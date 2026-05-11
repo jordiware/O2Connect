@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Repositories;
 using O2Connect.Api.RequestDtos;
 
 namespace O2Connect.Api.Services;
@@ -10,26 +12,38 @@ public interface IAuthorizationService
 
 public class AuthorizationService : IAuthorizationService
 {
-    public Task<IActionResult> HandleAsync(AuthorizationRequest request)
+    IClientRepository _clientService;
+
+    public AuthorizationService(IClientRepository clientService)
     {
-        // Mock validation
+        _clientService = clientService;
+    }
+
+    public async Task<IActionResult> HandleAsync(AuthorizationRequest request)
+    {
         if (string.IsNullOrWhiteSpace(request.ClientId) ||
             string.IsNullOrWhiteSpace(request.RedirectUri) ||
             string.IsNullOrWhiteSpace(request.ResponseType))
         {
-            return Task.FromResult<IActionResult>(new BadRequestObjectResult(new
-            {
-                error = "invalid_request"
-            }));
+            return new BadRequestObjectResult(new { error = "invalid_request" });
+        }
+
+        var client = await _clientService.GetByIdAsync(request.ClientId);
+        if (client == null)
+        {
+            return new BadRequestObjectResult(new { error = "invalid_client"});
+        }
+
+        var isValidRedirect = await _clientService.ValidateRedirectUriAsync(request.ClientId, request.RedirectUri);
+        if (!isValidRedirect)
+        {
+            return new BadRequestObjectResult(new { error = "invalid_redirect" });
         }
 
         // Only support authorization_code for now
         if (!string.Equals(request.ResponseType, "code", StringComparison.Ordinal))
         {
-            return Task.FromResult<IActionResult>(new BadRequestObjectResult(new
-            {
-                error = "unsupported_response_type"
-            }));
+            return new BadRequestObjectResult(new { error = "unsupported_response_type" });
         }
 
         // Mock authorization code
@@ -45,7 +59,7 @@ public class AuthorizationService : IAuthorizationService
             redirect += $"&state={Uri.EscapeDataString(request.State)}";
         }
 
-        return Task.FromResult<IActionResult>(new RedirectResult(redirect));
+        return new RedirectResult(redirect);
     }
 }
 

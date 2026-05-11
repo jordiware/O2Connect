@@ -8,4 +8,3 @@ public class TokenResponse
     public string? RefreshToken { get; set; }
     public string? IdToken { get; set; }
 }
-

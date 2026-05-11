@@ -1,15 +1,15 @@
 ﻿using O2Connect.Api.Models;
 
-namespace O2Connect.Api.Services;
+namespace O2Connect.Api.Repositories;
 
-public interface IClientService
+public interface IClientRepository
 {
     Task<Client?> GetByIdAsync(string clientId);
     Task<bool> ValidateClientAsync(string clientId, string? clientSecret);
     Task<bool> ValidateRedirectUriAsync(string clientId, string redirectUri);
 }
 
-public class InMemoryClientService : IClientService
+public class InMemoryClientRepository : IClientRepository
 {
     private readonly List<Client> _clients = new()
     {

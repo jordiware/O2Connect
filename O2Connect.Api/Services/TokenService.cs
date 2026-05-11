@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.RequestDtos;
+﻿using O2Connect.Api.Repositories;
+using O2Connect.Api.RequestDtos;
 using O2Connect.Api.ResponseDtos;
 
 namespace O2Connect.Api.Services;
@@ -10,8 +11,23 @@ public interface ITokenService
 
 public class TokenService : ITokenService
 {
-    public Task<TokenResponse> HandleAsync(TokenRequest request)
+    private readonly IClientRepository _clientRepository;
+
+    public TokenService(IClientRepository clientRepository)
     {
+        _clientRepository = clientRepository;
+    }
+
+    public async Task<TokenResponse> HandleAsync(TokenRequest request)
+    {
+        var isValidClient = await _clientRepository
+            .ValidateClientAsync(request.ClientId!, request.ClientSecret);
+
+        if (!isValidClient)
+        {
+            throw new Exception("invalid_client");
+        }
+
         switch (request.GrantType)
         {
             case "authorization_code":
@@ -38,6 +54,6 @@ public class TokenService : ITokenService
             IdToken = "mock_id_token"
         };
 
-        return Task.FromResult(response);
+        return response;
     }
 }

@@ -1,8 +1,9 @@
+using O2Connect.Api.Repositories;
 using O2Connect.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSingleton<IClientService, InMemoryClientService>();
+builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
