@@ -7,5 +7,5 @@ public class Client
     public List<string> RedirectUris { get; set; } = new();
     public List<string> AllowedGrantTypes { get; set; } = new();
     public List<string> AllowedScopes { get; set; } = new();
-    public bool RequirePkce { get; set; }
+    public bool RequiresSecret { get; set; }
 }

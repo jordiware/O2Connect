@@ -20,7 +20,7 @@ public class InMemoryClientRepository : IClientRepository
             RedirectUris = new List<string> { "https://example.com/callback" },
             AllowedGrantTypes = new List<string> { "authorization_code", "client_credentials" },
             AllowedScopes = new List<string> { "openid", "profile", "api" },
-            RequirePkce = false
+            RequiresSecret = false
         }
     };
 

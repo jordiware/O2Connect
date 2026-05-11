@@ -1,6 +1,8 @@
 ﻿using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace O2Connect.Api.Services;
 
@@ -11,7 +13,7 @@ public interface ITokenService
 
 public class TokenService : ITokenService
 {
-    IAuthorizationCodeRepository _authorizationCodeRepository;
+    private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IClientRepository _clientRepository;
 
     public TokenService(
@@ -24,12 +26,20 @@ public class TokenService : ITokenService
 
     public async Task<TokenResponse> HandleAsync(TokenRequest request)
     {
-        var isValidClient = await _clientRepository
-            .ValidateClientAsync(request.ClientId!, request.ClientSecret);
+        var client = await _clientRepository.GetByIdAsync(request.ClientId!);
 
-        if (!isValidClient)
-        {
+        if (client == null)
             throw new Exception("invalid_client");
+
+        if (client.RequiresSecret)
+        {
+            if (!await _clientRepository.ValidateClientAsync(request.ClientId!, request.ClientSecret))
+                throw new Exception("invalid_client");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.GrantType))
+        {
+            throw new Exception("invalid_request");
         }
 
         switch (request.GrantType)
@@ -42,9 +52,19 @@ public class TokenService : ITokenService
                     throw new Exception("invalid_grant");
                 }
 
+                if (storedCode.ClientId != request.ClientId)
+                {
+                    throw new Exception("invalid_grant");
+                }
+
                 if (storedCode.ExpiresAt < DateTime.UtcNow)
                 {
                     throw new Exception("invalid_grant");
+                }
+
+                if (string.IsNullOrWhiteSpace(request.RedirectUri))
+                {
+                    throw new Exception("invalid_request");
                 }
 
                 if (storedCode.RedirectUri != request.RedirectUri)
@@ -52,7 +72,26 @@ public class TokenService : ITokenService
                     throw new Exception("invalid_grant");
                 }
 
-                // (Later) PKCE validation goes here
+                if (string.IsNullOrWhiteSpace(request.CodeVerifier))
+                {
+                    throw new Exception("invalid_request");
+                }
+
+                if (!string.Equals(storedCode.CodeChallengeMethod, "S256", StringComparison.Ordinal))
+                {
+                    throw new Exception("invalid_grant");
+                }
+
+                using (var sha256 = SHA256.Create())
+                {
+                    var hashed = sha256.ComputeHash(Encoding.ASCII.GetBytes(request.CodeVerifier));
+                    var computedChallenge = Convert.ToBase64String(hashed);
+
+                    if (!string.Equals(computedChallenge, storedCode.CodeChallenge, StringComparison.Ordinal))
+                    {
+                        throw new Exception("invalid_grant");
+                    }
+                }
 
                 await _authorizationCodeRepository.RemoveAsync(request.Code!);
 
