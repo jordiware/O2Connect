@@ -2,6 +2,8 @@ using O2Connect.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSingleton<IClientService, InMemoryClientService>();
+
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
