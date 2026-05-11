@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace O2Connect.Api.RequestDtos;
+namespace O2Connect.Dto.Requests;
 
 public class AuthorizationRequest
 {

@@ -1,4 +1,4 @@
-﻿namespace O2Connect.Api.ResponseDtos;
+﻿namespace O2Connect.Dto.Responses;
 
 public class TokenResponse
 {

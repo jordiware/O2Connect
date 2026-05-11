@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using O2Connect.Api.RequestDtos;
 using O2Connect.Api.Services;
+using O2Connect.Dto.Requests;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 

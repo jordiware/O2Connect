@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Models;
 using O2Connect.Api.Repositories;
-using O2Connect.Api.RequestDtos;
+using O2Connect.Dto.Requests;
 
 namespace O2Connect.Api.Services;
 
@@ -12,11 +12,15 @@ public interface IAuthorizationService
 
 public class AuthorizationService : IAuthorizationService
 {
-    IClientRepository _clientService;
+    IAuthorizationCodeRepository _authorizationCodeRepository;
+    IClientRepository _clientRepository;
 
-    public AuthorizationService(IClientRepository clientService)
+    public AuthorizationService(
+        IAuthorizationCodeRepository authorizationCodeRepository,
+        IClientRepository clientRepository)
     {
-        _clientService = clientService;
+        _authorizationCodeRepository = authorizationCodeRepository;
+        _clientRepository = clientRepository;
     }
 
     public async Task<IActionResult> HandleAsync(AuthorizationRequest request)
@@ -28,13 +32,13 @@ public class AuthorizationService : IAuthorizationService
             return new BadRequestObjectResult(new { error = "invalid_request" });
         }
 
-        var client = await _clientService.GetByIdAsync(request.ClientId);
+        var client = await _clientRepository.GetByIdAsync(request.ClientId);
         if (client == null)
         {
             return new BadRequestObjectResult(new { error = "invalid_client"});
         }
 
-        var isValidRedirect = await _clientService.ValidateRedirectUriAsync(request.ClientId, request.RedirectUri);
+        var isValidRedirect = await _clientRepository.ValidateRedirectUriAsync(request.ClientId, request.RedirectUri);
         if (!isValidRedirect)
         {
             return new BadRequestObjectResult(new { error = "invalid_redirect" });
@@ -47,7 +51,20 @@ public class AuthorizationService : IAuthorizationService
         }
 
         // Mock authorization code
-        var code = "mock_auth_code";
+        var code = Guid.NewGuid().ToString("N");
+
+        var authCode = new AuthorizationCode
+        {
+            Code = code,
+            ClientId = request.ClientId,
+            RedirectUri = request.RedirectUri,
+            CodeChallenge = request.CodeChallenge,
+            CodeChallengeMethod = request.CodeChallengeMethod,
+            Scope = request.Scope,
+            ExpiresAt = DateTime.UtcNow.AddMinutes(5)
+        };
+
+        await _authorizationCodeRepository.StoreAsync(authCode);
 
         var uri = request.RedirectUri;
         var separator = uri.Contains("?") ? "&" : "?";

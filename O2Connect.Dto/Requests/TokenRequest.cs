@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
-namespace O2Connect.Api.RequestDtos;
+namespace O2Connect.Dto.Requests;
 
 public class TokenRequest
 {

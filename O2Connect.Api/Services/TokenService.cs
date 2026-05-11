@@ -1,6 +1,6 @@
 ﻿using O2Connect.Api.Repositories;
-using O2Connect.Api.RequestDtos;
-using O2Connect.Api.ResponseDtos;
+using O2Connect.Dto.Requests;
+using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.Services;
 
@@ -11,10 +11,14 @@ public interface ITokenService
 
 public class TokenService : ITokenService
 {
+    IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IClientRepository _clientRepository;
 
-    public TokenService(IClientRepository clientRepository)
+    public TokenService(
+        IAuthorizationCodeRepository authorizationCodeRepository,
+        IClientRepository clientRepository)
     {
+        _authorizationCodeRepository = authorizationCodeRepository;
         _clientRepository = clientRepository;
     }
 
@@ -31,9 +35,28 @@ public class TokenService : ITokenService
         switch (request.GrantType)
         {
             case "authorization_code":
-                // handle code flow
-                break;
+                var storedCode = await _authorizationCodeRepository.GetAsync(request.Code!);
 
+                if (storedCode == null)
+                {
+                    throw new Exception("invalid_grant");
+                }
+
+                if (storedCode.ExpiresAt < DateTime.UtcNow)
+                {
+                    throw new Exception("invalid_grant");
+                }
+
+                if (storedCode.RedirectUri != request.RedirectUri)
+                {
+                    throw new Exception("invalid_grant");
+                }
+
+                // (Later) PKCE validation goes here
+
+                await _authorizationCodeRepository.RemoveAsync(request.Code!);
+
+                break;
             case "client_credentials":
                 // handle machine-to-machine
                 break;
