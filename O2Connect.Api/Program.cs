@@ -3,6 +3,7 @@ using O2Connect.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

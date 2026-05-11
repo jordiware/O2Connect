@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.RequestDtos;
+using O2Connect.Api.Services;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -6,9 +8,16 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [Route("connect/authorize")]
 public class AuthorizationController : ControllerBase
 {
-    [HttpGet]
-    public IActionResult Authorize()
+    private readonly IAuthorizationService _authorizationService;
+
+    public AuthorizationController(IAuthorizationService authorizationService)
     {
-        return Ok("/connect/authorize endpoint");
+        _authorizationService = authorizationService;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest request)
+    {
+        return await _authorizationService.HandleAsync(request);
     }
 }
