@@ -1,3 +1,4 @@
+using O2Connect.Api.Middleware;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Services;
 
@@ -22,6 +23,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseMiddleware<OAuthExceptionMiddleware>();
 
 app.MapControllers();
 
