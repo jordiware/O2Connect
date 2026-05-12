@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 
@@ -19,9 +20,9 @@ public class TokenController : ControllerBase
     public async Task<IActionResult> Token([FromForm] TokenRequest request)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+            throw new OAuthException("invalid_request");
 
-        var response = _tokenService.HandleAsync(request);
+        var response = await _tokenService.HandleAsync(request, HttpContext.RequestAborted);
 
         return Ok(response);
     }
