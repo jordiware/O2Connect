@@ -3,8 +3,6 @@ using O2Connect.Api.Repositories;
 using O2Connect.Api.Services.Helpers;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace O2Connect.Api.Services;
 
@@ -15,12 +13,12 @@ public interface ITokenService
 
 public class TokenService : ITokenService
 {
-    private readonly IPkceHelper _pkceHelper;
+    private readonly IPkceValidationHelper _pkceHelper;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IClientRepository _clientRepository;
 
     public TokenService(
-        IPkceHelper pkceHelper,
+        IPkceValidationHelper pkceHelper,
         IAuthorizationCodeRepository authorizationCodeRepository,
         IClientRepository clientRepository)
     {
@@ -31,15 +29,25 @@ public class TokenService : ITokenService
 
     public async Task<TokenResponse> HandleAsync(TokenRequest request, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(request.ClientId))
+            throw new OAuthException("invalid_request", "client_id is empty");
+
+        if (string.IsNullOrWhiteSpace(request.GrantType))
+            throw new OAuthException("invalid_request", "grant_type is empty");
+
+        if (string.IsNullOrWhiteSpace(request.Scope))
+            throw new OAuthException("invalid_request", "scope is empty");
+
         var client = await _clientRepository.GetByIdAsync(request.ClientId);
 
         if (client == null)
-        {
             throw new OAuthException("invalid_client", "No client found for given client_id");
-        }
+        
+        if (!client.AllowedScopes.Contains(request.Scope))
+            throw new OAuthException("invalid_scope");
 
         if (client.RequiresSecret
-            && await _clientRepository.ValidateClientAsync(request.ClientId, request.ClientSecret))
+            && !await _clientRepository.ValidateClientAsync(request.ClientId, request.ClientSecret))
         {
             throw new OAuthException("invalid_client");
         }
@@ -55,7 +63,16 @@ public class TokenService : ITokenService
 
     public async Task<TokenResponse> HandleAuthorizationCodeGrantTypeAsync(TokenRequest request, CancellationToken ct)
     {
-        var storedCode = await _authorizationCodeRepository.RedeemAsync(request.Code!);
+        if (string.IsNullOrWhiteSpace(request.RedirectUri))
+            throw new OAuthException("invalid_request");
+
+        if (string.IsNullOrWhiteSpace(request.Code))
+            throw new OAuthException("invalid_request");
+
+        if (string.IsNullOrWhiteSpace(request.CodeVerifier))
+            throw new OAuthException("invalid_request");
+
+        var storedCode = await _authorizationCodeRepository.RedeemAsync(request.Code);
 
         if (storedCode == null)
             throw new OAuthException("invalid_grant");
@@ -69,7 +86,7 @@ public class TokenService : ITokenService
         if (storedCode.RedirectUri != request.RedirectUri)
             throw new OAuthException("invalid_grant");
 
-        _pkceHelper.Validate(request.CodeVerifier!, storedCode.CodeChallenge!, storedCode.CodeChallengeMethod!);
+        _pkceHelper.Validate(request.CodeVerifier, storedCode.CodeChallenge!, storedCode.CodeChallengeMethod!);
 
         var response = new TokenResponse
         {

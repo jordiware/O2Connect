@@ -1,8 +1,11 @@
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Services;
+using O2Connect.Api.Services.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSingleton<IPkceValidationHelper, PkceValidationHelper>();
 
 builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
