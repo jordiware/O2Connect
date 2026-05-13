@@ -1,5 +1,6 @@
 ﻿using O2Connect.Api.Exceptions;
 using O2Connect.Api.Repositories;
+using O2Connect.Api.Services.Helpers;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
 using System.Security.Cryptography;
@@ -14,29 +15,27 @@ public interface ITokenService
 
 public class TokenService : ITokenService
 {
+    private readonly IPkceHelper _pkceHelper;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IClientRepository _clientRepository;
 
     public TokenService(
+        IPkceHelper pkceHelper,
         IAuthorizationCodeRepository authorizationCodeRepository,
         IClientRepository clientRepository)
     {
+        _pkceHelper = pkceHelper;
         _authorizationCodeRepository = authorizationCodeRepository;
         _clientRepository = clientRepository;
     }
 
     public async Task<TokenResponse> HandleAsync(TokenRequest request, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.ClientId))
-        {
-            throw new OAuthException("invalid_request");
-        }
-
         var client = await _clientRepository.GetByIdAsync(request.ClientId);
 
         if (client == null)
         {
-            throw new OAuthException("invalid_client");
+            throw new OAuthException("invalid_client", "No client found for given client_id");
         }
 
         if (client.RequiresSecret
@@ -45,73 +44,32 @@ public class TokenService : ITokenService
             throw new OAuthException("invalid_client");
         }
 
-        if (string.IsNullOrWhiteSpace(request.GrantType))
-        {
-            throw new OAuthException("invalid_request");
-        }
-
         return request.GrantType switch
         {
-            GrantTypes.AuthorizationCode => await HandleAuthorizationCodeGrantTypeAsync(request, ct),
-            GrantTypes.ClientCredentials => await HandleClientCredentialsGrantTypeAsync(request, ct),
-            GrantTypes.RefreshToken => await HandleRefreshTokenGrantTypeAsync(request, ct),
+            "authorization_code" => await HandleAuthorizationCodeGrantTypeAsync(request, ct),
+            "client_credentials" => await HandleClientCredentialsGrantTypeAsync(request, ct),
+            "refresh_token" => await HandleRefreshTokenGrantTypeAsync(request, ct),
             _ => throw new OAuthException("unsupported_grant_type")
         };
     }
 
     public async Task<TokenResponse> HandleAuthorizationCodeGrantTypeAsync(TokenRequest request, CancellationToken ct)
     {
-        var storedCode = await _authorizationCodeRepository.GetAsync(request.Code!);
+        var storedCode = await _authorizationCodeRepository.RedeemAsync(request.Code!);
 
         if (storedCode == null)
-        {
             throw new OAuthException("invalid_grant");
-        }
 
         if (storedCode.ClientId != request.ClientId)
-        {
             throw new OAuthException("invalid_grant");
-        }
 
         if (storedCode.ExpiresAt < DateTime.UtcNow)
-        {
             throw new OAuthException("invalid_grant");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.RedirectUri))
-        {
-            throw new OAuthException("invalid_request");
-        }
 
         if (storedCode.RedirectUri != request.RedirectUri)
-        {
             throw new OAuthException("invalid_grant");
-        }
 
-        if (string.IsNullOrWhiteSpace(request.CodeVerifier))
-        {
-            throw new OAuthException("invalid_request");
-        }
-
-        if (!string.Equals(storedCode.CodeChallengeMethod, "S256", StringComparison.Ordinal))
-        {
-            throw new OAuthException("invalid_grant");
-        }
-
-        using var sha256 = SHA256.Create();
-        var bytes = Encoding.UTF8.GetBytes(request.CodeVerifier);
-        var hash = sha256.ComputeHash(bytes);
-        var computedChallenge = Convert.ToBase64String(hash)
-                                       .Replace("+", "-")
-                                       .Replace("/", "_")
-                                       .Replace("=", "");
-
-        if (!string.Equals(computedChallenge, storedCode.CodeChallenge, StringComparison.Ordinal))
-        {
-            throw new OAuthException("invalid_grant");
-        }
-
-        await _authorizationCodeRepository.RemoveAsync(request.Code!);
+        _pkceHelper.Validate(request.CodeVerifier!, storedCode.CodeChallenge!, storedCode.CodeChallengeMethod!);
 
         var response = new TokenResponse
         {
@@ -148,12 +106,5 @@ public class TokenService : ITokenService
         };
 
         return response;
-    }
-
-    public static class GrantTypes
-    {
-        public const string AuthorizationCode = "authorization_code";
-        public const string ClientCredentials = "client_credentials";
-        public const string RefreshToken = "refresh_token";
     }
 }

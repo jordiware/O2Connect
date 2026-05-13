@@ -6,6 +6,7 @@ public interface IAuthorizationCodeRepository
 {
     Task StoreAsync(AuthorizationCode code);
     Task<AuthorizationCode?> GetAsync(string code);
+    Task<AuthorizationCode?> RedeemAsync(string code);
     Task RemoveAsync(string code);
 }
 
@@ -23,6 +24,13 @@ public class InMemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
     {
         _codes.TryGetValue(code, out var value);
         return Task.FromResult(value);
+    }
+
+    public async Task<AuthorizationCode?> RedeemAsync(string code)
+    {
+        _codes.TryGetValue(code, out var value);
+        await RemoveAsync(code);
+        return value;
     }
 
     public Task RemoveAsync(string code)
