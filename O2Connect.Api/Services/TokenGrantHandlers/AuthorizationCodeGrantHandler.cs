@@ -25,27 +25,27 @@ public class AuthorizationCodeGrantHandler : TokenGrantHandler
         var client = validatedClient.Client;
 
         if (!client.RedirectUris.Contains(request.RedirectUri!))
-            throw new OAuthException("invalid_grant");
+            throw OAuthException.FromInvalidGrant();
 
         if (string.IsNullOrWhiteSpace(request.RedirectUri))
-            throw new OAuthException("invalid_request");
+            throw OAuthException.FromInvalidRequest();
 
         if (string.IsNullOrWhiteSpace(request.Code))
-            throw new OAuthException("invalid_request");
+            throw OAuthException.FromInvalidRequest();
 
         var storedCode = await _authorizationCodeRepository.RedeemAsync(request.Code, ct);
 
         if (storedCode == null)
-            throw new OAuthException("invalid_grant");
+            throw OAuthException.FromInvalidGrant();
 
         if (storedCode.ClientId != client.ClientId)
-            throw new OAuthException("invalid_grant");
+            throw OAuthException.FromInvalidGrant();
 
         if (storedCode.ExpiresAt <= DateTime.UtcNow)
-            throw new OAuthException("invalid_grant");
+            throw OAuthException.FromInvalidGrant();
 
         if (!string.Equals(storedCode.RedirectUri, request.RedirectUri, StringComparison.Ordinal))
-            throw new OAuthException("invalid_grant");
+            throw OAuthException.FromInvalidGrant();
 
         if (validatedClient.RequestedScopes.Count > 0)
         {
@@ -53,22 +53,22 @@ public class AuthorizationCodeGrantHandler : TokenGrantHandler
             var granted = new HashSet<string>(storedCode.Scopes ?? [], StringComparer.Ordinal);
 
             if (!requested.IsSubsetOf(granted))
-                throw new OAuthException("invalid_grant");
+                throw OAuthException.FromInvalidGrant();
         }
 
         if (storedCode.CodeChallenge != null)
         {
             if (string.IsNullOrWhiteSpace(storedCode.CodeChallengeMethod))
-                throw new OAuthException("invalid_grant");
+                throw OAuthException.FromInvalidGrant();
 
             if (string.IsNullOrWhiteSpace(request.CodeVerifier))
-                throw new OAuthException("invalid_grant");
+                throw OAuthException.FromInvalidGrant();
 
             if (!_pkceValidators.TryGetValue(storedCode.CodeChallengeMethod, out var pkceValidator))
-                throw new OAuthException("invalid_grant");
+                throw OAuthException.FromInvalidGrant();
 
             if (!pkceValidator.Validate(request.CodeVerifier, storedCode.CodeChallenge))
-                throw new OAuthException("invalid_grant");
+                throw OAuthException.FromInvalidGrant();
         }
 
         return new TokenResponse

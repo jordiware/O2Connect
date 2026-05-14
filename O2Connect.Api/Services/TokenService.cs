@@ -28,7 +28,7 @@ public class TokenService : ITokenService
         var validatedClient = await _clientValidator.ValidateAsync(request, ct);
 
         if (!_grantHandlers.TryGetValue(request.GrantType, out var handler))
-            throw new OAuthException("unsupported_grant_type");
+            throw OAuthException.FromUnsupportedGrantType();
 
         return await handler.HandleAsync(request, validatedClient, ct);
     }

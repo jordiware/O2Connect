@@ -22,29 +22,29 @@ public class ClientValidator : IClientValidator
     public async Task<ValidatedClient> ValidateAsync(TokenRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.ClientId))
-            throw new OAuthException("invalid_request", "client_id is required");
+            throw OAuthException.FromInvalidRequest("client_id is required");
 
         if (string.IsNullOrWhiteSpace(request.GrantType))
-            throw new OAuthException("invalid_request", "grant_type is required");
+            throw OAuthException.FromInvalidRequest("grant_type is required");
 
         var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
 
         if (client == null)
-            throw new OAuthException("invalid_client");
+            throw OAuthException.FromInvalidClient();
 
         if (client.RequiresSecret)
         {
             if (string.IsNullOrWhiteSpace(request.ClientSecret))
-                throw new OAuthException("invalid_client");
+                throw OAuthException.FromInvalidClient();
 
             var valid = await _clientRepository.ValidateClientAsync(request.ClientId, request.ClientSecret, ct);
 
             if (!valid)
-                throw new OAuthException("invalid_client");
+                throw OAuthException.FromInvalidClient();
         }
 
         if (!client.AllowedGrantTypes.Contains(request.GrantType))
-            throw new OAuthException("unauthorized_client");
+            throw OAuthException.FromUnauthorizedClient();
 
         var requestedScopes = ParseScopes(request.Scope);
 
@@ -52,8 +52,8 @@ public class ClientValidator : IClientValidator
         {
             var allowed = new HashSet<string>(client.AllowedScopes, StringComparer.Ordinal);
 
-            if (!requestedScopes.All(s => allowed.Contains(s)))
-                throw new OAuthException("invalid_scope");
+            if (!requestedScopes.All(allowed.Contains))
+                throw OAuthException.FromInvalidScope();
         }
 
         return new ValidatedClient

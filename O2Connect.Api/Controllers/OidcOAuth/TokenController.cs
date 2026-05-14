@@ -20,7 +20,7 @@ public class TokenController : ControllerBase
     public async Task<IActionResult> Token([FromForm] TokenRequest request)
     {
         if (!ModelState.IsValid)
-            throw new OAuthException("invalid_request");
+            throw OAuthException.FromInvalidRequest();
 
         var response = await _tokenService.HandleAsync(request, HttpContext.RequestAborted);
 
