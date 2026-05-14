@@ -18,6 +18,6 @@ public class AuthorizationController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest request)
     {
-        return await _authorizationService.HandleAsync(request);
+        return await _authorizationService.HandleAsync(request, HttpContext.RequestAborted);
     }
 }

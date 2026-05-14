@@ -8,7 +8,7 @@ namespace O2Connect.Api.Services;
 
 public interface IAuthorizationService
 {
-    Task<IActionResult> HandleAsync(AuthorizationRequest request);
+    Task<IActionResult> HandleAsync(AuthorizationRequest request, CancellationToken ct);
 }
 
 public class AuthorizationService : IAuthorizationService
@@ -24,7 +24,7 @@ public class AuthorizationService : IAuthorizationService
         _clientRepository = clientRepository;
     }
 
-    public async Task<IActionResult> HandleAsync(AuthorizationRequest request)
+    public async Task<IActionResult> HandleAsync(AuthorizationRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.ClientId) ||
             string.IsNullOrWhiteSpace(request.RedirectUri) ||
@@ -33,13 +33,13 @@ public class AuthorizationService : IAuthorizationService
             return new BadRequestObjectResult(new { error = "invalid_request" });
         }
 
-        var client = await _clientRepository.GetByIdAsync(request.ClientId);
+        var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
         if (client == null)
         {
             return BuildErrorRedirect(request.RedirectUri, "invalid_client", request.State);
         }
 
-        var isValidRedirect = await _clientRepository.ValidateRedirectUriAsync(request.ClientId, request.RedirectUri);
+        var isValidRedirect = await _clientRepository.ValidateRedirectUriAsync(request.ClientId, request.RedirectUri, ct);
         if (!isValidRedirect)
         {
             return BuildErrorRedirect(request.RedirectUri, "invalid_redirect", request.State);
@@ -75,7 +75,7 @@ public class AuthorizationService : IAuthorizationService
             ExpiresAt = DateTime.UtcNow.AddMinutes(5)
         };
 
-        await _authorizationCodeRepository.StoreAsync(authCode);
+        await _authorizationCodeRepository.StoreAsync(authCode, ct);
 
         var uri = request.RedirectUri;
         var separator = uri.Contains("?") ? "&" : "?";

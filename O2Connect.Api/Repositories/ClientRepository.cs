@@ -4,9 +4,9 @@ namespace O2Connect.Api.Repositories;
 
 public interface IClientRepository
 {
-    Task<Client?> GetByIdAsync(string clientId);
-    Task<bool> ValidateClientAsync(string clientId, string? clientSecret);
-    Task<bool> ValidateRedirectUriAsync(string clientId, string redirectUri);
+    Task<Client?> GetByIdAsync(string clientId, CancellationToken ct);
+    Task<bool> ValidateClientAsync(string clientId, string? clientSecret, CancellationToken ct);
+    Task<bool> ValidateRedirectUriAsync(string clientId, string redirectUri, CancellationToken ct);
 }
 
 public class InMemoryClientRepository : IClientRepository
@@ -24,13 +24,13 @@ public class InMemoryClientRepository : IClientRepository
         }
     };
 
-    public Task<Client?> GetByIdAsync(string clientId)
+    public Task<Client?> GetByIdAsync(string clientId, CancellationToken ct)
     {
         var client = _clients.FirstOrDefault(c => c.ClientId == clientId);
         return Task.FromResult(client);
     }
 
-    public Task<bool> ValidateClientAsync(string clientId, string? clientSecret)
+    public Task<bool> ValidateClientAsync(string clientId, string? clientSecret, CancellationToken ct)
     {
         var client = _clients.FirstOrDefault(c => c.ClientId == clientId);
 
@@ -44,7 +44,7 @@ public class InMemoryClientRepository : IClientRepository
         return Task.FromResult(client.ClientSecret == clientSecret);
     }
 
-    public Task<bool> ValidateRedirectUriAsync(string clientId, string redirectUri)
+    public Task<bool> ValidateRedirectUriAsync(string clientId, string redirectUri, CancellationToken ct)
     {
         var client = _clients.FirstOrDefault(c => c.ClientId == clientId);
 

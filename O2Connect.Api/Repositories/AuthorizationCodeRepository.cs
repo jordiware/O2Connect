@@ -4,36 +4,36 @@ namespace O2Connect.Api.Repositories;
 
 public interface IAuthorizationCodeRepository
 {
-    Task StoreAsync(AuthorizationCode code);
-    Task<AuthorizationCode?> GetAsync(string code);
-    Task<AuthorizationCode?> RedeemAsync(string code);
-    Task RemoveAsync(string code);
+    Task StoreAsync(AuthorizationCode code, CancellationToken ct);
+    Task<AuthorizationCode?> GetAsync(string code, CancellationToken ct);
+    Task<AuthorizationCode?> RedeemAsync(string code, CancellationToken ct);
+    Task RemoveAsync(string code, CancellationToken ct);
 }
 
 public class InMemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
 {
     private readonly Dictionary<string, AuthorizationCode> _codes = new();
 
-    public Task StoreAsync(AuthorizationCode code)
+    public Task StoreAsync(AuthorizationCode code, CancellationToken ct)
     {
         _codes[code.Code] = code;
         return Task.CompletedTask;
     }
 
-    public Task<AuthorizationCode?> GetAsync(string code)
+    public Task<AuthorizationCode?> GetAsync(string code, CancellationToken ct  )
     {
         _codes.TryGetValue(code, out var value);
         return Task.FromResult(value);
     }
 
-    public async Task<AuthorizationCode?> RedeemAsync(string code)
+    public async Task<AuthorizationCode?> RedeemAsync(string code, CancellationToken ct)
     {
         _codes.TryGetValue(code, out var value);
-        await RemoveAsync(code);
+        await RemoveAsync(code, ct);
         return value;
     }
 
-    public Task RemoveAsync(string code)
+    public Task RemoveAsync(string code, CancellationToken ct)
     {
         _codes.Remove(code);
         return Task.CompletedTask;
