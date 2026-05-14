@@ -1,20 +1,22 @@
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Services;
-using O2Connect.Api.Services.PkceValidators;
 using O2Connect.Api.Services.TokenGrantHandlers;
+using O2Connect.Api.Services.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
 
-builder.Services.AddScoped<IPkceValidator, PlainPkceValidator>();
-builder.Services.AddScoped<IPkceValidator, S256PkceValidator>();
+builder.Services.AddTransient<IPkceValidator, PlainPkceValidator>();
+builder.Services.AddTransient<IPkceValidator, S256PkceValidator>();
 
-builder.Services.AddScoped<ITokenGrantHandler, AuthorizationCodeGrantHandler>();
-builder.Services.AddScoped<ITokenGrantHandler, ClientCredentialsGrantHandler>();
-builder.Services.AddScoped<ITokenGrantHandler, RefreshTokenGrantHandler>();
+builder.Services.AddTransient<IClientValidator, ClientValidator>();
+
+builder.Services.AddTransient<ITokenGrantHandler, AuthorizationCodeGrantHandler>();
+builder.Services.AddTransient<ITokenGrantHandler, ClientCredentialsGrantHandler>();
+builder.Services.AddTransient<ITokenGrantHandler, RefreshTokenGrantHandler>();
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();

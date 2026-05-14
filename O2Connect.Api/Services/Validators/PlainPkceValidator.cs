@@ -1,6 +1,6 @@
 ﻿using O2Connect.Api.Exceptions;
 
-namespace O2Connect.Api.Services.PkceValidators;
+namespace O2Connect.Api.Services.Validators;
 
 public class PlainPkceValidator : IPkceValidator
 {

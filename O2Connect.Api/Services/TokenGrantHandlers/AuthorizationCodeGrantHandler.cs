@@ -1,6 +1,7 @@
 ﻿using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models;
 using O2Connect.Api.Repositories;
-using O2Connect.Api.Services.PkceValidators;
+using O2Connect.Api.Services.Validators;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
 
@@ -19,15 +20,14 @@ public class AuthorizationCodeGrantHandler : TokenGrantHandler
 
     public override string GrantType => "authorization_code";
 
-    public override async Task<TokenResponse> HandleAsync(TokenRequest request, CancellationToken ct)
+    public override async Task<TokenResponse> HandleAsync(TokenRequest request, ValidatedClient validatedClient, CancellationToken ct)
     {
+        var client = validatedClient.Client;
+
         if (string.IsNullOrWhiteSpace(request.RedirectUri))
             throw new OAuthException("invalid_request");
 
         if (string.IsNullOrWhiteSpace(request.Code))
-            throw new OAuthException("invalid_request");
-
-        if (string.IsNullOrWhiteSpace(request.CodeVerifier))
             throw new OAuthException("invalid_request");
 
         var storedCode = await _authorizationCodeRepository.RedeemAsync(request.Code, ct);
@@ -35,30 +35,48 @@ public class AuthorizationCodeGrantHandler : TokenGrantHandler
         if (storedCode == null)
             throw new OAuthException("invalid_grant");
 
-        if (storedCode.ClientId != request.ClientId)
+        if (storedCode.ClientId != client.ClientId)
             throw new OAuthException("invalid_grant");
 
         if (storedCode.ExpiresAt < DateTime.UtcNow)
             throw new OAuthException("invalid_grant");
 
-        if (storedCode.RedirectUri != request.RedirectUri)
+        if (!string.Equals(storedCode.RedirectUri, request.RedirectUri, StringComparison.Ordinal))
             throw new OAuthException("invalid_grant");
 
-        var pkceValidator = _pkceValidators.FirstOrDefault(v => v.Method == storedCode.CodeChallengeMethod);
+        if (validatedClient.RequestedScopes.Count > 0)
+        {
+            var requested = new HashSet<string>(validatedClient.RequestedScopes, StringComparer.Ordinal);
+            var granted = new HashSet<string>(storedCode.Scopes ?? [], StringComparer.Ordinal);
 
-        if (pkceValidator == null)
-            throw new OAuthException("invalid_grant");
+            if (!requested.SetEquals(granted))
+                throw new OAuthException("invalid_grant");
+        }
+        
+        if (storedCode.CodeChallenge != null)
+        {
+            if (string.IsNullOrWhiteSpace(request.CodeVerifier))
+                throw new OAuthException("invalid_grant");
 
-        pkceValidator.Validate(request.CodeVerifier, storedCode.CodeChallenge!);
+            if (!_pkceValidators.TryGetValue(storedCode.CodeChallengeMethod!, out var pkceValidator))
+                throw new OAuthException("invalid_grant");
 
-        var response = new TokenResponse
+            try
+            {
+                pkceValidator.Validate(request.CodeVerifier, storedCode.CodeChallenge);
+            }
+            catch
+            {
+                throw new OAuthException("invalid_grant");
+            }
+        }
+
+        return new TokenResponse
         {
             AccessToken = "mock_access_token",
             ExpiresIn = 3600,
             RefreshToken = "mock_refresh_token",
             IdToken = "mock_id_token"
         };
-
-        return response;
     }
 }

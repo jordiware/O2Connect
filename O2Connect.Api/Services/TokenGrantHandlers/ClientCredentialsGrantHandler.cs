@@ -1,5 +1,6 @@
-﻿using O2Connect.Api.Repositories;
-using O2Connect.Api.Services.PkceValidators;
+﻿using O2Connect.Api.Models;
+using O2Connect.Api.Repositories;
+using O2Connect.Api.Services.Validators;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
 
@@ -13,7 +14,7 @@ public class ClientCredentialsGrantHandler : TokenGrantHandler
 
     public override string GrantType => "client_credentials";
 
-    public override Task<TokenResponse> HandleAsync(TokenRequest request, CancellationToken ct)
+    public override Task<TokenResponse> HandleAsync(TokenRequest request, ValidatedClient client, CancellationToken ct)
     {
         var response = new TokenResponse
         {
