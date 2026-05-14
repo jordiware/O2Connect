@@ -1,5 +1,4 @@
-﻿using O2Connect.Api.Exceptions;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 
 namespace O2Connect.Api.Services.Validators;
@@ -20,9 +19,9 @@ public class S256PkceValidator : IPkceValidator
                                        .Replace("/", "_")
                                        .Replace("=", "");
 
-        if (!string.Equals(computedChallenge, challenge, StringComparison.Ordinal))
-            throw new OAuthException("invalid_grant");
+        if (string.Equals(computedChallenge, challenge, StringComparison.Ordinal))
+            return true;
 
-        return true;
+        return false;
     }
 }

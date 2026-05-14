@@ -50,7 +50,7 @@ public class AuthorizationService : IAuthorizationService
         {
             return BuildErrorRedirect(request.RedirectUri, "unsupported_response_type", request.State);
         }
-        
+
         if (string.IsNullOrWhiteSpace(request.CodeChallenge))
         {
             return BuildErrorRedirect(request.RedirectUri, "invalid_request", request.State);
@@ -71,7 +71,7 @@ public class AuthorizationService : IAuthorizationService
             RedirectUri = request.RedirectUri,
             CodeChallenge = request.CodeChallenge,
             CodeChallengeMethod = request.CodeChallengeMethod,
-            Scope = request.Scope,
+            Scopes = [ request.Scope ],
             ExpiresAt = DateTime.UtcNow.AddMinutes(5)
         };
 

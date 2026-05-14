@@ -24,6 +24,9 @@ public class AuthorizationCodeGrantHandler : TokenGrantHandler
     {
         var client = validatedClient.Client;
 
+        if (!client.RedirectUris.Contains(request.RedirectUri!))
+            throw new OAuthException("invalid_grant");
+
         if (string.IsNullOrWhiteSpace(request.RedirectUri))
             throw new OAuthException("invalid_request");
 
@@ -38,7 +41,7 @@ public class AuthorizationCodeGrantHandler : TokenGrantHandler
         if (storedCode.ClientId != client.ClientId)
             throw new OAuthException("invalid_grant");
 
-        if (storedCode.ExpiresAt < DateTime.UtcNow)
+        if (storedCode.ExpiresAt <= DateTime.UtcNow)
             throw new OAuthException("invalid_grant");
 
         if (!string.Equals(storedCode.RedirectUri, request.RedirectUri, StringComparison.Ordinal))
@@ -49,26 +52,23 @@ public class AuthorizationCodeGrantHandler : TokenGrantHandler
             var requested = new HashSet<string>(validatedClient.RequestedScopes, StringComparer.Ordinal);
             var granted = new HashSet<string>(storedCode.Scopes ?? [], StringComparer.Ordinal);
 
-            if (!requested.SetEquals(granted))
+            if (!requested.IsSubsetOf(granted))
                 throw new OAuthException("invalid_grant");
         }
-        
+
         if (storedCode.CodeChallenge != null)
         {
+            if (string.IsNullOrWhiteSpace(storedCode.CodeChallengeMethod))
+                throw new OAuthException("invalid_grant");
+
             if (string.IsNullOrWhiteSpace(request.CodeVerifier))
                 throw new OAuthException("invalid_grant");
 
-            if (!_pkceValidators.TryGetValue(storedCode.CodeChallengeMethod!, out var pkceValidator))
+            if (!_pkceValidators.TryGetValue(storedCode.CodeChallengeMethod, out var pkceValidator))
                 throw new OAuthException("invalid_grant");
 
-            try
-            {
-                pkceValidator.Validate(request.CodeVerifier, storedCode.CodeChallenge);
-            }
-            catch
-            {
+            if (!pkceValidator.Validate(request.CodeVerifier, storedCode.CodeChallenge))
                 throw new OAuthException("invalid_grant");
-            }
         }
 
         return new TokenResponse

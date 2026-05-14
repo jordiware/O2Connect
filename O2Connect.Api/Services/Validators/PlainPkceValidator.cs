@@ -8,9 +8,9 @@ public class PlainPkceValidator : IPkceValidator
 
     public bool Validate(string verifier, string challenge)
     {
-        if (!string.Equals(verifier, challenge, StringComparison.Ordinal))
-            throw new OAuthException("invalid_grant");
+        if (string.Equals(verifier, challenge, StringComparison.Ordinal))
+            return true;
 
-        return true;
+        return false;
     }
 }
