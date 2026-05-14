@@ -19,9 +19,8 @@ public class S256PkceValidator : IPkceValidator
                                        .Replace("/", "_")
                                        .Replace("=", "");
 
-        if (string.Equals(computedChallenge, challenge, StringComparison.Ordinal))
-            return true;
-
-        return false;
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(computedChallenge), 
+            Encoding.UTF8.GetBytes(challenge));
     }
 }

@@ -24,14 +24,14 @@ public class AuthorizationCodeGrantHandler : TokenGrantHandler
     {
         var client = validatedClient.Client;
 
-        if (!client.RedirectUris.Contains(request.RedirectUri!))
-            throw OAuthException.FromInvalidGrant();
+        if (string.IsNullOrWhiteSpace(request.Code))
+            throw OAuthException.FromInvalidRequest();
 
         if (string.IsNullOrWhiteSpace(request.RedirectUri))
             throw OAuthException.FromInvalidRequest();
 
-        if (string.IsNullOrWhiteSpace(request.Code))
-            throw OAuthException.FromInvalidRequest();
+        if (!client.RedirectUris.Contains(request.RedirectUri))
+            throw OAuthException.FromInvalidGrant();
 
         var storedCode = await _authorizationCodeRepository.RedeemAsync(request.Code, ct);
 
@@ -54,6 +54,10 @@ public class AuthorizationCodeGrantHandler : TokenGrantHandler
 
             if (!requested.IsSubsetOf(granted))
                 throw OAuthException.FromInvalidGrant();
+        }
+        else
+        {
+            validatedClient.RequestedScopes = storedCode.Scopes ?? [];
         }
 
         if (storedCode.CodeChallenge != null)

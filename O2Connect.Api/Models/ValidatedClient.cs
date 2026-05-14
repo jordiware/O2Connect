@@ -2,6 +2,6 @@
 
 public sealed class ValidatedClient
 {
-    public required Client Client { get; init; }
-    public required IReadOnlyCollection<string> RequestedScopes { get; init; }
+    public required Client Client { get; set; }
+    public required IReadOnlyCollection<string> RequestedScopes { get; set; }
 }

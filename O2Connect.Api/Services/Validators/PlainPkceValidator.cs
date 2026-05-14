@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Exceptions;
+﻿using System.Security.Cryptography;
+using System.Text;
 
 namespace O2Connect.Api.Services.Validators;
 
@@ -8,9 +9,8 @@ public class PlainPkceValidator : IPkceValidator
 
     public bool Validate(string verifier, string challenge)
     {
-        if (string.Equals(verifier, challenge, StringComparison.Ordinal))
-            return true;
-
-        return false;
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(verifier),
+            Encoding.UTF8.GetBytes(challenge));
     }
 }
