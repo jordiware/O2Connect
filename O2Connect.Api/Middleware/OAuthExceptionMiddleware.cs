@@ -1,4 +1,7 @@
 ﻿using O2Connect.Api.Exceptions;
+using O2Connect.Dto.Responses;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace O2Connect.Api.Middleware;
 
@@ -37,21 +40,30 @@ public class OAuthExceptionMiddleware
 
     private static async Task HandleOAuthExceptionAsync(HttpContext context, OAuthException ex)
     {
-        context.Response.StatusCode = MapStatusCode(ex.Error);
+        context.Response.StatusCode = ex.StatusCode;
         context.Response.ContentType = "application/json";
 
-        if (ex.Error == "invalid_client")
+        if (!string.IsNullOrWhiteSpace(ex.WwwAuthenticate))
         {
-            context.Response.Headers["WWW-Authenticate"] = "Basic realm=\"token\"";
+            context.Response.Headers["WWW-Authenticate"] = ex.WwwAuthenticate;
         }
 
-        var payload = new
+        var payload = new OAuthErrorResponse
         {
-            error = ex.Error,
-            error_description = ex.Description
+            Error = ex.Error,
+            ErrorDescription = ex.Description,
+            ErrorUri = ex.ErrorUri
         };
 
-        await context.Response.WriteAsJsonAsync(payload);
+        var jsonOptions = new JsonSerializerOptions
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+        if (context.Response.HasStarted)
+            return;
+
+        await context.Response.WriteAsJsonAsync(payload, jsonOptions, context.RequestAborted);
     }
 
     private static async Task HandleGenericExceptionAsync(HttpContext context)
@@ -61,15 +73,12 @@ public class OAuthExceptionMiddleware
 
         var payload = new
         {
-            error = "server_error"
+            error = "internal_server_error"
         };
 
-        await context.Response.WriteAsJsonAsync(payload);
-    }
+        if (context.Response.HasStarted)
+            return;
 
-    private static int MapStatusCode(string error) => error switch
-    {
-        "invalid_client" => StatusCodes.Status401Unauthorized,
-        _ => StatusCodes.Status400BadRequest
-    };
+        await context.Response.WriteAsJsonAsync(payload, context.RequestAborted);
+    }
 }
