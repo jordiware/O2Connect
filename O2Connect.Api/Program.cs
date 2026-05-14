@@ -1,8 +1,8 @@
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Services;
-using O2Connect.Api.Services.Helpers.PkceValidators;
-using O2Connect.Api.Services.Helpers.TokenGrantHandlers;
+using O2Connect.Api.Services.PkceValidators;
+using O2Connect.Api.Services.TokenGrantHandlers;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,4 +1,4 @@
-﻿namespace O2Connect.Api.Services.Helpers.PkceValidators;
+﻿namespace O2Connect.Api.Services.PkceValidators;
 
 public interface IPkceValidator
 {

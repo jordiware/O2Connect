@@ -1,10 +1,10 @@
 ﻿using O2Connect.Api.Exceptions;
 using O2Connect.Api.Repositories;
-using O2Connect.Api.Services.Helpers.PkceValidators;
+using O2Connect.Api.Services.PkceValidators;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
 
-namespace O2Connect.Api.Services.Helpers.TokenGrantHandlers;
+namespace O2Connect.Api.Services.TokenGrantHandlers;
 
 public class AuthorizationCodeGrantHandler : TokenGrantHandler
 {

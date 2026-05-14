@@ -1,6 +1,6 @@
 ﻿using O2Connect.Api.Exceptions;
 using O2Connect.Api.Repositories;
-using O2Connect.Api.Services.Helpers.TokenGrantHandlers;
+using O2Connect.Api.Services.TokenGrantHandlers;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
 
