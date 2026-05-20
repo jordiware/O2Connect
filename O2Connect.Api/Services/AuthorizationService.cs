@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Models;
+using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using System.Security.Cryptography;
@@ -71,7 +72,7 @@ public class AuthorizationService : IAuthorizationService
             RedirectUri = request.RedirectUri,
             CodeChallenge = request.CodeChallenge,
             CodeChallengeMethod = request.CodeChallengeMethod,
-            Scopes = [ request.Scope ],
+            Scopes = new ScopeSet([ request.Scope! ]),
             ExpiresAt = DateTime.UtcNow.AddMinutes(5)
         };
 

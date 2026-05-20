@@ -7,4 +7,5 @@ public class TokenResponse
     public int ExpiresIn { get; set; }
     public string? RefreshToken { get; set; }
     public string? IdToken { get; set; }
+    public IReadOnlyCollection<string>? Scope { get; init; }
 }

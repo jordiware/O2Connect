@@ -1,20 +1,17 @@
-﻿using O2Connect.Api.Models;
-using O2Connect.Api.Repositories;
-using O2Connect.Api.Services.Validators;
-using O2Connect.Dto.Requests;
+﻿using O2Connect.Api.Models.RequestContexts;
 using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.Services.TokenGrantHandlers;
 
-public class ClientCredentialsGrantHandler : TokenGrantHandler
+public class ClientCredentialsGrantHandler : ITokenGrantHandler
 {
-    public ClientCredentialsGrantHandler(IEnumerable<IPkceValidator> pkceValidators) : base(pkceValidators)
+    public ClientCredentialsGrantHandler()
     {
     }
 
-    public override string GrantType => "client_credentials";
+    public GrantType GrantType => GrantType.ClientCredentials;
 
-    public override Task<TokenResponse> HandleAsync(TokenRequest request, ValidatedClient client, CancellationToken ct)
+    public Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
     {
         var response = new TokenResponse
         {

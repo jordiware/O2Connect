@@ -1,11 +1,11 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace O2Connect.Api.Services.Validators;
+namespace O2Connect.Api.Crypto.Validators;
 
 public class PlainPkceValidator : IPkceValidator
 {
-    public string Method => "plain";
+    public PkceMethod Method => PkceMethod.Plain;
 
     public bool Validate(string verifier, string challenge)
     {

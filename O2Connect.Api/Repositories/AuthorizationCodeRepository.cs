@@ -1,4 +1,4 @@
-﻿using O2Connect.Api.Models;
+﻿using O2Connect.Api.Models.Store;
 using System.Collections.Concurrent;
 
 namespace O2Connect.Api.Repositories;

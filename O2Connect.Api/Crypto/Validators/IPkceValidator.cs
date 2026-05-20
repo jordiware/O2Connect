@@ -1,7 +1,7 @@
-﻿namespace O2Connect.Api.Services.Validators;
+﻿namespace O2Connect.Api.Crypto.Validators;
 
 public interface IPkceValidator
 {
-    string Method { get; }
+    PkceMethod Method { get; }
     bool Validate(string verifier, string challenge);
 }

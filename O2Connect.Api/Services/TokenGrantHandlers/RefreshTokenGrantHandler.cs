@@ -1,19 +1,17 @@
-﻿using O2Connect.Api.Models;
-using O2Connect.Api.Services.Validators;
-using O2Connect.Dto.Requests;
+﻿using O2Connect.Api.Models.RequestContexts;
 using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.Services.TokenGrantHandlers;
 
-public class RefreshTokenGrantHandler : TokenGrantHandler
+public class RefreshTokenGrantHandler : ITokenGrantHandler
 {
-    public RefreshTokenGrantHandler(IEnumerable<IPkceValidator> pkceValidators) : base(pkceValidators)
+    public RefreshTokenGrantHandler()
     {
     }
 
-    public override string GrantType => "refresh_token";
+    public GrantType GrantType => GrantType.RefreshToken;
 
-    public override Task<TokenResponse> HandleAsync(TokenRequest request, ValidatedClient client, CancellationToken ct)
+    public Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
     {
         var response = new TokenResponse
         {

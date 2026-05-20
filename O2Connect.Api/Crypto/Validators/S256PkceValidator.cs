@@ -1,11 +1,11 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace O2Connect.Api.Services.Validators;
+namespace O2Connect.Api.Crypto.Validators;
 
 public class S256PkceValidator : IPkceValidator
 {
-    public string Method => "S256";
+    public PkceMethod Method => PkceMethod.S256;
 
     public bool Validate(string verifier, string challenge)
     {

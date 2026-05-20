@@ -1,4 +1,4 @@
-﻿namespace O2Connect.Api.Models;
+﻿namespace O2Connect.Api.Models.Store;
 
 public class AuthorizationCode
 {
@@ -7,7 +7,7 @@ public class AuthorizationCode
     public string RedirectUri { get; set; } = default!;
     public string? CodeChallenge { get; set; }
     public string? CodeChallengeMethod { get; set; }
-    public IReadOnlyCollection<string>? Scopes { get; set; }
+    public required ScopeSet Scopes { get; set; }
     public DateTime ExpiresAt { get; set; }
     public string SubjectId { get; set; } = default!;
     public string? Nonce { get; set; }
