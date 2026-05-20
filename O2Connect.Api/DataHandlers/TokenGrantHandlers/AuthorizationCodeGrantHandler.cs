@@ -1,14 +1,14 @@
 ﻿using O2Connect.Api.Crypto.Validators;
+using O2Connect.Api.DataFactories;
+using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.Exceptions;
-using O2Connect.Api.Models.FactoryRequests;
 using O2Connect.Api.Models.RequestContexts;
 using O2Connect.Api.Models.RequestInputs;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
-using O2Connect.Api.Services.ResponseGenerators;
 using O2Connect.Dto.Responses;
 
-namespace O2Connect.Api.Services.TokenGrantHandlers;
+namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
 
 public class AuthorizationCodeGrantHandler : ITokenGrantHandler
 {
@@ -43,7 +43,7 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
 
         await _authorizationCodeRepository.RedeemAsync(code.Code, ct);
 
-        return await _tokenGenerator.GenerateAsync(new TokenFactoryRequest
+        return await _tokenGenerator.GenerateAsync(new JwtTokenFactoryRequest
         {
             Client = context.Client,
             Scopes = ResolveScopes(context, code),

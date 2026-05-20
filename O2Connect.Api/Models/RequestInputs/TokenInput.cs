@@ -1,5 +1,5 @@
-﻿using O2Connect.Api.Exceptions;
-using O2Connect.Api.Services.TokenGrantHandlers;
+﻿using O2Connect.Api.DataHandlers.TokenGrantHandlers;
+using O2Connect.Api.Exceptions;
 using O2Connect.Dto.Requests;
 
 namespace O2Connect.Api.Models.RequestInputs;

@@ -1,11 +1,11 @@
 using O2Connect.Api.Crypto;
 using O2Connect.Api.Crypto.Validators;
+using O2Connect.Api.DataHandlers.TokenGrantHandlers;
+using O2Connect.Api.DataValidators;
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Services;
 using O2Connect.Api.Services.Authenticators;
-using O2Connect.Api.Services.TokenGrantHandlers;
-using O2Connect.Api.Services.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 

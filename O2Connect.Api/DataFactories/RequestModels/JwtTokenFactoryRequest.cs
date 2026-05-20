@@ -1,8 +1,8 @@
 ﻿using O2Connect.Api.Models.Store;
 
-namespace O2Connect.Api.Models.FactoryRequests;
+namespace O2Connect.Api.DataFactories.RequestModels;
 
-public sealed class TokenFactoryRequest
+public sealed class JwtTokenFactoryRequest
 {
     public required Client Client { get; init; }
 

@@ -1,7 +1,7 @@
 ﻿using O2Connect.Api.Models.RequestContexts;
 using O2Connect.Dto.Responses;
 
-namespace O2Connect.Api.Services.TokenGrantHandlers;
+namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
 
 public interface ITokenGrantHandler
 {

@@ -2,7 +2,7 @@
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 
-namespace O2Connect.Api.Services.Validators;
+namespace O2Connect.Api.DataValidators;
 
 public interface IScopeValidator
 {

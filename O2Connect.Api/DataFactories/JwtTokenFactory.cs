@@ -1,16 +1,16 @@
 ﻿using Microsoft.IdentityModel.Tokens;
+using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.Models;
-using O2Connect.Api.Models.FactoryRequests;
 using O2Connect.Dto.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace O2Connect.Api.Services.ResponseGenerators;
+namespace O2Connect.Api.DataFactories;
 
 public interface ITokenFactory
 {
-    Task<TokenResponse> GenerateAsync(TokenFactoryRequest request, CancellationToken ct);
+    Task<TokenResponse> GenerateAsync(JwtTokenFactoryRequest request, CancellationToken ct);
 }
 
 public class JwtTokenFactory : ITokenFactory
@@ -23,7 +23,7 @@ public class JwtTokenFactory : ITokenFactory
     }
 
     public Task<TokenResponse> GenerateAsync(
-        TokenFactoryRequest request,
+        JwtTokenFactoryRequest request,
         CancellationToken ct)
     {
         var now = DateTime.UtcNow;
@@ -52,7 +52,7 @@ public class JwtTokenFactory : ITokenFactory
         });
 
     }
-    private static IEnumerable<Claim> BuildClaims(TokenFactoryRequest request)
+    private static IEnumerable<Claim> BuildClaims(JwtTokenFactoryRequest request)
     {
         yield return new Claim(JwtRegisteredClaimNames.Sub, request.Subject);
         yield return new Claim("client_id", request.Client.ClientId);

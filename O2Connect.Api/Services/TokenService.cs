@@ -1,6 +1,6 @@
-﻿using O2Connect.Api.Models.RequestInputs;
-using O2Connect.Api.Services.TokenGrantHandlers;
-using O2Connect.Api.Services.Validators;
+﻿using O2Connect.Api.DataHandlers.TokenGrantHandlers;
+using O2Connect.Api.DataValidators;
+using O2Connect.Api.Models.RequestInputs;
 using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.Services;

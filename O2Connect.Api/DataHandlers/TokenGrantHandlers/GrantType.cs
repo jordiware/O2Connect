@@ -1,6 +1,6 @@
 ﻿using O2Connect.Api.Exceptions;
 
-namespace O2Connect.Api.Services.TokenGrantHandlers;
+namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
 
 public readonly record struct GrantType(string Value)
 {
