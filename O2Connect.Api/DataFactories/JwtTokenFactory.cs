@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.Models;
 using O2Connect.Dto.Responses;
@@ -17,14 +18,12 @@ public class JwtTokenFactory : ITokenFactory
 {
     private readonly JwtOptions _options;
 
-    public JwtTokenFactory(JwtOptions options)
+    public JwtTokenFactory(IOptions<JwtOptions> options)
     {
-        _options = options;
+        _options = options.Value;
     }
 
-    public Task<TokenResponse> GenerateAsync(
-        JwtTokenFactoryRequest request,
-        CancellationToken ct)
+    public Task<TokenResponse> GenerateAsync(JwtTokenFactoryRequest request, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
 

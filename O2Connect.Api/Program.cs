@@ -1,16 +1,22 @@
 using O2Connect.Api.Crypto;
 using O2Connect.Api.Crypto.Validators;
+using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.TokenGrantHandlers;
 using O2Connect.Api.DataValidators;
 using O2Connect.Api.Middleware;
+using O2Connect.Api.Models;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Services;
 using O2Connect.Api.Services.Authenticators;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+
 builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
+
+builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
 
 builder.Services.AddTransient<IPkceValidator, PlainPkceValidator>();
 builder.Services.AddTransient<IPkceValidator, S256PkceValidator>();

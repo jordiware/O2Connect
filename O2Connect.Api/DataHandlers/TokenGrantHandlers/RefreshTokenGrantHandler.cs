@@ -1,4 +1,4 @@
-﻿using O2Connect.Api.Models.RequestContexts;
+﻿using O2Connect.Api.Models.DataContexts;
 using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
