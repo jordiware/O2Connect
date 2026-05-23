@@ -13,7 +13,7 @@ public class PkceValidatorResolver : IPkceValidatorResolver
 
     public PkceValidatorResolver(IEnumerable<IPkceValidator> validators)
     {
-        _validators = validators.ToDictionary(v => v.Method.Value, StringComparer.Ordinal);
+        _validators = validators.ToDictionary(v => v.Method.Value, StringComparer.OrdinalIgnoreCase);
     }
 
     public IPkceValidator Resolve(PkceMethod method)

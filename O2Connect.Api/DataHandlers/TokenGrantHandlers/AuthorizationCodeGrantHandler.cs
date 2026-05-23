@@ -13,19 +13,22 @@ namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
 public class AuthorizationCodeGrantHandler : ITokenGrantHandler
 {
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
+    private readonly IClientRepository _clientRepository;
     private readonly IPkceValidatorResolver _pkceResolver;
-    private readonly ITokenFactory _tokenGenerator;
+    private readonly ITokenFactory _tokenFactory;
 
     public GrantType GrantType => GrantType.AuthorizationCode;
 
     public AuthorizationCodeGrantHandler(
         IAuthorizationCodeRepository authorizationCodeRepository,
+        IClientRepository clientRepository,
         IPkceValidatorResolver pkceResolver,
-        ITokenFactory tokenGenerator)
+        ITokenFactory tokenFactory)
     {
         _authorizationCodeRepository = authorizationCodeRepository;
+        _clientRepository = clientRepository;
         _pkceResolver = pkceResolver;
-        _tokenGenerator = tokenGenerator;
+        _tokenFactory = tokenFactory;
     }
 
     public async Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
@@ -36,14 +39,12 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
             string.IsNullOrWhiteSpace(input.RedirectUri))
             throw OAuthException.FromInvalidRequest();
 
-        var code = await _authorizationCodeRepository.GetAsync(input.Code, ct)
+        var code = await _authorizationCodeRepository.RedeemAsync(input.Code, ct)
             ?? throw OAuthException.FromInvalidGrant();
 
-        Validate(code, context, input);
+        await Validate(code, context, input, ct);
 
-        await _authorizationCodeRepository.RedeemAsync(code.Code, ct);
-
-        return await _tokenGenerator.GenerateAsync(new JwtTokenFactoryRequest
+        return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
             Client = context.Client,
             Scopes = ResolveScopes(context, code),
@@ -51,15 +52,21 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
         }, ct);
     }
 
-    private void Validate(AuthorizationCode code, TokenRequestContext context, TokenInput input)
+    private async Task Validate(AuthorizationCode code, TokenRequestContext context, TokenInput input, CancellationToken ct)
     {
         if (code.ClientId != context.Client.ClientId)
+            throw OAuthException.FromInvalidGrant();
+
+        if (!context.Client.RequiresSecret && string.IsNullOrEmpty(code.CodeChallenge))
             throw OAuthException.FromInvalidGrant();
 
         if (code.ExpiresAt <= DateTime.UtcNow)
             throw OAuthException.FromInvalidGrant();
 
         if (!string.Equals(code.RedirectUri, input.RedirectUri, StringComparison.Ordinal))
+            throw OAuthException.FromInvalidGrant();
+
+        if (!await _clientRepository.ValidateRedirectUriAsync(context.Client.ClientId, input.RedirectUri!, ct))
             throw OAuthException.FromInvalidGrant();
 
         if (code.CodeChallenge != null)

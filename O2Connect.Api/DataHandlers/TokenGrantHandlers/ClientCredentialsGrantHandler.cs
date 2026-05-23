@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Models.DataContexts;
+﻿using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models.DataContexts;
 using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
@@ -13,6 +14,9 @@ public class ClientCredentialsGrantHandler : ITokenGrantHandler
 
     public Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
     {
+        if (context.Input.Scopes == null)
+            throw OAuthException.FromInvalidScope();
+
         var response = new TokenResponse
         {
             AccessToken = "mock_access_token",

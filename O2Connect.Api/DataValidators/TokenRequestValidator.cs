@@ -30,9 +30,6 @@ public class TokenRequestValidator : ITokenRequestValidator
         if (!client.AllowedGrantTypes.Contains(input.GrantType.Value))
             throw OAuthException.FromUnauthorizedClient();
 
-        if (input.Scopes == null)
-            throw OAuthException.FromInvalidScope();
-
         var scopes = _scopeValidator.Validate(input.Scopes, client);
 
         return new TokenRequestContext(

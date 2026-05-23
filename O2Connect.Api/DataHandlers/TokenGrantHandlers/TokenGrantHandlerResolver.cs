@@ -13,7 +13,7 @@ public class TokenGrantHandlerResolver : ITokenGrantHandlerResolver
 
     public TokenGrantHandlerResolver(IEnumerable<ITokenGrantHandler> handlers)
     {
-        _handlers = handlers.ToDictionary(h => h.GrantType.Value, StringComparer.Ordinal);
+        _handlers = handlers.ToDictionary(h => h.GrantType.Value, StringComparer.OrdinalIgnoreCase);
     }
 
     public ITokenGrantHandler Resolve(GrantType grantType)
