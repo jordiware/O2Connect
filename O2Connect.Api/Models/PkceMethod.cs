@@ -1,6 +1,6 @@
 ﻿using O2Connect.Api.Exceptions;
 
-namespace O2Connect.Api.Crypto.Validators;
+namespace O2Connect.Api.Models;
 
 public readonly record struct PkceMethod(string Value)
 {

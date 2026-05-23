@@ -12,11 +12,11 @@ public interface ITokenService
 
 public class TokenService : ITokenService
 {
-    private readonly ITokenRequestValidator _tokenValidator;
+    private readonly ITokenInputValidator _tokenValidator;
     private readonly ITokenGrantHandlerResolver _grantResolver;
 
     public TokenService(
-        ITokenRequestValidator tokenValidator,
+        ITokenInputValidator tokenValidator,
         ITokenGrantHandlerResolver grantResolver)
     {
         _tokenValidator = tokenValidator;

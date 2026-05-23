@@ -5,17 +5,17 @@ using O2Connect.Api.Services.Authenticators;
 
 namespace O2Connect.Api.DataValidators;
 
-public interface ITokenRequestValidator
+public interface ITokenInputValidator
 {
     Task<TokenRequestContext> ValidateAsync(TokenInput input, CancellationToken ct);
 }
 
-public class TokenRequestValidator : ITokenRequestValidator
+public class TokenInputValidator : ITokenInputValidator
 {
     private readonly IClientAuthenticator _clientAuth;
     private readonly IScopeValidator _scopeValidator;
 
-    public TokenRequestValidator(
+    public TokenInputValidator(
         IClientAuthenticator clientAuth,
         IScopeValidator scopeValidator)
     {

@@ -15,8 +15,17 @@ public class TokenRequest
     [FromForm(Name = "client_secret")]
     public string? ClientSecret { get; set; }
 
+    [FromForm(Name = "client_assertion")]
+    public string? ClientAssertion { get; set; }
+
+    [FromForm(Name = "client_assertion_type")]
+    public string? ClientAssertionType { get; set; }
+
     [FromForm(Name = "code")]
     public string? Code { get; set; }
+
+    [FromForm(Name = "device_code")]
+    public string? DeviceCode { get; set; }
 
     [FromForm(Name = "redirect_uri")]
     public string? RedirectUri { get; set; }
@@ -29,4 +38,10 @@ public class TokenRequest
 
     [FromForm(Name = "scope")]
     public string? Scope { get; set; }
+
+    [FromForm(Name = "resource")]
+    public string? Resource { get; set; }
+
+    [FromForm(Name = "audience")]
+    public string? Audience { get; set; }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Controllers.RequestModelValidators;
 using O2Connect.Api.Exceptions;
-using O2Connect.Api.Models.RequestInputs;
+using O2Connect.Api.Models;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using System.Text;
@@ -11,10 +12,14 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [Route("connect/token")]
 public class TokenController : ControllerBase
 {
+    private readonly ITokenRequestValidatorResolver _requestValidatorResolver;
     private readonly ITokenService _tokenService;
 
-    public TokenController(ITokenService tokenService)
+    public TokenController(
+        ITokenRequestValidatorResolver requestValidatorResolver,
+        ITokenService tokenService)
     {
+        _requestValidatorResolver = requestValidatorResolver;
         _tokenService = tokenService;
     }
 
@@ -31,7 +36,9 @@ public class TokenController : ControllerBase
         request.ClientId = clientId;
         request.ClientSecret = clientSecret;
 
-        var input = TokenInput.FromRequestDto(request);
+        var grantType = GrantType.Parse(request.GrantType);
+        var validator = _requestValidatorResolver.Resolve(grantType);
+        var input = validator.Validate(request);
 
         var response = await _tokenService.HandleAsync(input, HttpContext.RequestAborted);
 

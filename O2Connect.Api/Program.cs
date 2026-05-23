@@ -1,3 +1,4 @@
+using O2Connect.Api.Controllers.RequestModelValidators;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.Crypto.Validators;
 using O2Connect.Api.DataFactories;
@@ -20,17 +21,22 @@ builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
 
 builder.Services.AddTransient<IPkceValidator, PlainPkceValidator>();
 builder.Services.AddTransient<IPkceValidator, S256PkceValidator>();
-builder.Services.AddScoped<IPkceValidatorResolver, PkceValidatorResolver>();
-
-builder.Services.AddTransient<ISecretHasher, Pbkdf2SecretHasher>();
+builder.Services.AddSingleton<IPkceValidatorResolver, PkceValidatorResolver>();
 
 builder.Services.AddTransient<ITokenGrantHandler, AuthorizationCodeGrantHandler>();
 builder.Services.AddTransient<ITokenGrantHandler, ClientCredentialsGrantHandler>();
 builder.Services.AddTransient<ITokenGrantHandler, RefreshTokenGrantHandler>();
-builder.Services.AddScoped<ITokenGrantHandlerResolver, TokenGrantHandlerResolver>();
+builder.Services.AddSingleton<ITokenGrantHandlerResolver, TokenGrantHandlerResolver>();
+
+builder.Services.AddTransient<ITokenRequestValidator, AuthorizationCodeTokenRequestValidator>();
+builder.Services.AddTransient<ITokenRequestValidator, ClientCredentialsTokenRequestValidator>();
+builder.Services.AddTransient<ITokenRequestValidator, RefreshTokenTokenRequestValidator>();
+builder.Services.AddSingleton<ITokenRequestValidatorResolver, TokenRequestValidatorResolver>();
+
+builder.Services.AddTransient<ISecretHasher, Pbkdf2SecretHasher>();
 
 builder.Services.AddScoped<IScopeValidator, ScopeValidator>();
-builder.Services.AddScoped<ITokenRequestValidator, TokenRequestValidator>();
+builder.Services.AddScoped<ITokenInputValidator, TokenInputValidator>();
 
 builder.Services.AddScoped<IClientAuthenticator, ClientAuthenticator>();
 
