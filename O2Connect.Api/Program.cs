@@ -2,6 +2,7 @@ using O2Connect.Api.Controllers.RequestModelValidators;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.Crypto.Validators;
 using O2Connect.Api.DataFactories;
+using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.DataHandlers.TokenGrantHandlers;
 using O2Connect.Api.DataValidators;
 using O2Connect.Api.Middleware;
@@ -33,6 +34,9 @@ builder.Services.AddTransient<ITokenRequestValidator, ClientCredentialsTokenRequ
 builder.Services.AddTransient<ITokenRequestValidator, RefreshTokenTokenRequestValidator>();
 builder.Services.AddSingleton<ITokenRequestValidatorResolver, TokenRequestValidatorResolver>();
 
+builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretBasicHandler>();
+builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretPostHandler>();
+
 builder.Services.AddTransient<ISecretHasher, Pbkdf2SecretHasher>();
 
 builder.Services.AddScoped<IScopeValidator, ScopeValidator>();
@@ -40,6 +44,7 @@ builder.Services.AddScoped<ITokenInputValidator, TokenInputValidator>();
 
 builder.Services.AddScoped<IClientAuthenticator, ClientAuthenticator>();
 
+builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 

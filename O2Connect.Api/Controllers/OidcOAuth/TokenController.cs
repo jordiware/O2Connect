@@ -13,13 +13,16 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 public class TokenController : ControllerBase
 {
     private readonly ITokenRequestValidatorResolver _requestValidatorResolver;
+    private readonly IClientAuthenticationService _clientAuthenticationService;
     private readonly ITokenService _tokenService;
 
     public TokenController(
         ITokenRequestValidatorResolver requestValidatorResolver,
+        IClientAuthenticationService clientAuthenticationService,
         ITokenService tokenService)
     {
         _requestValidatorResolver = requestValidatorResolver;
+        _clientAuthenticationService = clientAuthenticationService;
         _tokenService = tokenService;
     }
 
@@ -28,13 +31,19 @@ public class TokenController : ControllerBase
     {
         if (!Request.HasFormContentType)
             throw OAuthException.FromInvalidRequest();
-        if (!ModelState.IsValid)
-            throw OAuthException.FromInvalidRequest();
+
+        if (Request.Headers.Authorization.Any() &&
+            (!string.IsNullOrWhiteSpace(request.ClientId) || !string.IsNullOrWhiteSpace(request.ClientSecret)))
+        {
+            throw OAuthException.FromInvalidRequest("Client credentials must not be provided in both Authorization header and request body.");
+        }
 
         var (clientId, clientSecret) = GetClientCredentials(request);
 
         request.ClientId = clientId;
         request.ClientSecret = clientSecret;
+
+        var client = await _clientAuthenticationService.AuthenticateAsync(Request, request, HttpContext.RequestAborted);
 
         var grantType = GrantType.Parse(request.GrantType);
         var validator = _requestValidatorResolver.Resolve(grantType);
@@ -42,18 +51,37 @@ public class TokenController : ControllerBase
 
         var response = await _tokenService.HandleAsync(input, HttpContext.RequestAborted);
 
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers.Pragma = "no-cache";
+
         return Ok(response);
     }
 
     private (string? clientId, string? clientSecret) GetClientCredentials(TokenRequest request)
     {
-        if (Request.Headers.Authorization.FirstOrDefault()?.StartsWith("Basic ") == true)
-        {
-            var encoded = Request.Headers.Authorization.ToString()["Basic ".Length..];
-            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
-            var parts = decoded.Split(':', 2);
+        var header = Request.Headers.Authorization.FirstOrDefault();
 
-            return (parts[0], parts.Length > 1 ? parts[1] : null);
+        if (header?.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var encoded = header["Basic ".Length..].Trim();
+
+            try
+            {
+                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
+                var separatorIndex = decoded.IndexOf(':');
+
+                if (separatorIndex <= 0)
+                    throw OAuthException.FromInvalidClient();
+
+                var clientId = decoded[..separatorIndex];
+                var clientSecret = decoded[(separatorIndex + 1)..];
+
+                return (clientId, clientSecret);
+            }
+            catch
+            {
+                throw OAuthException.FromInvalidClient();
+            }
         }
 
         return (request.ClientId, request.ClientSecret);

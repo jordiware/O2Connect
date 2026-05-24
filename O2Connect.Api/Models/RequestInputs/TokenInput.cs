@@ -23,7 +23,7 @@ public sealed class TokenInput
 
         return new TokenInput
         {
-            ClientId = request.ClientId,
+            ClientId = request.ClientId!,
             ClientSecret = request.ClientSecret,
             GrantType = GrantType.Parse(request.GrantType),
             Code = request.Code,
