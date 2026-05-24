@@ -9,4 +9,5 @@ public class Client
     public List<string> AllowedAuthenticationMethods { get; set; } = new();
     public List<string> AllowedScopes { get; set; } = new();
     public bool RequiresSecret { get; set; }
+    public bool RequiresPkce { get; set; } = true;
 }
