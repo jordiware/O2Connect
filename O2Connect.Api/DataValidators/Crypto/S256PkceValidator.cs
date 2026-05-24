@@ -2,7 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace O2Connect.Api.Crypto.Validators;
+namespace O2Connect.Api.DataValidators.Crypto;
 
 public class S256PkceValidator : PkceValidator, IPkceValidator
 {

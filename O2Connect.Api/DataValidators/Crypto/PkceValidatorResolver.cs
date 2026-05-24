@@ -1,7 +1,7 @@
 ﻿using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 
-namespace O2Connect.Api.Crypto.Validators;
+namespace O2Connect.Api.DataValidators.Crypto;
 
 public interface IPkceValidatorResolver
 {
