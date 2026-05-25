@@ -8,6 +8,7 @@ using O2Connect.Api.DataValidators.Crypto;
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Models;
 using O2Connect.Api.Repositories;
+using O2Connect.Api.Repositories.Cache;
 using O2Connect.Api.Services;
 using O2Connect.Api.Services.Authenticators;
 
@@ -15,6 +16,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 
+builder.Services.AddMemoryCache();
+
+builder.Services.AddHttpClient<IJwksProvider, JwksProvider>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(2);
+});
+
+builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>(); 
 builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
 

@@ -1,6 +1,6 @@
 ﻿using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.Exceptions;
-using O2Connect.Api.Models;
+using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 
@@ -8,9 +8,7 @@ namespace O2Connect.Api.Services;
 
 public interface IClientAuthenticationService
 {
-    Task<AuthenticatedClient> AuthenticateAsync(HttpRequest request,
-                                                TokenRequest tokenRequest,
-                                                CancellationToken cancellationToken);
+    Task<Client> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken);
 }
 
 public class ClientAuthenticationService : IClientAuthenticationService
@@ -26,39 +24,37 @@ public class ClientAuthenticationService : IClientAuthenticationService
         _clientRepository = clientRepository;
     }
 
-    public async Task<AuthenticatedClient> AuthenticateAsync(
-        HttpRequest request,
-        TokenRequest tokenRequest,
-        CancellationToken cancellationToken)
+    public async Task<Client> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
-        var matchingHandlers = _handlers
-            .Where(h => h.CanHandle(request, tokenRequest))
-            .ToList();
+        string? clientId = null;
+        IClientAuthenticationHandler? selectedHandler = null;
 
-        if (matchingHandlers.Count == 0)
-            throw OAuthException.FromInvalidClient("No client authentication method provided.");
+        foreach (var handler in _handlers)
+        {
+            if (!handler.CanHandle(request, tokenRequest))
+                continue;
 
-        if (matchingHandlers.Count > 1)
-            throw OAuthException.FromInvalidRequest("Multiple client authentication methods used.");
+            clientId = await handler.ExtractClientIdAsync(request, tokenRequest);
 
-        var handler = matchingHandlers[0];
+            if (!string.IsNullOrEmpty(clientId))
+            {
+                selectedHandler = handler;
+                break;
+            }
+        }
 
-        var (clientId, secret) = await handler.ExtractCredentialsAsync(request, tokenRequest);
+        if (string.IsNullOrEmpty(clientId))
+            throw OAuthException.FromInvalidClient();
 
         var client = await _clientRepository.GetByIdAsync(clientId, cancellationToken);
         if (client is null)
             throw OAuthException.FromInvalidClient();
 
-        if (!client.AllowedAuthenticationMethods.Contains(handler.Method.Value))
-            throw OAuthException.FromUnauthorizedClient();
+        if (selectedHandler is null || !client.AllowedAuthenticationMethods.Contains(selectedHandler.Method.Value))
+            throw OAuthException.FromInvalidClient();
 
-        await handler.ValidateAsync(client, secret);
+        await selectedHandler.AuthenticateAsync(request, tokenRequest, client);
 
-        return new AuthenticatedClient
-        {
-            ClientId = clientId,
-            Client = client,
-            AuthenticationMethod = handler.Method
-        };
+        return client;
     }
 }

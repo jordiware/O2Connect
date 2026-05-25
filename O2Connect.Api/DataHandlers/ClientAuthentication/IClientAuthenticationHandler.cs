@@ -7,10 +7,7 @@ namespace O2Connect.Api.DataHandlers.ClientAuthentication;
 public interface IClientAuthenticationHandler
 {
     ClientAuthenticationMethod Method { get; }
-
     bool CanHandle(HttpRequest request, TokenRequest tokenRequest);
-
-    Task<(string clientId, string? secret)> ExtractCredentialsAsync(HttpRequest request, TokenRequest tokenRequest);
-
-    Task ValidateAsync(Client client, string? secret);
+    Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest);
+    Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client);
 }

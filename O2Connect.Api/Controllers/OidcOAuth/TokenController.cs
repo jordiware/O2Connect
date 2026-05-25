@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using O2Connect.Api.Controllers.RequestModelValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
@@ -38,7 +39,7 @@ public class TokenController : ControllerBase
             throw OAuthException.FromInvalidRequest("Client credentials must not be provided in both Authorization header and request body.");
         }
 
-        var (clientId, clientSecret) = GetClientCredentials(request);
+        var (clientId, clientSecret) = GetClientCredentials(request, Request.Headers.Authorization);
 
         request.ClientId = clientId;
         request.ClientSecret = clientSecret;
@@ -57,9 +58,9 @@ public class TokenController : ControllerBase
         return Ok(response);
     }
 
-    private (string? clientId, string? clientSecret) GetClientCredentials(TokenRequest request)
+    private (string? clientId, string? clientSecret) GetClientCredentials(TokenRequest request, StringValues authorizationHeaders)
     {
-        var header = Request.Headers.Authorization.FirstOrDefault();
+        var header = authorizationHeaders.FirstOrDefault();
 
         if (header?.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) == true)
         {

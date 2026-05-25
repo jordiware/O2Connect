@@ -12,7 +12,7 @@ public abstract class PkceValidator : IPkceValidator
 
     public virtual void Validate(Client client, AuthorizationCode code, string? codeVerifier)
     {
-        if (string.IsNullOrEmpty(code.CodeChallenge) && client.RequiresPkce)
+        if (string.IsNullOrEmpty(code.CodeChallenge) && client.RequirePkce)
             throw OAuthException.FromInvalidGrant("PKCE required");
 
         if (string.IsNullOrEmpty(codeVerifier))

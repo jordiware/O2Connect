@@ -21,7 +21,29 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
     public bool CanHandle(HttpRequest request, TokenRequest tokenRequest)
         => request.Headers.Authorization.FirstOrDefault()?.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) == true;
 
-    public Task<(string clientId, string? secret)> ExtractCredentialsAsync(HttpRequest request, TokenRequest tokenRequest)
+    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest)
+    {
+        var (clientId, secret) = ExtractCredentialsAsync(request, tokenRequest);
+        return Task.FromResult(clientId);
+    }
+
+    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client)
+    {
+        var (clientId, secret) = ExtractCredentialsAsync(request, tokenRequest);
+
+        if (clientId != client.ClientId)
+            throw OAuthException.FromInvalidClient();
+
+        if (string.IsNullOrEmpty(secret))
+            throw OAuthException.FromInvalidClient();
+
+        if (!_validator.Validate(client, secret))
+            throw OAuthException.FromInvalidClient();
+
+        return ClientAuthenticationResult.Success(clientId);
+    }
+
+    private (string? clientId, string? secret) ExtractCredentialsAsync(HttpRequest request, TokenRequest tokenRequest)
     {
         var header = request.Headers.Authorization.ToString();
         var encoded = header["Basic ".Length..].Trim();
@@ -40,22 +62,11 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
             if (secret.Length == 0) 
                 secret = null;
 
-            return Task.FromResult((clientId, secret));
+            return (clientId, secret);
         }
         catch
         {
             throw OAuthException.FromInvalidClient();
         }
-    }
-
-    public Task ValidateAsync(Client client, string? secret)
-    {
-        if (string.IsNullOrEmpty(secret))
-            throw OAuthException.FromInvalidClient();
-
-        if (!_validator.Validate(client, secret))
-            throw OAuthException.FromInvalidClient();
-
-        return Task.CompletedTask;
     }
 }
