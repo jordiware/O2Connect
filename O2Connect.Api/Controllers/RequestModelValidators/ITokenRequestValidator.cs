@@ -7,5 +7,5 @@ namespace O2Connect.Api.Controllers.RequestModelValidators;
 public interface ITokenRequestValidator
 {
     GrantType GrantType { get; }
-    TokenInput Validate(TokenRequest request);
+    TokenRequestInput Validate(TokenRequest request);
 }

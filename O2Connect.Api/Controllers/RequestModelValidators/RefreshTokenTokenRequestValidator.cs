@@ -9,7 +9,7 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
 {
     public GrantType GrantType => GrantType.RefreshToken;
 
-    public TokenInput Validate(TokenRequest request)
+    public TokenRequestInput Validate(TokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.ClientId))
             throw OAuthException.FromInvalidRequest("Missing 'client_id'.");
@@ -17,6 +17,6 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
             throw OAuthException.FromInvalidRequest("Missing 'redirect_uri'.");
 
-        return TokenInput.FromRequestDto(request);
+        return TokenRequestInput.FromRequestDto(request);
     }
 }

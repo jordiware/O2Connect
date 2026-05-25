@@ -8,7 +8,7 @@ namespace O2Connect.Api.Services.Authenticators;
 
 public interface IClientAuthenticator
 {
-    Task<Client> AuthenticateAsync(TokenInput input, CancellationToken ct);
+    Task<Client> AuthenticateAsync(TokenRequestInput input, CancellationToken ct);
 }
 
 public class ClientAuthenticator : IClientAuthenticator
@@ -24,7 +24,7 @@ public class ClientAuthenticator : IClientAuthenticator
         _hasher = hasher;
     }
 
-    public async Task<Client> AuthenticateAsync(TokenInput input, CancellationToken ct)
+    public async Task<Client> AuthenticateAsync(TokenRequestInput input, CancellationToken ct)
     {
         var client = await _repo.GetByIdAsync(input.ClientId, ct)
             ?? throw OAuthException.FromInvalidClient();

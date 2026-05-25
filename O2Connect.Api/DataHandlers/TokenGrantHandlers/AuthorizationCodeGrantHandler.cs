@@ -53,7 +53,7 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
         }, ct);
     }
 
-    private async Task Validate(AuthorizationCode code, TokenRequestContext context, TokenInput input, CancellationToken ct)
+    private async Task Validate(AuthorizationCode code, TokenRequestContext context, TokenRequestInput input, CancellationToken ct)
     {
         if (code.ClientId != context.Client.ClientId)
             throw OAuthException.FromInvalidGrant();

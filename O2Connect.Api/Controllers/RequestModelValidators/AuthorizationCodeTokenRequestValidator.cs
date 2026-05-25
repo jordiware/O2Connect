@@ -9,7 +9,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
 {
     public GrantType GrantType => GrantType.AuthorizationCode;
 
-    public TokenInput Validate(TokenRequest request)
+    public TokenRequestInput Validate(TokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.ClientId))
             throw OAuthException.FromInvalidRequest("Missing 'client_id'.");
@@ -23,6 +23,6 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
         if (!string.IsNullOrWhiteSpace(request.CodeVerifier) && request.CodeVerifier.Length < 43)
             throw OAuthException.FromInvalidRequest("Invalid 'code_verifier'.");
 
-        return TokenInput.FromRequestDto(request);
+        return TokenRequestInput.FromRequestDto(request);
     }
 }

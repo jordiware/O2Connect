@@ -7,7 +7,7 @@ namespace O2Connect.Api.DataValidators;
 
 public interface ITokenInputValidator
 {
-    Task<TokenRequestContext> ValidateAsync(TokenInput input, CancellationToken ct);
+    Task<TokenRequestContext> ValidateAsync(TokenRequestInput input, CancellationToken ct);
 }
 
 public class TokenInputValidator : ITokenInputValidator
@@ -23,7 +23,7 @@ public class TokenInputValidator : ITokenInputValidator
         _scopeValidator = scopeValidator;
     }
 
-    public async Task<TokenRequestContext> ValidateAsync(TokenInput input, CancellationToken ct)
+    public async Task<TokenRequestContext> ValidateAsync(TokenRequestInput input, CancellationToken ct)
     {
         var client = await _clientAuth.AuthenticateAsync(input, ct);
 

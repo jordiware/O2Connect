@@ -9,11 +9,11 @@ public class ClientCredentialsTokenRequestValidator : ITokenRequestValidator
 {
     public GrantType GrantType => GrantType.ClientCredentials;
 
-    public TokenInput Validate(TokenRequest request)
+    public TokenRequestInput Validate(TokenRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.ClientId))
             throw OAuthException.FromInvalidRequest("Missing 'client_id'.");
 
-        return TokenInput.FromRequestDto(request);
+        return TokenRequestInput.FromRequestDto(request);
     }
 }

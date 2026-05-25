@@ -7,7 +7,7 @@ namespace O2Connect.Api.Services;
 
 public interface ITokenService
 {
-    Task<TokenResponse> HandleAsync(TokenInput input, CancellationToken ct);
+    Task<TokenResponse> HandleAsync(TokenRequestInput input, CancellationToken ct);
 }
 
 public class TokenService : ITokenService
@@ -23,7 +23,7 @@ public class TokenService : ITokenService
         _grantResolver = grantResolver;
     }
 
-    public async Task<TokenResponse> HandleAsync(TokenInput input, CancellationToken ct)
+    public async Task<TokenResponse> HandleAsync(TokenRequestInput input, CancellationToken ct)
     {
         var context = await _tokenValidator.ValidateAsync(input, ct);
 

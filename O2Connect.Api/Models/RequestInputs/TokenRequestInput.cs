@@ -1,9 +1,8 @@
-﻿using O2Connect.Api.Exceptions;
-using O2Connect.Dto.Requests;
+﻿using O2Connect.Dto.Requests;
 
 namespace O2Connect.Api.Models.RequestInputs;
 
-public sealed class TokenInput
+public sealed class TokenRequestInput
 {
     public string ClientId { get; init; } = default!;
     public string? ClientSecret { get; init; }
@@ -13,7 +12,7 @@ public sealed class TokenInput
     public string? CodeVerifier { get; init; }
     public ScopeSet? Scopes { get; init; }
 
-    public static TokenInput FromRequestDto(TokenRequest request)
+    public static TokenRequestInput FromRequestDto(TokenRequest request)
     {
         var scopes = string.IsNullOrWhiteSpace(request.Scope) ? 
                      Array.Empty<string>() : 
@@ -21,7 +20,7 @@ public sealed class TokenInput
                                   .Distinct(StringComparer.Ordinal)
                                   .ToArray();
 
-        return new TokenInput
+        return new TokenRequestInput
         {
             ClientId = request.ClientId!,
             ClientSecret = request.ClientSecret,

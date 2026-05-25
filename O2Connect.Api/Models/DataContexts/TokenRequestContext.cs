@@ -7,5 +7,5 @@ public sealed record TokenRequestContext(
     Client Client,
     GrantType GrantType,
     ScopeSet RequestedScopes,
-    TokenInput Input
+    TokenRequestInput Input
 );
