@@ -1,7 +1,9 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
+using O2Connect.Api.Models.Options;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories.Cache;
 using O2Connect.Dto.Requests;
@@ -12,15 +14,18 @@ namespace O2Connect.Api.DataHandlers.ClientAuthentication;
 
 public class PrivateKeyJwtHandler : IClientAuthenticationHandler
 {
+    private readonly OAuthOptions _oauthOptions;
     private readonly IJwksProvider _jwksProvider;
     private readonly IReplayCache _replayCache;
 
     public ClientAuthenticationMethod Method => ClientAuthenticationMethod.PrivateKeyJwt;
 
     public PrivateKeyJwtHandler(
+        IOptions<OAuthOptions> oauthOptions,
         IJwksProvider jwksProvider,
         IReplayCache replayCache)
     {
+        _oauthOptions = oauthOptions.Value;
         _jwksProvider = jwksProvider;
         _replayCache = replayCache;
     }
@@ -117,7 +122,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
             ValidIssuer = client.ClientId,
 
             ValidateAudience = true,
-            ValidAudience = "https://your-domain/connect/token",
+            ValidAudience = _oauthOptions.TokenEndpoint,
 
             ValidateLifetime = true,
 
@@ -127,7 +132,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
             RequireSignedTokens = true,
             RequireExpirationTime = true,
 
-            ValidAlgorithms = new[] { SecurityAlgorithms.RsaSha256 }
+            ValidAlgorithms = [SecurityAlgorithms.RsaSha256]
         };
 
         return handler.ValidateToken(jwt, parameters, out _);

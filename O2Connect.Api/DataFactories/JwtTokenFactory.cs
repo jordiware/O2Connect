@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using O2Connect.Api.DataFactories.RequestModels;
-using O2Connect.Api.Models;
+using O2Connect.Api.Models.Options;
 using O2Connect.Dto.Responses;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

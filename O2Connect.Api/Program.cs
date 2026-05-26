@@ -6,7 +6,7 @@ using O2Connect.Api.DataHandlers.TokenGrantHandlers;
 using O2Connect.Api.DataValidators;
 using O2Connect.Api.DataValidators.Crypto;
 using O2Connect.Api.Middleware;
-using O2Connect.Api.Models;
+using O2Connect.Api.Models.Options;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
 using O2Connect.Api.Services;
@@ -15,6 +15,7 @@ using O2Connect.Api.Services.Authenticators;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection("OAuth"));
 
 builder.Services.AddMemoryCache();
 
