@@ -154,4 +154,16 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
 
         return await _jwksProvider.GetKeysAsync(client.JsonWebKeysUri, kid, ct);
     }
+
+    private string? GetKid(string jwt)
+    {
+        var handler = new JwtSecurityTokenHandler();
+
+        if (!handler.CanReadToken(jwt))
+            return null;
+
+        var token = handler.ReadJwtToken(jwt);
+
+        return token.Header.Kid;
+    }
 }

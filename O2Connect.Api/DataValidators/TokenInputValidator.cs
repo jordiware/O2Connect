@@ -1,5 +1,5 @@
 ﻿using O2Connect.Api.Exceptions;
-using O2Connect.Api.Models.DataContexts;
+using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.RequestInputs;
 using O2Connect.Api.Services.Authenticators;
 

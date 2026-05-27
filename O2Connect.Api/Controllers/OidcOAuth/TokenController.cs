@@ -30,7 +30,7 @@ public class TokenController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Token([FromForm] TokenRequest request)
     {
-        if (!Request.HasFormContentType)
+        if (!Request.ContentType?.StartsWith("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase) == true)
             throw OAuthException.FromInvalidRequest();
 
         if (Request.Headers.Authorization.Any() &&
@@ -60,6 +60,9 @@ public class TokenController : ControllerBase
 
     private (string? clientId, string? clientSecret) GetClientCredentials(TokenRequest request, StringValues authorizationHeaders)
     {
+        if (authorizationHeaders.Count > 1)
+            throw OAuthException.FromInvalidRequest("Multiple Authorization headers");
+
         var header = authorizationHeaders.FirstOrDefault();
 
         if (header?.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) == true)

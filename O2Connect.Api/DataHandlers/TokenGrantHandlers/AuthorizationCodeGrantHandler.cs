@@ -3,7 +3,7 @@ using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.DataValidators.Crypto;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
-using O2Connect.Api.Models.DataContexts;
+using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.RequestInputs;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
