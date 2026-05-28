@@ -17,10 +17,6 @@ public static class TokenRequestMapper
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        var scopes = StringDataSet.Split(request.Scope, ' ');
-        var resources = StringDataSet.Split(request.Resource, ',');
-        var audiences = StringDataSet.Split(request.Audience, ',');
-
         return new TokenRequestContext
         {
             // Core
@@ -37,9 +33,9 @@ public static class TokenRequestMapper
             // Device Code
             DeviceCode = request.DeviceCode,
             // Scopes / resources
-            Scopes = new ScopeSet(scopes),
-            Resources = new ResourceSet(resources),
-            Audiences = new AudienceSet(audiences),
+            Scopes = ValueSet.FromDataString(request.Scope, ' '),
+            Resources = ValueSet.FromDataString(request.Resource, ','),
+            Audiences = ValueSet.FromDataString(request.Audience, ','),
             RawScope = request.Scope,
             // Client assertion
             ClientAssertion = request.ClientAssertion,

@@ -24,15 +24,15 @@ public sealed class TokenRequestContext
     public string? DeviceCode { get; init; }
 
     // Scopes / resources
-    public ScopeSet Scopes { get; init; } = new([]);
+    public ValueSet Scopes { get; init; } = new([]);
     /// <summary>
     /// RFC 8707 resource indicators
     /// </summary>
-    public ResourceSet Resources { get; init; } = new([]);
+    public ValueSet Resources { get; init; } = new([]);
     /// <summary>
     /// Non-standard but widely used (Auth0-style)
     /// </summary>
-    public AudienceSet Audiences { get; init; } = new([]);
+    public ValueSet Audiences { get; init; } = new([]);
 
     // Token shaping
     /// <summary>

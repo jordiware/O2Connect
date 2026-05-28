@@ -6,14 +6,14 @@ namespace O2Connect.Api.DataValidators;
 
 public interface IScopeValidator
 {
-    ScopeSet Validate(ScopeSet? requested, Client client);
+    ValueSet Validate(ValueSet? requested, Client client);
 }
 
 public class ScopeValidator : IScopeValidator
 {
-    public ScopeSet Validate(ScopeSet? requested, Client client)
+    public ValueSet Validate(ValueSet? requested, Client client)
     {
-        var allowed = new ScopeSet(client.AllowedScopes);
+        var allowed = new ValueSet(client.AllowedScopes);
 
         if (requested == null)
             throw OAuthException.FromInvalidScope();

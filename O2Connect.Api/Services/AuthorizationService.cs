@@ -72,7 +72,7 @@ public class AuthorizationService : IAuthorizationService
             RedirectUri = request.RedirectUri,
             CodeChallenge = request.CodeChallenge,
             CodeChallengeMethod = request.CodeChallengeMethod,
-            Scopes = new ScopeSet([ request.Scope! ]),
+            Scopes = ValueSet.FromDataString(request.Scope, ' '),
             ExpiresAt = DateTime.UtcNow.AddMinutes(5)
         };
 
