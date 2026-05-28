@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Controllers.RequestModelValidators;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
@@ -13,6 +14,10 @@ using O2Connect.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection("OAuth"));
 

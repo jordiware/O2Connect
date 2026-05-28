@@ -27,7 +27,7 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
         return Task.FromResult(clientId);
     }
 
-    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client)
+    public async Task<(bool, ClientAuthenticationResult?)> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client)
     {
         var (clientId, secret) = ExtractCredentialsAsync(request, tokenRequest);
 
@@ -40,7 +40,7 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
         if (!_validator.Validate(client, secret))
             throw OAuthException.FromInvalidClient();
 
-        return ClientAuthenticationResult.Success(client, Method);
+        return (true, new ClientAuthenticationResult(client, Method));
     }
 
     private (string? clientId, string? secret) ExtractCredentialsAsync(HttpRequest request, TokenRequest tokenRequest)

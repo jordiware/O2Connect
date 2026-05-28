@@ -26,7 +26,8 @@ public class OAuthExceptionMiddleware
         }
         catch (OAuthException ex)
         {
-            _logger.LogWarning("OAuth error: {Error} - {Description}", ex.Error, ex.Description);
+            _logger.LogDebug("OAuth error: {Error} - {Description}", ex.Error, ex.Description);
+            _logger.LogWarning("OAuth error: {Error}", ex.Error);
 
             await HandleOAuthExceptionAsync(context, ex);
         }
@@ -40,8 +41,13 @@ public class OAuthExceptionMiddleware
 
     private static async Task HandleOAuthExceptionAsync(HttpContext context, OAuthException ex)
     {
+        if (context.Response.HasStarted)
+            return;
+
         context.Response.StatusCode = ex.StatusCode;
         context.Response.ContentType = "application/json";
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers.Pragma = "no-cache";
 
         if (!string.IsNullOrWhiteSpace(ex.WwwAuthenticate))
         {
@@ -51,7 +57,7 @@ public class OAuthExceptionMiddleware
         var payload = new OAuthErrorResponse
         {
             Error = ex.Error,
-            ErrorDescription = ex.Description,
+            ErrorDescription = ex.Error == "invalid_client" ? null : ex.Description,
             ErrorUri = ex.ErrorUri
         };
 
@@ -60,25 +66,26 @@ public class OAuthExceptionMiddleware
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        if (context.Response.HasStarted)
-            return;
-
-        await context.Response.WriteAsJsonAsync(payload, jsonOptions, context.RequestAborted);
+        await context.Response.WriteAsync(JsonSerializer.Serialize(payload, jsonOptions),
+                                          context.RequestAborted);
     }
 
     private static async Task HandleGenericExceptionAsync(HttpContext context)
     {
+        if (context.Response.HasStarted)
+            return;
+
         context.Response.StatusCode = StatusCodes.Status500InternalServerError;
         context.Response.ContentType = "application/json";
+        context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers.Pragma = "no-cache";
 
         var payload = new
         {
             error = "internal_server_error"
         };
 
-        if (context.Response.HasStarted)
-            return;
-
-        await context.Response.WriteAsJsonAsync(payload, context.RequestAborted);
+        await context.Response.WriteAsync(JsonSerializer.Serialize(payload),
+                                          context.RequestAborted);
     }
 }

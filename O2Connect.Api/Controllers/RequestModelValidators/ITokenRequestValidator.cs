@@ -8,5 +8,8 @@ namespace O2Connect.Api.Controllers.RequestModelValidators;
 public interface ITokenRequestValidator
 {
     GrantType GrantType { get; }
-    TokenRequestContext Validate(TokenRequest request, Client client, ClientAuthenticationMethod method);
+    Task<TokenRequestContext> ValidateAsync(TokenRequest request,
+                                            Client client,
+                                            ClientAuthenticationMethod method,
+                                            CancellationToken ct);
 }

@@ -70,30 +70,30 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         }
     }
 
-    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client)
+    public async Task<(bool, ClientAuthenticationResult?)> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client)
     {
         var assertion = tokenRequest.ClientAssertion;
 
         if (string.IsNullOrEmpty(assertion))
-            return ClientAuthenticationResult.Fail();
+            return (false, null);
 
         var principal = await ValidateJwt(assertion, client);
 
         if (principal == null)
-            return ClientAuthenticationResult.Fail();
+            return (false, null);
 
         var jti = principal.FindFirst("jti")?.Value;
 
         if (string.IsNullOrEmpty(jti))
-            return ClientAuthenticationResult.Fail();
+            return (false, null);
 
         var exp = principal.FindFirst("exp")?.Value;
         var expiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp!));
 
         if (!await _replayCache.TryAddAsync(jti, expiry))
-            return ClientAuthenticationResult.Fail();
+            return (false, null);
 
-        return ClientAuthenticationResult.Success(client, Method);
+        return (true, new ClientAuthenticationResult(client, Method));
     }
 
     private async Task<ClaimsPrincipal?> ValidateJwt(string jwt, Client client)

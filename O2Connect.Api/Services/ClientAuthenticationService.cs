@@ -10,7 +10,7 @@ namespace O2Connect.Api.Services;
 
 public interface IClientAuthenticationService
 {
-    Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken);
+    Task<(bool, ClientAuthenticationResult?)> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken);
 }
 
 public class ClientAuthenticationService : IClientAuthenticationService
@@ -26,8 +26,14 @@ public class ClientAuthenticationService : IClientAuthenticationService
         _clientRepository = clientRepository;
     }
 
-    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken)
+    public async Task<(bool, ClientAuthenticationResult?)> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
+        if (request.Headers.Authorization.Any()
+            && (!string.IsNullOrWhiteSpace(tokenRequest.ClientId) || !string.IsNullOrWhiteSpace(tokenRequest.ClientSecret)))
+        {
+            throw OAuthException.FromInvalidRequest("Client credentials must not be provided in both Authorization header and request body.");
+        }
+
         var (clientId, clientSecret) = GetClientCredentials(tokenRequest, request.Headers.Authorization);
         IClientAuthenticationHandler? selectedHandler = null;
 
@@ -55,9 +61,7 @@ public class ClientAuthenticationService : IClientAuthenticationService
         if (selectedHandler is null || !client.AllowedAuthenticationMethods.Contains(selectedHandler.Method.Value))
             throw OAuthException.FromInvalidClient();
 
-        var authenticatedClient = await selectedHandler.AuthenticateAsync(request, tokenRequest, client);
-
-        return authenticatedClient;
+        return await selectedHandler.AuthenticateAsync(request, tokenRequest, client);
     }
 
     private (string? clientId, string? clientSecret) GetClientCredentials(TokenRequest request, StringValues authorizationHeaders)

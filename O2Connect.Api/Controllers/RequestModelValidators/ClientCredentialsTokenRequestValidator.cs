@@ -11,7 +11,10 @@ public class ClientCredentialsTokenRequestValidator : ITokenRequestValidator
 {
     public GrantType GrantType => GrantType.ClientCredentials;
 
-    public TokenRequestContext Validate(TokenRequest request, Client client, ClientAuthenticationMethod method)
+    public async Task<TokenRequestContext> ValidateAsync(TokenRequest request,
+                                                         Client client,
+                                                         ClientAuthenticationMethod method,
+                                                         CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.ClientId))
             throw OAuthException.FromInvalidRequest("Missing 'client_id'.");

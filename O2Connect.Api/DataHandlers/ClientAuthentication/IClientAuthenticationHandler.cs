@@ -9,5 +9,5 @@ public interface IClientAuthenticationHandler
     ClientAuthenticationMethod Method { get; }
     bool CanHandle(HttpRequest request, TokenRequest tokenRequest);
     Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest);
-    Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client);
+    Task<(bool, ClientAuthenticationResult?)> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client);
 }
