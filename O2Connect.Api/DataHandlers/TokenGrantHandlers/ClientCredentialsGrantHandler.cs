@@ -15,7 +15,7 @@ public class ClientCredentialsGrantHandler : ITokenGrantHandler
 
     public Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
     {
-        if (context.Input.Scopes == null)
+        if (context.Scopes == null || context.Scopes.IsEmpty)
             throw OAuthException.FromInvalidScope();
 
         var response = new TokenResponse

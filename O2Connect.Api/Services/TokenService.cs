@@ -1,13 +1,13 @@
 ﻿using O2Connect.Api.DataHandlers.TokenGrantHandlers;
 using O2Connect.Api.DataValidators;
-using O2Connect.Api.Models.RequestInputs;
+using O2Connect.Api.Models.Context;
 using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.Services;
 
 public interface ITokenService
 {
-    Task<TokenResponse> HandleAsync(TokenRequestInput input, CancellationToken ct);
+    Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct);
 }
 
 public class TokenService : ITokenService
@@ -23,9 +23,9 @@ public class TokenService : ITokenService
         _grantResolver = grantResolver;
     }
 
-    public async Task<TokenResponse> HandleAsync(TokenRequestInput input, CancellationToken ct)
+    public async Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
     {
-        var context = await _tokenValidator.ValidateAsync(input, ct);
+        context = await _tokenValidator.ValidateAsync(context, ct);
 
         var handler = _grantResolver.Resolve(context.GrantType);
 

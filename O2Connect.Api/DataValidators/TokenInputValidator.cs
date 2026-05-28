@@ -1,42 +1,30 @@
 ﻿using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Context;
-using O2Connect.Api.Models.RequestInputs;
-using O2Connect.Api.Services.Authenticators;
 
 namespace O2Connect.Api.DataValidators;
 
 public interface ITokenInputValidator
 {
-    Task<TokenRequestContext> ValidateAsync(TokenRequestInput input, CancellationToken ct);
+    Task<TokenRequestContext> ValidateAsync(TokenRequestContext context, CancellationToken ct);
 }
 
 public class TokenInputValidator : ITokenInputValidator
 {
-    private readonly IClientAuthenticator _clientAuth;
     private readonly IScopeValidator _scopeValidator;
 
     public TokenInputValidator(
-        IClientAuthenticator clientAuth,
         IScopeValidator scopeValidator)
     {
-        _clientAuth = clientAuth;
         _scopeValidator = scopeValidator;
     }
 
-    public async Task<TokenRequestContext> ValidateAsync(TokenRequestInput input, CancellationToken ct)
+    public async Task<TokenRequestContext> ValidateAsync(TokenRequestContext context, CancellationToken ct)
     {
-        var client = await _clientAuth.AuthenticateAsync(input, ct);
-
-        if (!client.AllowedGrantTypes.Contains(input.GrantType.Value))
+        if (!context.Client.AllowedGrantTypes.Contains(context.GrantType.Value))
             throw OAuthException.FromUnauthorizedClient();
 
-        var scopes = _scopeValidator.Validate(input.Scopes, client);
+        var scopes = _scopeValidator.Validate(context.Scopes, context.Client);
 
-        return new TokenRequestContext(
-            client,
-            input.GrantType,
-            scopes,
-            input
-        );
+        return context;
     }
 }

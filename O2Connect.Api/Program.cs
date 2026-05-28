@@ -10,7 +10,6 @@ using O2Connect.Api.Models.Options;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
 using O2Connect.Api.Services;
-using O2Connect.Api.Services.Authenticators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,8 +50,6 @@ builder.Services.AddTransient<ISecretHasher, Pbkdf2SecretHasher>();
 
 builder.Services.AddScoped<IScopeValidator, ScopeValidator>();
 builder.Services.AddScoped<ITokenInputValidator, TokenInputValidator>();
-
-builder.Services.AddScoped<IClientAuthenticator, ClientAuthenticator>();
 
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();

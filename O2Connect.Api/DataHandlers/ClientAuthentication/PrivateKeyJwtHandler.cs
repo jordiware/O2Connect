@@ -88,7 +88,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
             return ClientAuthenticationResult.Fail();
 
         var exp = principal.FindFirst("exp")?.Value;
-        var expiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp));
+        var expiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp!));
 
         if (!await _replayCache.TryAddAsync(jti, expiry))
             return ClientAuthenticationResult.Fail();

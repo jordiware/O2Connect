@@ -4,6 +4,8 @@ public sealed class ScopeSet
 {
     private readonly HashSet<string> _scopes;
 
+    public IReadOnlyCollection<string> Values => _scopes;
+
     public ScopeSet(IEnumerable<string> scopes)
     {
         _scopes = new HashSet<string>(Normalize(scopes), StringComparer.Ordinal);
@@ -15,8 +17,6 @@ public sealed class ScopeSet
 
     public bool IsSubsetOf(IEnumerable<string> other) =>
         _scopes.IsSubsetOf(other);
-
-    public IReadOnlyCollection<string> Values => _scopes;
 
     private static IEnumerable<string> Normalize(IEnumerable<string> scopes)
     {

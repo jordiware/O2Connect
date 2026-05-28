@@ -1,6 +1,8 @@
-﻿using O2Connect.Api.Exceptions;
+﻿using O2Connect.Api.DtoMappers;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
-using O2Connect.Api.Models.RequestInputs;
+using O2Connect.Api.Models.Context;
+using O2Connect.Api.Models.Store;
 using O2Connect.Dto.Requests;
 
 namespace O2Connect.Api.Controllers.RequestModelValidators;
@@ -9,7 +11,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
 {
     public GrantType GrantType => GrantType.AuthorizationCode;
 
-    public TokenRequestInput Validate(TokenRequest request)
+    public TokenRequestContext Validate(TokenRequest request, Client client, ClientAuthenticationMethod method)
     {
         if (string.IsNullOrWhiteSpace(request.ClientId))
             throw OAuthException.FromInvalidRequest("Missing 'client_id'.");
@@ -23,6 +25,6 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
         if (!string.IsNullOrWhiteSpace(request.CodeVerifier) && request.CodeVerifier.Length < 43)
             throw OAuthException.FromInvalidRequest("Invalid 'code_verifier'.");
 
-        return TokenRequestInput.FromRequestDto(request);
+        return request.ToRequestContext(client, method);
     }
 }

@@ -4,7 +4,6 @@ using O2Connect.Api.DataValidators.Crypto;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Context;
-using O2Connect.Api.Models.RequestInputs;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
@@ -34,16 +33,14 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
 
     public async Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
     {
-        var input = context.Input;
-
-        if (string.IsNullOrWhiteSpace(input.Code) ||
-            string.IsNullOrWhiteSpace(input.RedirectUri))
+        if (string.IsNullOrWhiteSpace(context.Code) ||
+            string.IsNullOrWhiteSpace(context.RedirectUri))
             throw OAuthException.FromInvalidRequest();
 
-        var code = await _authorizationCodeRepository.RedeemAsync(input.Code, ct)
+        var code = await _authorizationCodeRepository.RedeemAsync(context.Code, ct)
             ?? throw OAuthException.FromInvalidGrant();
 
-        await Validate(code, context, input, ct);
+        await Validate(code, context, ct);
 
         return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
@@ -53,7 +50,7 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
         }, ct);
     }
 
-    private async Task Validate(AuthorizationCode code, TokenRequestContext context, TokenRequestInput input, CancellationToken ct)
+    private async Task Validate(AuthorizationCode code, TokenRequestContext context, CancellationToken ct)
     {
         if (code.ClientId != context.Client.ClientId)
             throw OAuthException.FromInvalidGrant();
@@ -64,10 +61,10 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
         if (code.ExpiresAt <= DateTime.UtcNow)
             throw OAuthException.FromInvalidGrant();
 
-        if (!string.Equals(code.RedirectUri, input.RedirectUri, StringComparison.Ordinal))
+        if (!string.Equals(code.RedirectUri, context.RedirectUri, StringComparison.Ordinal))
             throw OAuthException.FromInvalidGrant();
 
-        if (!await _clientRepository.ValidateRedirectUriAsync(context.Client.ClientId, input.RedirectUri!, ct))
+        if (!await _clientRepository.ValidateRedirectUriAsync(context.ClientId, context.RedirectUri!, ct))
             throw OAuthException.FromInvalidGrant();
 
         if (code.CodeChallenge != null)
@@ -75,22 +72,22 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
             if (string.IsNullOrWhiteSpace(code.CodeChallengeMethod))
                 throw OAuthException.FromInvalidGrant();
 
-            if (string.IsNullOrWhiteSpace(context.Input.CodeVerifier))
+            if (string.IsNullOrWhiteSpace(context.CodeVerifier))
                 throw OAuthException.FromInvalidGrant();
 
             var validator = _pkceResolver.Resolve(PkceMethod.Parse(code.CodeChallengeMethod));
-            validator.Validate(context.Client, code, context.Input.CodeVerifier);
+            validator.Validate(context.Client, code, context.CodeVerifier);
         }
     }
 
     private static IReadOnlyCollection<string> ResolveScopes(TokenRequestContext context, AuthorizationCode code)
     {
-        if (context.RequestedScopes.IsEmpty)
+        if (context.Scopes.IsEmpty)
             return code.Scopes.Values;
 
-        if (!context.RequestedScopes.IsSubsetOf(code.Scopes.Values))
+        if (!context.Scopes.IsSubsetOf(code.Scopes.Values))
             throw OAuthException.FromInvalidGrant();
 
-        return context.RequestedScopes.Values;
+        return context.Scopes.Values;
     }
 }

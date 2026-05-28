@@ -3,6 +3,7 @@ using Microsoft.Extensions.Primitives;
 using O2Connect.Api.Controllers.RequestModelValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
+using O2Connect.Api.Models.Context;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using System.Text;
@@ -42,15 +43,17 @@ public class TokenController : ControllerBase
             throw OAuthException.FromInvalidRequest("Client credentials must not be provided in both Authorization header and request body.");
         }
 
-        var client = await _clientAuthenticationService.AuthenticateAsync(Request,
-                                                                          request,
-                                                                          HttpContext.RequestAborted);
+        var authenticatedClient = await _clientAuthenticationService
+            .AuthenticateAsync(Request, request, HttpContext.RequestAborted);
+
+        if (!authenticatedClient.Succeeded)
+            throw OAuthException.FromInvalidClient();
 
         var grantType = GrantType.Parse(request.GrantType);
         var validator = _requestValidatorResolver.Resolve(grantType);
-        var input = validator.Validate(request);
+        var tokenRequestContext = validator.Validate(request, authenticatedClient.Client!, authenticatedClient.Method!.Value);
 
-        var response = await _tokenService.HandleAsync(input, HttpContext.RequestAborted);
+        var response = await _tokenService.HandleAsync(tokenRequestContext, HttpContext.RequestAborted);
 
         Response.Headers.CacheControl = "no-store";
         Response.Headers.Pragma = "no-cache";
