@@ -93,7 +93,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         if (!await _replayCache.TryAddAsync(jti, expiry))
             return ClientAuthenticationResult.Fail();
 
-        return ClientAuthenticationResult.Success(client.ClientId);
+        return ClientAuthenticationResult.Success(client, Method);
     }
 
     private async Task<ClaimsPrincipal?> ValidateJwt(string jwt, Client client)

@@ -33,18 +33,18 @@ public class TokenController : ControllerBase
         if (!Request.ContentType?.StartsWith("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase) == true)
             throw OAuthException.FromInvalidRequest();
 
-        if (Request.Headers.Authorization.Any() &&
-            (!string.IsNullOrWhiteSpace(request.ClientId) || !string.IsNullOrWhiteSpace(request.ClientSecret)))
+        if (Request.Form["client_id"].Count > 1)
+            throw OAuthException.FromInvalidRequest("client_id repeated");
+
+        if (Request.Headers.Authorization.Any()
+            && (!string.IsNullOrWhiteSpace(request.ClientId) || !string.IsNullOrWhiteSpace(request.ClientSecret)))
         {
             throw OAuthException.FromInvalidRequest("Client credentials must not be provided in both Authorization header and request body.");
         }
 
-        var (clientId, clientSecret) = GetClientCredentials(request, Request.Headers.Authorization);
-
-        request.ClientId = clientId;
-        request.ClientSecret = clientSecret;
-
-        var client = await _clientAuthenticationService.AuthenticateAsync(Request, request, HttpContext.RequestAborted);
+        var client = await _clientAuthenticationService.AuthenticateAsync(Request,
+                                                                          request,
+                                                                          HttpContext.RequestAborted);
 
         var grantType = GrantType.Parse(request.GrantType);
         var validator = _requestValidatorResolver.Resolve(grantType);
@@ -56,38 +56,5 @@ public class TokenController : ControllerBase
         Response.Headers.Pragma = "no-cache";
 
         return Ok(response);
-    }
-
-    private (string? clientId, string? clientSecret) GetClientCredentials(TokenRequest request, StringValues authorizationHeaders)
-    {
-        if (authorizationHeaders.Count > 1)
-            throw OAuthException.FromInvalidRequest("Multiple Authorization headers");
-
-        var header = authorizationHeaders.FirstOrDefault();
-
-        if (header?.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            var encoded = header["Basic ".Length..].Trim();
-
-            try
-            {
-                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
-                var separatorIndex = decoded.IndexOf(':');
-
-                if (separatorIndex <= 0)
-                    throw OAuthException.FromInvalidClient();
-
-                var clientId = decoded[..separatorIndex];
-                var clientSecret = decoded[(separatorIndex + 1)..];
-
-                return (clientId, clientSecret);
-            }
-            catch
-            {
-                throw OAuthException.FromInvalidClient();
-            }
-        }
-
-        return (request.ClientId, request.ClientSecret);
     }
 }

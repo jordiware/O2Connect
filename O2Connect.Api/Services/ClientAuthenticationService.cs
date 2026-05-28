@@ -1,14 +1,17 @@
-﻿using O2Connect.Api.DataHandlers.ClientAuthentication;
+﻿using Microsoft.Extensions.Primitives;
+using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
+using System.Text;
 
 namespace O2Connect.Api.Services;
 
 public interface IClientAuthenticationService
 {
-    Task<Client> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken);
+    Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken);
 }
 
 public class ClientAuthenticationService : IClientAuthenticationService
@@ -24,9 +27,9 @@ public class ClientAuthenticationService : IClientAuthenticationService
         _clientRepository = clientRepository;
     }
 
-    public async Task<Client> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken)
+    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
-        string? clientId = null;
+        var (clientId, clientSecret) = GetClientCredentials(tokenRequest, request.Headers.Authorization);
         IClientAuthenticationHandler? selectedHandler = null;
 
         foreach (var handler in _handlers)
@@ -53,8 +56,41 @@ public class ClientAuthenticationService : IClientAuthenticationService
         if (selectedHandler is null || !client.AllowedAuthenticationMethods.Contains(selectedHandler.Method.Value))
             throw OAuthException.FromInvalidClient();
 
-        await selectedHandler.AuthenticateAsync(request, tokenRequest, client);
+        var authenticatedClient = await selectedHandler.AuthenticateAsync(request, tokenRequest, client);
 
-        return client;
+        return authenticatedClient;
+    }
+
+    private (string? clientId, string? clientSecret) GetClientCredentials(TokenRequest request, StringValues authorizationHeaders)
+    {
+        if (authorizationHeaders.Count > 1)
+            throw OAuthException.FromInvalidRequest("Multiple Authorization headers");
+
+        var header = authorizationHeaders.FirstOrDefault();
+
+        if (header?.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var encoded = header["Basic ".Length..].Trim();
+
+            try
+            {
+                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
+                var separatorIndex = decoded.IndexOf(':');
+
+                if (separatorIndex <= 0)
+                    throw OAuthException.FromInvalidClient();
+
+                var clientId = decoded[..separatorIndex];
+                var clientSecret = decoded[(separatorIndex + 1)..];
+
+                return (clientId, clientSecret);
+            }
+            catch
+            {
+                throw OAuthException.FromInvalidClient();
+            }
+        }
+
+        return (request.ClientId, request.ClientSecret);
     }
 }

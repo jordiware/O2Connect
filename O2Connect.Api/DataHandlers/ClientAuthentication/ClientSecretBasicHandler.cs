@@ -40,7 +40,7 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
         if (!_validator.Validate(client, secret))
             throw OAuthException.FromInvalidClient();
 
-        return ClientAuthenticationResult.Success(clientId);
+        return ClientAuthenticationResult.Success(client, Method);
     }
 
     private (string? clientId, string? secret) ExtractCredentialsAsync(HttpRequest request, TokenRequest tokenRequest)
