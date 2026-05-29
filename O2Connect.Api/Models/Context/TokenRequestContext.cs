@@ -8,7 +8,7 @@ public sealed class TokenRequestContext
     public required Client Client { get; init; }
     public required GrantType GrantType { get; init; }
 
-    // Client authentication context
+    // _client authentication context
     public required ClientAuthenticationMethod ClientAuthenticationMethod { get; init; }
     public string ClientId => Client.ClientId;
 
@@ -56,7 +56,7 @@ public sealed class TokenRequestContext
     /// </summary>
     public string? ClientCertificateThumbprint { get; init; }
 
-    // Client assertion (JWT-based auth)
+    // _client assertion (JWT-based auth)
     public string? ClientAssertionType { get; init; }
     public string? ClientAssertion { get; init; }
 

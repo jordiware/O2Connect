@@ -22,7 +22,7 @@ public static class TokenRequestMapper
             // Core
             Client = client,
             GrantType = GrantType.Parse(request.GrantType),
-            // Client auth
+            // _client auth
             ClientAuthenticationMethod = method,
             // Authorization Code
             Code = request.Code,
@@ -37,7 +37,7 @@ public static class TokenRequestMapper
             Resources = ValueSet.FromDataString(request.Resource, ','),
             Audiences = ValueSet.FromDataString(request.Audience, ','),
             RawScope = request.Scope,
-            // Client assertion
+            // _client assertion
             ClientAssertion = request.ClientAssertion,
             ClientAssertionType = request.ClientAssertionType,
             // Advanced security

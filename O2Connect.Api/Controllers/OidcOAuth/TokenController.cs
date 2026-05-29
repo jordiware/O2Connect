@@ -33,16 +33,17 @@ public class TokenController : OidcOAuthControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var (result, authenticatedClient) = await _clientAuthenticationService
+        var grantType = GrantType.Parse(request.GrantType);
+
+        var clientAuthenticationResult = await _clientAuthenticationService
             .AuthenticateAsync(Request, request, HttpContext.RequestAborted);
 
-        if (!result || authenticatedClient is null)
+        if (!clientAuthenticationResult.Success)
             throw OAuthException.FromInvalidClient();
 
-        var grantType = GrantType.Parse(request.GrantType);
         var requestValidator = _requestValidatorResolver.Resolve(grantType);
         var requestContext = await requestValidator
-            .ValidateAsync(request, authenticatedClient.Client, authenticatedClient.Method, HttpContext.RequestAborted);
+            .ValidateAsync(request, clientAuthenticationResult._client, clientAuthenticationResult._method, HttpContext.RequestAborted);
 
         var response = await _tokenService.HandleAsync(requestContext, HttpContext.RequestAborted);
 

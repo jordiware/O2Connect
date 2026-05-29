@@ -10,7 +10,7 @@ namespace O2Connect.Api.Services;
 
 public interface IClientAuthenticationService
 {
-    Task<(bool, ClientAuthenticationResult?)> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken);
+    Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken);
 }
 
 public class ClientAuthenticationService : IClientAuthenticationService
@@ -26,7 +26,7 @@ public class ClientAuthenticationService : IClientAuthenticationService
         _clientRepository = clientRepository;
     }
 
-    public async Task<(bool, ClientAuthenticationResult?)> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken)
+    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken cancellationToken)
     {
         if (request.Headers.Authorization.Any()
             && (!string.IsNullOrWhiteSpace(tokenRequest.ClientId) || !string.IsNullOrWhiteSpace(tokenRequest.ClientSecret)))
