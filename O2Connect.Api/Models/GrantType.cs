@@ -2,11 +2,25 @@
 
 namespace O2Connect.Api.Models;
 
-public readonly record struct GrantType(string Value)
+public readonly record struct GrantType
 {
+    public string Value { get; }
+
     public static readonly GrantType AuthorizationCode = new("authorization_code");
     public static readonly GrantType ClientCredentials = new("client_credentials");
     public static readonly GrantType RefreshToken = new("refresh_token");
+
+    public static IReadOnlyCollection<GrantType> Supported { get; } =
+    [
+        AuthorizationCode,
+        ClientCredentials,
+        RefreshToken
+    ];
+
+    private GrantType(string value)
+    {
+        Value = value;
+    }
 
     public static GrantType Parse(string? value)
     {
