@@ -37,7 +37,15 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         return request.HasFormContentType
                && !string.IsNullOrWhiteSpace(tokenRequest.ClientAssertion)
                && !string.IsNullOrWhiteSpace(tokenRequest.ClientAssertionType)
-               && tokenRequest.ClientAssertionType == JwtBearerAssertionType;
+               && tokenRequest.ClientAssertionType.SequenceEqual(JwtBearerAssertionType);
+    }
+
+    public void ValidateSingleCredentialsSource(HttpRequest request, TokenRequest tokenRequest)
+    {
+        if (!string.IsNullOrWhiteSpace(tokenRequest.ClientId)
+            || !string.IsNullOrWhiteSpace(tokenRequest.ClientSecret)
+            || request.Headers.Authorization.Count != 0)
+            throw OAuthException.FromInvalidRequest("Multiple Authorization sources");
     }
 
     public async Task<string> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)

@@ -23,32 +23,33 @@ public class ClientSecretPostHandler : IClientAuthenticationHandler
                !string.IsNullOrWhiteSpace(tokenRequest.ClientSecret);
     }
 
-    public async Task<string> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
+    public void ValidateSingleCredentialsSource(HttpRequest request, TokenRequest tokenRequest)
+    {
+        if (!string.IsNullOrWhiteSpace(tokenRequest.ClientAssertionType)
+            || !string.IsNullOrWhiteSpace(tokenRequest.ClientAssertion)
+            || request.Headers.Authorization.Count != 0)
+            throw OAuthException.FromInvalidRequest("Multiple Authorization sources");
+    }
+
+    public Task<string> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(tokenRequest.ClientId))
             throw OAuthException.FromInvalidRequest();
 
-        return tokenRequest.ClientId;
+        return Task.FromResult(tokenRequest.ClientId);
     }
 
-    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client, CancellationToken ct)
+    public Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client, CancellationToken ct)
     {
-        var (clientId, secret) = ExtractCredentialsAsync(request, tokenRequest);
+        if (string.IsNullOrWhiteSpace(tokenRequest.ClientId))
+            throw OAuthException.FromInvalidRequest();
 
-        if (clientId != client.ClientId)
+        if (string.IsNullOrWhiteSpace(tokenRequest.ClientSecret))
+            throw OAuthException.FromInvalidRequest();
+
+        if (!_validator.Validate(client, tokenRequest.ClientSecret))
             throw OAuthException.FromInvalidClient();
 
-        if (string.IsNullOrEmpty(secret))
-            throw OAuthException.FromInvalidClient();
-
-        if (!_validator.Validate(client, secret))
-            throw OAuthException.FromInvalidClient();
-
-        return ClientAuthenticationResult.Ok(client, Method);
-    }
-
-    public (string clientId, string? secret) ExtractCredentialsAsync(HttpRequest request, TokenRequest tokenRequest)
-    {
-        return (tokenRequest.ClientId!, tokenRequest.ClientSecret);
+        return Task.FromResult(ClientAuthenticationResult.Ok(client, Method));
     }
 }

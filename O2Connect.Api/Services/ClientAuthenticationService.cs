@@ -43,6 +43,8 @@ public class ClientAuthenticationService : IClientAuthenticationService
             throw OAuthException.FromInvalidRequest("Multiple client authentication methods detected.");
 
         var authHandler = matchingHandlers.Single();
+        authHandler.ValidateSingleCredentialsSource(request, tokenRequest);
+
         var authMethod = authHandler.Method;
         var clientId = await authHandler.ExtractClientIdAsync(request, tokenRequest, ct);
         

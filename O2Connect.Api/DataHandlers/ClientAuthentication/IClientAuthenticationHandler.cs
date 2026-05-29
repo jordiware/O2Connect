@@ -10,7 +10,10 @@ public interface IClientAuthenticationHandler
 
     bool CanAuthenticate(HttpRequest request,
                          TokenRequest tokenRequest);
-    
+
+    void ValidateSingleCredentialsSource(HttpRequest request,
+                                         TokenRequest tokenRequest);
+
     Task<string> ExtractClientIdAsync(HttpRequest request,
                                       TokenRequest tokenRequest,
                                       CancellationToken ct);
