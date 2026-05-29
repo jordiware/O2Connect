@@ -21,13 +21,13 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
     public bool CanHandle(HttpRequest request, TokenRequest tokenRequest)
         => request.Headers.Authorization.FirstOrDefault()?.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) == true;
 
-    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest)
+    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {
         var (clientId, secret) = ExtractCredentialsAsync(request, tokenRequest);
         return Task.FromResult(clientId);
     }
 
-    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client)
+    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client, CancellationToken ct)
     {
         var (clientId, secret) = ExtractCredentialsAsync(request, tokenRequest);
 

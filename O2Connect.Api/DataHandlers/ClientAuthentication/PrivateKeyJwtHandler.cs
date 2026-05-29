@@ -36,7 +36,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
                request.Form["client_assertion_type"] == "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
     }
 
-    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest)
+    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {
         var assertion = tokenRequest.ClientAssertion;
 
@@ -70,7 +70,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         }
     }
 
-    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client)
+    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client, CancellationToken ct)
     {
         var assertion = tokenRequest.ClientAssertion;
 

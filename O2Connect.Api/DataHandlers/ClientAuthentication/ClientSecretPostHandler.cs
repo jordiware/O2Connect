@@ -20,12 +20,12 @@ public class ClientSecretPostHandler : IClientAuthenticationHandler
     public bool CanHandle(HttpRequest request, TokenRequest tokenRequest)
         => !string.IsNullOrEmpty(tokenRequest.ClientId);
 
-    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest)
+    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {
         return Task.FromResult(tokenRequest.ClientId);
     }
 
-    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client)
+    public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client, CancellationToken ct)
     {
         var (clientId, secret) = ExtractCredentialsAsync(request, tokenRequest);
 
