@@ -35,7 +35,7 @@ public class ClientAuthenticationService : IClientAuthenticationService
         if (!_handlers.Any())
             throw OAuthException.FromServerError("No authentication handlers registered.");
 
-        var matchingHandlers = _handlers.Where(h => h.CanHandle(request, tokenRequest));
+        var matchingHandlers = _handlers.Where(h => h.CanAuthenticate(request, tokenRequest));
 
         if (matchingHandlers.Count() == 0)
             throw OAuthException.FromInvalidClient();

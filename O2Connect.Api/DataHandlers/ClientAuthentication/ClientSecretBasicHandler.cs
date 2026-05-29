@@ -18,7 +18,7 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
         _validator = validator;
     }
 
-    public bool CanHandle(HttpRequest request, TokenRequest tokenRequest)
+    public bool CanAuthenticate(HttpRequest request, TokenRequest tokenRequest)
     {
         var authorizationHeaders = request.Headers.Authorization;
 
@@ -35,10 +35,14 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
             header.Substring("Basic ".Length).Trim().Length > 0;
     }
 
-    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
+    public async Task<string> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {
         var (clientId, secret) = ExtractCredentialsAsync(request, tokenRequest);
-        return Task.FromResult(clientId);
+
+        if (string.IsNullOrWhiteSpace(clientId))
+            throw OAuthException.FromInvalidClient();
+
+        return clientId;
     }
 
     public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client, CancellationToken ct)

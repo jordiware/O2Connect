@@ -17,15 +17,18 @@ public class ClientSecretPostHandler : IClientAuthenticationHandler
         _validator = validator;
     }
 
-    public bool CanHandle(HttpRequest request, TokenRequest tokenRequest)
+    public bool CanAuthenticate(HttpRequest request, TokenRequest tokenRequest)
     {
         return !string.IsNullOrWhiteSpace(tokenRequest.ClientId) &&
                !string.IsNullOrWhiteSpace(tokenRequest.ClientSecret);
     }
 
-    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
+    public async Task<string> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {
-        return Task.FromResult(tokenRequest.ClientId);
+        if (string.IsNullOrWhiteSpace(tokenRequest.ClientId))
+            throw OAuthException.FromInvalidClient();
+
+        return tokenRequest.ClientId;
     }
 
     public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client, CancellationToken ct)

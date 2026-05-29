@@ -32,7 +32,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         _replayCache = replayCache;
     }
 
-    public bool CanHandle(HttpRequest request, TokenRequest tokenRequest)
+    public bool CanAuthenticate(HttpRequest request, TokenRequest tokenRequest)
     {
         return request.HasFormContentType
                && !string.IsNullOrWhiteSpace(tokenRequest.ClientAssertion)
@@ -40,17 +40,17 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
                && tokenRequest.ClientAssertionType == JwtBearerAssertionType;
     }
 
-    public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
+    public async Task<string> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {
         var assertion = tokenRequest.ClientAssertion;
 
         if (string.IsNullOrEmpty(assertion))
-            return Task.FromResult<string?>(null);
+            throw OAuthException.FromInvalidRequest();
 
         var jwtHandler = new JwtSecurityTokenHandler();
 
         if (!jwtHandler.CanReadToken(assertion))
-            return Task.FromResult<string?>(null);
+            throw OAuthException.FromInvalidRequest();
 
         try
         {
@@ -59,18 +59,18 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
             var sub = jwt.Subject;
 
             if (string.IsNullOrEmpty(jwt.Issuer) || jwt.Issuer != sub)
-                return Task.FromResult<string?>(null);
-            
+                throw OAuthException.FromInvalidRequest();
+
             var clientId = jwt.Issuer;
 
             if (string.IsNullOrEmpty(clientId))
-                return Task.FromResult<string?>(null);
+                throw OAuthException.FromInvalidClient();
 
-            return Task.FromResult<string?>(clientId);
+            return clientId;
         }
         catch
         {
-            return Task.FromResult<string?>(null);
+            throw OAuthException.FromInvalidRequest();
         }
     }
 
