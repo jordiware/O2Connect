@@ -40,7 +40,7 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
         var (clientId, secret) = ExtractCredentialsAsync(request, tokenRequest);
 
         if (string.IsNullOrWhiteSpace(clientId))
-            throw OAuthException.FromInvalidClient();
+            throw OAuthException.FromInvalidRequest();
 
         return clientId;
     }

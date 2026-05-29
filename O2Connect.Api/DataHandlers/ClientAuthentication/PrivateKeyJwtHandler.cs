@@ -64,7 +64,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
             var clientId = jwt.Issuer;
 
             if (string.IsNullOrEmpty(clientId))
-                throw OAuthException.FromInvalidClient();
+                throw OAuthException.FromInvalidRequest();
 
             return clientId;
         }
@@ -157,17 +157,5 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         var kid = token.Header.Kid;
 
         return await _jwksProvider.GetKeysAsync(client.JsonWebKeysUri, kid, ct);
-    }
-
-    private string? GetKid(string jwt)
-    {
-        var handler = new JwtSecurityTokenHandler();
-
-        if (!handler.CanReadToken(jwt))
-            return null;
-
-        var token = handler.ReadJwtToken(jwt);
-
-        return token.Header.Kid;
     }
 }

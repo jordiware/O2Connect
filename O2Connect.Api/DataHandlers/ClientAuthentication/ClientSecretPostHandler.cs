@@ -26,7 +26,7 @@ public class ClientSecretPostHandler : IClientAuthenticationHandler
     public async Task<string> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(tokenRequest.ClientId))
-            throw OAuthException.FromInvalidClient();
+            throw OAuthException.FromInvalidRequest();
 
         return tokenRequest.ClientId;
     }
