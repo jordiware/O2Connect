@@ -19,7 +19,21 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
     }
 
     public bool CanHandle(HttpRequest request, TokenRequest tokenRequest)
-        => request.Headers.Authorization.FirstOrDefault()?.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) == true;
+    {
+        var authorizationHeaders = request.Headers.Authorization;
+
+        if (authorizationHeaders.Count == 0)
+            return false;
+
+        if (authorizationHeaders.Count > 1)
+            throw OAuthException.FromInvalidRequest("Multiple Authorization headers");
+
+        var header = authorizationHeaders.FirstOrDefault();
+
+        return header is not null &&
+            header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) &&
+            header.Substring("Basic ".Length).Trim().Length > 0;
+    }
 
     public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {

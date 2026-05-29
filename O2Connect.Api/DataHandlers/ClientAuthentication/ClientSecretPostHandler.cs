@@ -18,7 +18,10 @@ public class ClientSecretPostHandler : IClientAuthenticationHandler
     }
 
     public bool CanHandle(HttpRequest request, TokenRequest tokenRequest)
-        => !string.IsNullOrEmpty(tokenRequest.ClientId);
+    {
+        return !string.IsNullOrWhiteSpace(tokenRequest.ClientId) &&
+               !string.IsNullOrWhiteSpace(tokenRequest.ClientSecret);
+    }
 
     public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)
     {

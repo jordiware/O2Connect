@@ -14,6 +14,8 @@ namespace O2Connect.Api.DataHandlers.ClientAuthentication;
 
 public class PrivateKeyJwtHandler : IClientAuthenticationHandler
 {
+    private const string JwtBearerAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
+
     private readonly OAuthOptions _oauthOptions;
     private readonly IJwksProvider _jwksProvider;
     private readonly IReplayCache _replayCache;
@@ -32,8 +34,10 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
 
     public bool CanHandle(HttpRequest request, TokenRequest tokenRequest)
     {
-        return request.HasFormContentType &&
-               request.Form["client_assertion_type"] == "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
+        return request.HasFormContentType
+               && !string.IsNullOrWhiteSpace(tokenRequest.ClientAssertion)
+               && !string.IsNullOrWhiteSpace(tokenRequest.ClientAssertionType)
+               && tokenRequest.ClientAssertionType == JwtBearerAssertionType;
     }
 
     public Task<string?> ExtractClientIdAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct)

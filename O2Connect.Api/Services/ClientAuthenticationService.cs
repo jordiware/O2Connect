@@ -32,16 +32,18 @@ public class ClientAuthenticationService : IClientAuthenticationService
             throw OAuthException.FromInvalidRequest("Client credentials must not be provided in both Authorization header and request body.");
         }
 
-        var authMethod = DetectAuthenticationMethod(request, tokenRequest);
-        var matchingHandlers = _handlers.Where(h => h.Method == authMethod).ToList();
+        if (!_handlers.Any())
+            throw OAuthException.FromServerError("No authentication handlers registered.");
 
-        if (matchingHandlers.Count == 0)
-            throw OAuthException.FromServerError("No handler registered for authentication method.");
+        var matchingHandlers = _handlers.Where(h => h.CanHandle(request, tokenRequest));
 
-        if (matchingHandlers.Count > 1)
-            throw OAuthException.FromServerError("Multiple handlers registered for the same authentication method.");
+        if (matchingHandlers.Count() == 0)
+            throw OAuthException.FromInvalidClient();
+        if (matchingHandlers.Count() > 1)
+            throw OAuthException.FromInvalidRequest("Multiple client authentication methods detected.");
 
         var authHandler = matchingHandlers.Single();
+        var authMethod = authHandler.Method;
         var clientId = await authHandler.ExtractClientIdAsync(request, tokenRequest, ct);
         
         if (string.IsNullOrWhiteSpace(clientId))
@@ -51,53 +53,9 @@ public class ClientAuthenticationService : IClientAuthenticationService
 
         if (client is null)
             throw OAuthException.FromInvalidClient();
-
         if (!client.AllowedAuthenticationMethods.Select(ClientAuthenticationMethod.Parse).Contains(authMethod))
             throw OAuthException.FromInvalidClient();
 
         return await authHandler.AuthenticateAsync(request, tokenRequest, client, ct);
-    }
-
-    private ClientAuthenticationMethod DetectAuthenticationMethod(HttpRequest request, TokenRequest tokenRequest)
-    {
-        var methodsUsed = new List<ClientAuthenticationMethod>();
-
-        if (HasBasicAuth(request))
-            methodsUsed.Add(ClientAuthenticationMethod.ClientSecretBasic);
-
-        if (!string.IsNullOrWhiteSpace(tokenRequest.ClientId) &&
-            !string.IsNullOrWhiteSpace(tokenRequest.ClientSecret))
-        {
-            methodsUsed.Add(ClientAuthenticationMethod.ClientSecretPost);
-        }
-
-        if (!string.IsNullOrWhiteSpace(tokenRequest.ClientAssertion) &&
-            !string.IsNullOrWhiteSpace(tokenRequest.ClientAssertionType) &&
-            tokenRequest.ClientAssertionType == "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
-        {
-            methodsUsed.Add(ClientAuthenticationMethod.PrivateKeyJwt);
-        }
-
-        if (methodsUsed.Count == 0)
-            throw OAuthException.FromInvalidClient();
-
-        if (methodsUsed.Count > 1)
-            throw OAuthException.FromInvalidRequest("Multiple client authentication methods detected.");
-
-        return methodsUsed.Single();
-    }
-
-    private bool HasBasicAuth(HttpRequest request)
-    {
-        var authorizationHeaders = request.Headers.Authorization;
-
-        if (authorizationHeaders.Count > 1)
-            throw OAuthException.FromInvalidRequest("Multiple Authorization headers");
-
-        var header = authorizationHeaders.FirstOrDefault();
-
-        return header is not null && 
-            header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase) &&
-            header.Length > "Basic ".Length;
     }
 }
