@@ -230,7 +230,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
 
         var kid = parsedClientAssertion.Token.Header.Kid;
 
-        return await _jwksProvider.GetKeysAsync(client.JsonWebKeysUri, kid, ct);
+        return await _jwksProvider.GetKeysAsync(client.JsonWebKeysUri, kid, SecurityAlgorithms.RsaSha256, ct);
     }
 
     private sealed record ParsedClientAssertion(string ClientId, string? Jti, long? Exp, JwtSecurityToken Token);
