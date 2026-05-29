@@ -7,7 +7,10 @@ namespace O2Connect.Api.Crypto;
 
 public interface IJwksProvider
 {
-    Task<IEnumerable<SecurityKey>> GetKeysAsync(string jwksUri, string? kid, CancellationToken ct);
+    Task<IEnumerable<SecurityKey>> GetKeysAsync(string jwksUri,
+                                                string? kid,
+                                                CancellationToken ct);
+
     void Invalidate(string jwksUri);
 }
 

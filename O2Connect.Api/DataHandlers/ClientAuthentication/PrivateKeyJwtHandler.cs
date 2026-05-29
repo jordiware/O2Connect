@@ -37,7 +37,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         return request.HasFormContentType
                && !string.IsNullOrWhiteSpace(tokenRequest.ClientAssertion)
                && !string.IsNullOrWhiteSpace(tokenRequest.ClientAssertionType)
-               && tokenRequest.ClientAssertionType.SequenceEqual(JwtBearerAssertionType);
+               && tokenRequest.ClientAssertionType == JwtBearerAssertionType;
     }
 
     public void ValidateSingleCredentialsSource(HttpRequest request, TokenRequest tokenRequest)
@@ -64,9 +64,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         {
             var jwt = jwtHandler.ReadJwtToken(assertion);
 
-            var sub = jwt.Subject;
-
-            if (string.IsNullOrEmpty(jwt.Issuer) || jwt.Issuer != sub)
+            if (!string.IsNullOrEmpty(jwt.Subject) && jwt.Subject != jwt.Issuer)
                 throw OAuthException.FromInvalidRequest();
 
             var clientId = jwt.Issuer;
@@ -76,10 +74,8 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
 
             return clientId;
         }
-        catch
-        {
-            throw OAuthException.FromInvalidRequest();
-        }
+        catch (ArgumentException) { throw OAuthException.FromInvalidRequest(); }
+        catch (SecurityTokenException) { throw OAuthException.FromInvalidRequest(); }
     }
 
     public async Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, Client client, CancellationToken ct)
@@ -89,44 +85,119 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         if (string.IsNullOrEmpty(assertion))
             return ClientAuthenticationResult.Fail();
 
-        var principal = await ValidateJwt(assertion, client);
-
-        if (principal == null)
+        if (string.IsNullOrEmpty(client.JsonWebKeysUri))
             return ClientAuthenticationResult.Fail();
 
-        var jti = principal.FindFirst("jti")?.Value;
+        var parsed = ParseAssertion(assertion, client);
 
-        if (string.IsNullOrEmpty(jti))
+        await ValidateJwt(parsed, client, ct);
+
+        if (string.IsNullOrEmpty(parsed.Jti))
             return ClientAuthenticationResult.Fail();
 
-        var exp = principal.FindFirst("exp")?.Value;
-        var expiry = DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp!));
+        if (!parsed.Exp.HasValue)
+            return ClientAuthenticationResult.Fail();
 
-        if (!await _replayCache.TryAddAsync(jti, expiry))
+        var now = DateTimeOffset.UtcNow;
+        var expiry = DateTimeOffset.FromUnixTimeSeconds(parsed.Exp.Value);
+
+        if (expiry < now)
+            return ClientAuthenticationResult.Fail();
+
+        var maxLifetime = TimeSpan.FromMinutes(5);
+
+        if (expiry > now.Add(maxLifetime))
+            return ClientAuthenticationResult.Fail();
+
+        if (!parsed.Token.Payload.TryGetValue("iat", out var iatObj)
+            || !long.TryParse(iatObj?.ToString(), out var iat))
+            return ClientAuthenticationResult.Fail();
+
+        var issuedAt = DateTimeOffset.FromUnixTimeSeconds(iat);
+
+        if (issuedAt > now.AddMinutes(1))
+            return ClientAuthenticationResult.Fail();
+
+        if (issuedAt < now.Subtract(maxLifetime))
+            return ClientAuthenticationResult.Fail();
+
+        if (!await _replayCache.TryAddAsync(parsed.Jti, expiry))
             return ClientAuthenticationResult.Fail();
 
         return ClientAuthenticationResult.Ok(client, Method);
     }
 
-    private async Task<ClaimsPrincipal?> ValidateJwt(string jwt, Client client)
+    private ParsedClientAssertion ParseAssertion(string assertion, Client client)
+    {
+        var handler = new JwtSecurityTokenHandler();
+
+        if (!handler.CanReadToken(assertion))
+            throw OAuthException.FromInvalidRequest();
+
+        var jwt = handler.ReadJwtToken(assertion);
+
+        if (!string.IsNullOrEmpty(jwt.Issuer) && jwt.Issuer != client.ClientId)
+            throw OAuthException.FromInvalidRequest();
+
+        if (!string.IsNullOrEmpty(jwt.Subject) && jwt.Subject != jwt.Issuer)
+            throw OAuthException.FromInvalidRequest();
+
+        var clientId = jwt.Issuer;
+
+        if (string.IsNullOrEmpty(clientId))
+            throw OAuthException.FromInvalidRequest();
+
+        long? exp = jwt.Payload.TryGetValue("exp", out var value)
+                    && long.TryParse(value?.ToString(), out var parsed)
+                        ? parsed
+                        : null;
+
+        return new ParsedClientAssertion(clientId, jwt.Id, exp, jwt);
+    }
+
+    private async Task<ClaimsPrincipal> ValidateJwt(ParsedClientAssertion parsedClientAssertion, Client client, CancellationToken ct)
     {
         try
         {
-            return await ValidateInternal(jwt, client, useFreshKeys: false);
+            return await ValidateInternal(parsedClientAssertion, client, ct);
         }
         catch (SecurityTokenSignatureKeyNotFoundException)
         {
             _jwksProvider.Invalidate(client.JsonWebKeysUri!);
 
-            return await ValidateInternal(jwt, client, useFreshKeys: true);
+
+            try
+            {
+                return await ValidateInternal(parsedClientAssertion, client, ct);
+            }
+            catch
+            {
+                throw OAuthException.FromInvalidClient();
+            }
+        }
+        catch (SecurityTokenInvalidSignatureException)
+        {
+            _jwksProvider.Invalidate(client.JsonWebKeysUri!);
+
+            try
+            {
+                return await ValidateInternal(parsedClientAssertion, client, ct);
+            }
+            catch
+            {
+                throw OAuthException.FromInvalidClient();
+            }
         }
     }
 
-    private async Task<ClaimsPrincipal?> ValidateInternal(string jwt, Client client, bool useFreshKeys)
+    private async Task<ClaimsPrincipal> ValidateInternal(ParsedClientAssertion parsedClientAssertion, Client client, CancellationToken ct)
     {
-        var handler = new JwtSecurityTokenHandler();
+        var jwt = parsedClientAssertion.Token;
 
-        var keys = await GetClientKeys(jwt, client, CancellationToken.None);
+        if (jwt.Header.Alg != SecurityAlgorithms.RsaSha256)
+            throw OAuthException.FromInvalidClient();
+
+        var keys = await GetClientKeys(parsedClientAssertion, client, ct);
 
         var parameters = new TokenValidationParameters
         {
@@ -137,6 +208,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
             ValidAudience = _oauthOptions.TokenEndpoint,
 
             ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1),
 
             ValidateIssuerSigningKey = true,
             IssuerSigningKeys = keys,
@@ -147,23 +219,19 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
             ValidAlgorithms = [SecurityAlgorithms.RsaSha256]
         };
 
-        return handler.ValidateToken(jwt, parameters, out _);
+        var handler = new JwtSecurityTokenHandler();
+        return handler.ValidateToken(parsedClientAssertion.Token.RawData, parameters, out _);
     }
 
-    private async Task<IEnumerable<SecurityKey>> GetClientKeys(string jwt, Client client, CancellationToken ct)
+    private async Task<IEnumerable<SecurityKey>> GetClientKeys(ParsedClientAssertion parsedClientAssertion, Client client, CancellationToken ct)
     {
         if (string.IsNullOrEmpty(client.JsonWebKeysUri))
             throw OAuthException.FromInvalidClient();
 
-        var handler = new JwtSecurityTokenHandler();
-
-        if (!handler.CanReadToken(jwt))
-            throw OAuthException.FromInvalidClient();
-
-        var token = handler.ReadJwtToken(jwt);
-
-        var kid = token.Header.Kid;
+        var kid = parsedClientAssertion.Token.Header.Kid;
 
         return await _jwksProvider.GetKeysAsync(client.JsonWebKeysUri, kid, ct);
     }
+
+    private sealed record ParsedClientAssertion(string ClientId, string? Jti, long? Exp, JwtSecurityToken Token);
 }
