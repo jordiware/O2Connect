@@ -304,7 +304,7 @@ public class JwksProvider : IJwksProvider
         }
 
         var size = GetKeySize(key);
-        if (key.N == null || size < 2048 || size > 4096)
+        if (size < 2048 || size > 4096)
         {
             _logger.LogDebug("Rejected JWK {Kid}: invalid key size {Size}", key.Kid, size);
             return false;
@@ -317,6 +317,9 @@ public class JwksProvider : IJwksProvider
     {
         if (IPAddress.IsLoopback(ip))
             return true;
+
+        if (ip.IsIPv4MappedToIPv6)
+            return IsPrivateAddress(ip.MapToIPv4());
 
         if (ip.AddressFamily == AddressFamily.InterNetwork)
         {
