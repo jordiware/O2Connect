@@ -46,12 +46,20 @@ public class JwksProvider : IJwksProvider
 
         var keys = jwks.Keys.Where(k => FilterKeys(k, expectedAlg)).ToList();
 
+        if (keys.Count == 0)
+        {
+            _logger.LogWarning("No usable signing keys found in JWKS from {Uri}", jwksUri);
+        }
+
         if (!string.IsNullOrEmpty(kid))
         {
             keys = keys.Where(k => k.Kid == kid).ToList();
 
             if (keys.Count != 1)
+            {
+                _logger.LogWarning("JWKS from {Uri} did not contain exactly one key matching kid {Kid}", jwksUri, kid);
                 throw OAuthException.FromInvalidClient();
+            }
         }
         else if (keys.Count == 0)
         {
@@ -66,6 +74,9 @@ public class JwksProvider : IJwksProvider
         var parsed = new Uri(jwksUri);
         var normalized = parsed.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path | UriComponents.Query, UriFormat.UriEscaped);
         var jwksCacheKey = $"jwks:{normalized}";
+
+        _logger.LogDebug("Invalidated JWKS cache for {Uri}", jwksUri);
+
         _cache.Remove(jwksCacheKey);
     }
 
@@ -81,16 +92,26 @@ public class JwksProvider : IJwksProvider
 
         var normalized = parsed.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path | UriComponents.Query, UriFormat.UriEscaped);
 
+        _logger.LogTrace("JWKS cache lookup for {Uri}", uri);
+
         var jwksCacheKey = $"jwks:{normalized}";
         if (_cache.TryGetValue<JsonWebKeySet>(jwksCacheKey, out var cached))
+        {
+            _logger.LogTrace("JWKS cache hit for {Uri}", uri);
             return cached;
+        }
+
+        _logger.LogDebug("JWKS cache miss for {Uri}", uri);
 
         var publicAddresses = (await Dns.GetHostAddressesAsync(parsed.Host, ct))
                                         .Where(a => !IsPrivateAddress(a))
                                         .ToList();
 
         if (publicAddresses.Count != 1)
+        {
+            _logger.LogWarning("Rejected JWKS endpoint {Uri}: expected single public IP, got {Count}", uri, publicAddresses.Count);
             throw OAuthException.FromInvalidClient();
+        }
 
         var address = publicAddresses[0];
 
@@ -107,21 +128,34 @@ public class JwksProvider : IJwksProvider
             Timeout = TimeSpan.FromSeconds(5)
         };
 
+        _logger.LogDebug("Fetching JWKS from {Uri}", uri);
+
         using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
 
         if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("JWKS fetch failed from {Uri} with status {StatusCode}", uri, response.StatusCode);
             throw OAuthException.FromInvalidClient();
+        }
 
         if (response.Content.Headers.ContentType?.MediaType == null)
             throw OAuthException.FromInvalidClient();
 
         if (response.Content.Headers.ContentType?.MediaType.StartsWith("application/json") == false)
+        {
+            _logger.LogDebug("Rejected JWKS from {Uri}: invalid content-type {ContentType}", uri, response.Content.Headers.ContentType?.MediaType);
             throw OAuthException.FromInvalidClient();
+        }
 
         if (response.Content.Headers.ContentLength is long len && len > MaxJwksSize)
+        {
+            _logger.LogDebug("Rejected JWKS from {Uri}: content too large ({Length})", uri, len);
             throw OAuthException.FromInvalidClient();
+        }
 
         await using var stream = await response.Content.ReadAsStreamAsync(ct);
+
+        _logger.LogTrace("Received JWKS response from {Uri}", uri);
 
         using var limitedStream = new MemoryStream();
         var buffer = new byte[8192];
@@ -133,7 +167,10 @@ public class JwksProvider : IJwksProvider
             totalRead += read;
 
             if (totalRead > MaxJwksSize)
+            {
+                _logger.LogDebug("Rejected JWKS from {Uri}: streamed content exceeded max size", uri);
                 throw OAuthException.FromInvalidClient();
+            }
 
             limitedStream.Write(buffer, 0, read);
         }
@@ -148,6 +185,8 @@ public class JwksProvider : IJwksProvider
 
             if (jwks.Keys == null || jwks.Keys.Count == 0 || jwks.Keys.Count > 10)
                 throw OAuthException.FromInvalidClient();
+
+            _logger.LogDebug("Caching JWKS for {Uri} TTL:{TTL}", uri, TimeSpan.FromMinutes(10));
 
             _cache.Set(jwksCacheKey, jwks, TimeSpan.FromMinutes(10));
 
@@ -165,7 +204,12 @@ public class JwksProvider : IJwksProvider
         var handlerCacheKey = $"handler:{key}";
 
         if (_cache.TryGetValue<SocketsHttpHandler>(handlerCacheKey, out var existing))
-            return existing ?? throw new KeyNotFoundException();
+        {
+            _logger.LogTrace("Handler cache hit for {Key}", key);
+            return existing!;
+        }
+
+        _logger.LogTrace("Creating new handler for {Key}", key);
 
         var handler = CreateHandler(host);
 
@@ -233,23 +277,38 @@ public class JwksProvider : IJwksProvider
         };
     }
 
-    private static bool FilterKeys(JsonWebKey key, string expectedAlg)
+    private bool FilterKeys(JsonWebKey key, string expectedAlg)
     {
         if (key.Kty != "RSA")
+        {
+            _logger.LogDebug("Rejected JWK {Kid}: unsupported kty {Kty}", key.Kid, key.Kty);
             return false;
+        }
 
         if (key.Use != null && key.Use != "sig")
+        {
+            _logger.LogDebug("Rejected JWK {Kid}: invalid use {Use}", key.Kid, key.Use);
             return false;
+        }
 
         if (key.KeyOps != null && !key.KeyOps.Contains("verify"))
+        {
+            _logger.LogDebug("Rejected JWK {Kid}: missing verify in key_ops", key.Kid);
             return false;
+        }
 
         if (key.Alg != null && key.Alg != expectedAlg)
+        {
+            _logger.LogDebug("Rejected JWK {Kid}: alg mismatch {Alg}", key.Kid, key.Alg);
             return false;
+        }
 
         var size = GetKeySize(key);
         if (key.N == null || size < 2048 || size > 4096)
+        {
+            _logger.LogDebug("Rejected JWK {Kid}: invalid key size {Size}", key.Kid, size);
             return false;
+        }
 
         return true;
     }
