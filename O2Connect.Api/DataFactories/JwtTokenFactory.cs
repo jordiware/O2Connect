@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories.RequestModels;
+using O2Connect.Api.Models;
 using O2Connect.Api.Models.Options;
 using O2Connect.Dto.Responses;
 using System.Globalization;
@@ -30,7 +31,7 @@ public class JwtTokenFactory : ITokenFactory
     public Task<TokenResponse> GenerateAsync(JwtTokenFactoryRequest request, CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;
-        var key = _keyProvider.GetActiveKey();
+        var key = _keyProvider.GetSigningKeys().Single(k => k.Status == SigningKeyStatus.Active);
 
         var claims = BuildClaims(request, now);
 

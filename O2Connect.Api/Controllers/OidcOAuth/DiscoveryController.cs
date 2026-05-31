@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Crypto;
+using O2Connect.Api.Models;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -6,6 +8,13 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [Route(".well-known")]
 public class DiscoveryController : ControllerBase
 {
+    private readonly ISigningKeyProvider _signingKeyProvider;
+
+    public DiscoveryController(ISigningKeyProvider signingKeyProvider)
+    {
+        _signingKeyProvider = signingKeyProvider;
+    }
+
     [HttpGet("openid-configuration")]
     public IActionResult OpenIdConfiguration()
     {
@@ -15,6 +24,14 @@ public class DiscoveryController : ControllerBase
     [HttpGet("jwks.json")]
     public IActionResult Jwks()
     {
-        return Ok("/.well-known/jwks.json endpoint");
+        var keys = _signingKeyProvider.GetSigningKeys();
+
+        var jwks = keys.Where(k => k.Status != SigningKeyStatus.Expired)
+                       .Select(k => k.ToJwk())
+                       .ToArray();
+
+        Response.Headers.CacheControl = "public,max-age=3600";
+
+        return Ok(new { keys = jwks });
     }
 }

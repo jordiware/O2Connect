@@ -8,36 +8,124 @@ namespace O2Connect.Api.Crypto;
 
 public interface ISigningKeyProvider
 {
+    IReadOnlyCollection<SigningKey> GetSigningKeys();
     SigningKey GetActiveKey();
 }
 
-public class RsaSigningKeyProvider : ISigningKeyProvider
+public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
 {
     private readonly JwtOptions _options;
-    private readonly RSA _rsa;
+
+    private readonly object _lock = new();
+    private readonly Dictionary<string, SigningKey> _keys = new();
 
     public RsaSigningKeyProvider(IOptions<JwtOptions> options)
     {
         _options = options.Value;
 
-        _rsa = RSA.Create();
+        var rsa = RSA.Create();
 
-        // In production: load from secure storage (cert, vault, HSM)
-        _rsa.ImportFromPem(File.ReadAllText("private_key.pem"));
-    }
+        if (!File.Exists("private_key.pem"))
+            throw new InvalidOperationException("Private key file missing.");
 
-    public SigningKey GetActiveKey()
-    {
-        var securityKey = new RsaSecurityKey(_rsa)
+        rsa.ImportFromPem(File.ReadAllText("private_key.pem"));
+
+        var key = new RsaSecurityKey(rsa)
         {
             KeyId = _options.ActiveKeyId
         };
 
-        return new SigningKey
+        var signingKey = new SigningKey
         {
             KeyId = _options.ActiveKeyId,
-            Key = securityKey,
-            Credentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256)
+            Key = key,
+            Credentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256),
+            Status = SigningKeyStatus.Active
         };
+
+        _keys.Add(signingKey.KeyId, signingKey);
+    }
+
+    public IReadOnlyCollection<SigningKey> GetSigningKeys()
+    {
+        lock (_lock)
+        {
+            return _keys.Values.ToList();
+        }
+    }
+
+    public SigningKey GetActiveKey()
+    {
+        lock (_lock)
+        {
+            return _keys.Values.Single(v => v.Status == SigningKeyStatus.Active);
+        }
+
+    }
+
+    public void AddKey(RSA rsa, string keyId)
+    {
+        if (rsa is null)
+            throw new ArgumentNullException(nameof(rsa));
+
+        if (string.IsNullOrWhiteSpace(keyId))
+            throw new ArgumentException("KeyId required.", nameof(keyId));
+
+        var securityKey = new RsaSecurityKey(rsa)
+        {
+            KeyId = keyId
+        };
+
+        lock (_lock)
+        {
+            var newKey = new SigningKey
+            {
+                KeyId = keyId,
+                Key = securityKey,
+                Credentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256),
+                Status = SigningKeyStatus.Retired
+            };
+
+            if (!_keys.TryAdd(keyId, newKey))
+                throw new InvalidOperationException("Duplicate key id.");
+        }
+    }
+
+    public void SetActiveKey(string newActiveKeyId)
+    {
+        lock (_lock)
+        {
+            if (!_keys.ContainsKey(newActiveKeyId))
+                throw new InvalidOperationException("Key not found.");
+
+            if (_keys[newActiveKeyId].Status == SigningKeyStatus.Active)
+                return;
+
+            foreach (var (key, value) in _keys)
+            {
+                if (key == newActiveKeyId)
+                {
+                    _keys[key] = value.Clone(SigningKeyStatus.Active);
+                }
+                else if (value.Status == SigningKeyStatus.Active)
+                {
+                    _keys[key] = value.Clone(SigningKeyStatus.Retired);
+                }
+            }
+
+            if (_keys.Values.Count(k => k.Status == SigningKeyStatus.Active) != 1)
+                throw new InvalidOperationException("Exactly one active key required.");
+        }
+    }
+
+    public void Dispose()
+    {
+        lock (_lock)
+        {
+            foreach (var value in _keys.Values)
+            {
+                value.Key.Rsa.Dispose();
+            }
+        }
     }
 }
