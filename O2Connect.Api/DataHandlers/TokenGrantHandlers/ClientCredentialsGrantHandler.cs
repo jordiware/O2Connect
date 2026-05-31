@@ -1,4 +1,6 @@
-﻿using O2Connect.Api.Exceptions;
+﻿using O2Connect.Api.DataFactories;
+using O2Connect.Api.DataFactories.RequestModels;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Context;
 using O2Connect.Dto.Responses;
@@ -7,25 +9,35 @@ namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
 
 public class ClientCredentialsGrantHandler : ITokenGrantHandler
 {
-    public ClientCredentialsGrantHandler()
-    {
-    }
+    private readonly ITokenFactory _tokenFactory;
 
     public GrantType GrantType => GrantType.ClientCredentials;
 
-    public Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
+    public ClientCredentialsGrantHandler(
+        ITokenFactory tokenFactory)
     {
-        if (context.AuthorizationCode.Scopes == null || context.AuthorizationCode.Scopes.IsEmpty)
+        _tokenFactory = tokenFactory;
+    }
+
+    public async Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
+    {
+        if (context.AuthorizationCode is not null)
+            throw OAuthException.FromInvalidRequest();
+
+        if (!context.Client.AllowedGrantTypes.Contains(GrantType.Value))
+            throw OAuthException.FromUnauthorizedClient();
+
+        var requestedScopes = context.Scopes.Values.ToHashSet();
+        var allowedScopes = context.Client.AllowedScopes.ToHashSet();
+
+        if (!requestedScopes.All(allowedScopes.Contains))
             throw OAuthException.FromInvalidScope();
 
-        var response = new TokenResponse
+        return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
-            AccessToken = "mock_access_token",
-            ExpiresIn = 3600,
-            RefreshToken = "mock_refresh_token",
-            IdToken = "mock_id_token"
-        };
-
-        return Task.FromResult(response);
+            Client = context.Client,
+            Scopes = context.Scopes,
+            Subject = context.Client.ClientId
+        }, ct);
     }
 }
