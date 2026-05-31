@@ -88,6 +88,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
             Client = client,
             ClientAuthenticationMethod = method,
             GrantType = GrantType,
+            Scopes = code.Scopes,
             TokenRequest = request
         };
 

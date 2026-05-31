@@ -10,14 +10,33 @@ public class ClientCredentialsTokenRequestValidator : ITokenRequestValidator
 {
     public GrantType GrantType => GrantType.ClientCredentials;
 
-    public async Task<TokenRequestContext> ValidateAsync(TokenRequest request,
-                                                         Client client,
-                                                         ClientAuthenticationMethod method,
-                                                         CancellationToken ct)
+    public Task<TokenRequestContext> ValidateAsync(TokenRequest request,
+                                                   Client client,
+                                                   ClientAuthenticationMethod method,
+                                                   CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request.ClientId))
-            throw OAuthException.FromInvalidRequest("Missing 'client_id'.");
+        ct.ThrowIfCancellationRequested();
 
-        return default!; // TODO
+        if (!client.AllowedGrantTypes.Contains(GrantType.Value, StringComparer.Ordinal))
+            throw OAuthException.FromUnauthorizedClient();
+
+        var requestedScopes = ValueSet.FromDataString(request.Scope, ' ');
+
+        if (requestedScopes.IsEmpty)
+            throw OAuthException.FromInvalidScope();
+
+        if (!requestedScopes.IsSubsetOf(client.AllowedScopes))
+            throw OAuthException.FromInvalidScope();
+
+        var context = new TokenRequestContext
+        {
+            Client = client,
+            ClientAuthenticationMethod = method,
+            GrantType = GrantType,
+            Scopes = requestedScopes,
+            TokenRequest = request,
+        };
+
+        return Task.FromResult(context);
     }
 }

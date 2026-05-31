@@ -7,7 +7,9 @@ public sealed class TokenRequestContext
 {
     public required TokenRequest TokenRequest { get; init; }
     public required Client Client { get; init; }
-    public required AuthorizationCode AuthorizationCode { get; init; }
     public required GrantType GrantType { get; init; }
     public required ClientAuthenticationMethod ClientAuthenticationMethod { get; init; }
+    public required ValueSet Scopes { get; init; }
+
+    public AuthorizationCode? AuthorizationCode { get; init; } = null;
 }
