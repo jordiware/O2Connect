@@ -4,16 +4,17 @@ using O2Connect.Api.Exceptions;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace O2Connect.Api.Crypto;
 
 public interface IJwksProvider
 {
-    Task<IEnumerable<SecurityKey>> GetKeysAsync(string jwksUri,
-                                                string? kid,
-                                                string expectedAlg,
-                                                CancellationToken ct);
+    Task<IReadOnlyList<SecurityKey>> GetKeysAsync(string jwksUri,
+                                                  string? kid,
+                                                  string expectedAlg,
+                                                  CancellationToken ct);
 
     void Invalidate(string jwksUri);
 }
@@ -23,29 +24,27 @@ public class JwksProvider : IJwksProvider
     const long MaxJwksSize = 256 * 1024; // 256 KB
 
     private readonly IMemoryCache _cache;
+    private readonly ILogger<JwksProvider> _logger;
 
     public JwksProvider(
-        IMemoryCache cache)
+        IMemoryCache cache,
+        ILogger<JwksProvider> logger)
     {
         _cache = cache;
+        _logger = logger;
     }
 
-    public async Task<IEnumerable<SecurityKey>> GetKeysAsync(string jwksUri,
-                                                             string? kid,
-                                                             string expectedAlg,
-                                                             CancellationToken ct)
+    public async Task<IReadOnlyList<SecurityKey>> GetKeysAsync(string jwksUri,
+                                                               string? kid,
+                                                               string expectedAlg,
+                                                               CancellationToken ct)
     {
         var jwks = await GetOrFetchAsync(jwksUri, ct);
 
         if (jwks == null)
             throw OAuthException.FromInvalidClient();
 
-        var keys = jwks.Keys.Where(k => k.Kty == "RSA")
-                            .Where(k => k.Use == null || k.Use == "sig")
-                            .Where(k => k.KeyOps == null || k.KeyOps.Contains("verify"))
-                            .Where(k => k.Alg == null || k.Alg == expectedAlg)
-                            .Where(k => k.N != null && GetKeySize(k) is >= 2048 and <= 8192)
-                            .ToList();
+        var keys = jwks.Keys.Where(k => FilterKeys(k, expectedAlg)).ToList();
 
         if (!string.IsNullOrEmpty(kid))
         {
@@ -54,10 +53,9 @@ public class JwksProvider : IJwksProvider
             if (keys.Count != 1)
                 throw OAuthException.FromInvalidClient();
         }
-        else
+        else if (keys.Count == 0)
         {
-            if (keys.Count != 1)
-                throw OAuthException.FromInvalidClient();
+            throw OAuthException.FromInvalidClient();
         }
 
         return keys;
@@ -65,8 +63,10 @@ public class JwksProvider : IJwksProvider
 
     public void Invalidate(string jwksUri)
     {
-        var normalized = new Uri(jwksUri).GetLeftPart(UriPartial.Path);
-        _cache.Remove(normalized);
+        var parsed = new Uri(jwksUri);
+        var normalized = parsed.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path | UriComponents.Query, UriFormat.UriEscaped);
+        var jwksCacheKey = $"jwks:{normalized}";
+        _cache.Remove(jwksCacheKey);
     }
 
     private async Task<JsonWebKeySet?> GetOrFetchAsync(string uri, CancellationToken ct)
@@ -79,56 +79,43 @@ public class JwksProvider : IJwksProvider
         if (parsed.Port != 443 && parsed.Port != -1)
             throw OAuthException.FromInvalidClient();
 
-        var normalized = parsed.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path, UriFormat.UriEscaped);
+        var normalized = parsed.GetComponents(UriComponents.SchemeAndServer | UriComponents.Path | UriComponents.Query, UriFormat.UriEscaped);
 
-        var addresses = await Dns.GetHostAddressesAsync(parsed.Host, ct);
+        var jwksCacheKey = $"jwks:{normalized}";
+        if (_cache.TryGetValue<JsonWebKeySet>(jwksCacheKey, out var cached))
+            return cached;
 
-        if (addresses == null || addresses.Length == 0)
-            throw OAuthException.FromInvalidClient();
-
-        var publicAddresses = addresses.Where(a => !IsPrivateAddress(a)).ToList();
+        var publicAddresses = (await Dns.GetHostAddressesAsync(parsed.Host, ct))
+                                        .Where(a => !IsPrivateAddress(a))
+                                        .ToList();
 
         if (publicAddresses.Count != 1)
             throw OAuthException.FromInvalidClient();
 
-        if (_cache.TryGetValue<JsonWebKeySet>(normalized, out var cached))
-            return cached;
-
         var address = publicAddresses[0];
 
-        var handler = new SocketsHttpHandler
-        {
-            AllowAutoRedirect = false,
-            ConnectCallback = async (context, cancellationToken) =>
-            {
-                var socket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Options.Set(new HttpRequestOptionsKey<IPAddress>("ResolvedIP"), address);
 
-                await socket.ConnectAsync(new IPEndPoint(address, context.DnsEndPoint.Port),
-                                          cancellationToken);
+        var port = parsed.Port == -1 ? 443 : parsed.Port;
+        var key = $"{parsed.Scheme}://{parsed.Host}:{port}";
 
-                return new NetworkStream(socket, ownsSocket: true);
-            },
-            SslOptions = new SslClientAuthenticationOptions
-            {
-                TargetHost = parsed.Host,
-                RemoteCertificateValidationCallback = (sender, cert, chain, errors) =>
-                {
-                    return errors == SslPolicyErrors.None;
-                }
-            }
-        };
+        var handler = GetOrCreateHandler(key, parsed.Host);
 
-        using var httpClient = new HttpClient(handler)
+        using var httpClient = new HttpClient(handler, disposeHandler: false)
         {
             Timeout = TimeSpan.FromSeconds(5)
         };
 
-        var response = await httpClient.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, ct);
+        using var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
 
         if (!response.IsSuccessStatusCode)
             throw OAuthException.FromInvalidClient();
 
-        if (response.Content.Headers.ContentType?.MediaType != "application/json")
+        if (response.Content.Headers.ContentType?.MediaType == null)
+            throw OAuthException.FromInvalidClient();
+
+        if (response.Content.Headers.ContentType?.MediaType.StartsWith("application/json") == false)
             throw OAuthException.FromInvalidClient();
 
         if (response.Content.Headers.ContentLength is long len && len > MaxJwksSize)
@@ -151,16 +138,120 @@ public class JwksProvider : IJwksProvider
             limitedStream.Write(buffer, 0, read);
         }
 
-        var json = Encoding.UTF8.GetString(limitedStream.ToArray());
+        limitedStream.Position = 0;
+        using var reader = new StreamReader(limitedStream, Encoding.UTF8);
+        var json = await reader.ReadToEndAsync(ct);
 
-        var jwks = new JsonWebKeySet(json);
+        try
+        {
+            var jwks = new JsonWebKeySet(json);
 
-        if (jwks.Keys == null || jwks.Keys.Count == 0 || jwks.Keys.Count > 10)
+            if (jwks.Keys == null || jwks.Keys.Count == 0 || jwks.Keys.Count > 10)
+                throw OAuthException.FromInvalidClient();
+
+            _cache.Set(jwksCacheKey, jwks, TimeSpan.FromMinutes(10));
+
+            return jwks;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Invalid JWKS from {Uri}", uri);
             throw OAuthException.FromInvalidClient();
+        }
+    }
 
-        _cache.Set(normalized, jwks, TimeSpan.FromMinutes(10));
+    private SocketsHttpHandler GetOrCreateHandler(string key, string host)
+    {
+        var handlerCacheKey = $"handler:{key}";
 
-        return jwks;
+        if (_cache.TryGetValue<SocketsHttpHandler>(handlerCacheKey, out var existing))
+            return existing ?? throw new KeyNotFoundException();
+
+        var handler = CreateHandler(host);
+
+        var options = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+            SlidingExpiration = TimeSpan.FromMinutes(5),
+            Size = 1 // optional, if you enable size limits
+        };
+
+        options.RegisterPostEvictionCallback((k, value, reason, state) =>
+        {
+            if (value is SocketsHttpHandler h)
+            {
+                try
+                {
+                    h.Dispose();
+                }
+                catch
+                {
+                    // swallow — disposal shouldn't crash anything
+                }
+            }
+        });
+
+        _cache.Set(handlerCacheKey, handler, options);
+
+        return handler;
+    }
+
+    private SocketsHttpHandler CreateHandler(string host)
+    {
+        return new SocketsHttpHandler
+        {
+            AllowAutoRedirect = false,
+            AutomaticDecompression = DecompressionMethods.None,
+            UseCookies = false,
+
+            // Keep connections alive
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+            MaxConnectionsPerServer = 10,
+
+            SslOptions = new SslClientAuthenticationOptions
+            {
+                TargetHost = host,
+                CertificateRevocationCheckMode = X509RevocationMode.Online
+            },
+            ConnectCallback = async (context, ct) =>
+            {
+                var containsAddress = context.InitialRequestMessage.Options.TryGetValue(new HttpRequestOptionsKey<IPAddress>("ResolvedIP"), out IPAddress? address);
+
+                if (!containsAddress || address == null)
+                    throw new IOException("Missing resolved IP");
+
+                var socket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+                await socket.ConnectAsync(
+                    new IPEndPoint(address, context.DnsEndPoint.Port),
+                    ct);
+
+                return new NetworkStream(socket, ownsSocket: true);
+            },
+
+        };
+    }
+
+    private static bool FilterKeys(JsonWebKey key, string expectedAlg)
+    {
+        if (key.Kty != "RSA")
+            return false;
+
+        if (key.Use != null && key.Use != "sig")
+            return false;
+
+        if (key.KeyOps != null && !key.KeyOps.Contains("verify"))
+            return false;
+
+        if (key.Alg != null && key.Alg != expectedAlg)
+            return false;
+
+        var size = GetKeySize(key);
+        if (key.N == null || size < 2048 || size > 4096)
+            return false;
+
+        return true;
     }
 
     private static bool IsPrivateAddress(IPAddress ip)

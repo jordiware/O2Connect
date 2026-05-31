@@ -21,11 +21,9 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection("OAuth"));
 
-builder.Services.AddMemoryCache();
-
-builder.Services.AddHttpClient<IJwksProvider, JwksProvider>(client =>
+builder.Services.AddMemoryCache(options =>
 {
-    client.Timeout = TimeSpan.FromSeconds(2);
+    options.SizeLimit = 1000;
 });
 
 builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>(); 
