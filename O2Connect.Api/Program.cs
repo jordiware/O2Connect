@@ -29,6 +29,7 @@ builder.Services.AddMemoryCache(options =>
 builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>(); 
 builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
+builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
 
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
 builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();

@@ -1,6 +1,6 @@
 ﻿namespace O2Connect.Api.Models.Store;
 
-public record AuthorizationCode
+public sealed record AuthorizationCode
 {
     public string Code { get; init; } = default!;
     public string ClientId { get; init; } = default!;

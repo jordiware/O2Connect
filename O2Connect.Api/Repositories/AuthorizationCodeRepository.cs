@@ -36,10 +36,7 @@ public class InMemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
 
     public Task<bool> TryConsumeAsync(string code, CancellationToken ct)
     {
-        if (!_codes.TryGetValue(code, out var value) || value.Consumed)
-            return Task.FromResult(false);
-
-        var updated = _codes.AddOrUpdate(code, _ => value, (_, existing) =>
+        var updated = _codes.AddOrUpdate(code, _ => default!, (_, existing) =>
         {
             if (existing.Consumed)
                 return existing;
@@ -47,7 +44,7 @@ public class InMemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
             return existing with { Consumed = true };
         });
 
-        return Task.FromResult(code == updated.Code);
+        return Task.FromResult(updated.Consumed);
     }
 
     public Task RemoveAsync(string code, CancellationToken ct)

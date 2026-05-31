@@ -1,6 +1,6 @@
 ﻿namespace O2Connect.Api.Models.Store;
 
-public class Client
+public sealed record Client
 {
     public string ClientId { get; set; } = default!;
     public string ClientName { get; set; } = default!;

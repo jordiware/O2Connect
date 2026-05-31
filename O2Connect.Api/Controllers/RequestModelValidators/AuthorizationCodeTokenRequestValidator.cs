@@ -48,6 +48,9 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
             && !CodeVerifierRegex.IsMatch(request.CodeVerifier))
             throw OAuthException.FromInvalidRequest("Invalid 'code_verifier'.");
 
+        if (!client.AllowedGrantTypes.Contains(GrantType.Value, StringComparer.Ordinal))
+            throw OAuthException.FromUnauthorizedClient();
+
         var code = await _authorizationCodeStore.GetAsync(request.Code, ct);
         if (code == null)
             throw OAuthException.FromInvalidGrant();
