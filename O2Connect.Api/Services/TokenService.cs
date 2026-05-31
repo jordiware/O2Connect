@@ -1,5 +1,6 @@
 ﻿using O2Connect.Api.DataHandlers.TokenGrantHandlers;
 using O2Connect.Api.DataValidators;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Context;
 using O2Connect.Dto.Responses;
 
@@ -27,7 +28,8 @@ public class TokenService : ITokenService
     {
         context = await _tokenValidator.ValidateAsync(context, ct);
 
-        var handler = _grantResolver.Resolve(context.GrantType);
+        if (!_grantResolver.TryResolve(context.GrantType, out var handler))
+            throw OAuthException.FromUnsupportedGrantType();
 
         return await handler.HandleAsync(context, ct);
     }

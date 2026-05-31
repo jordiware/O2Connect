@@ -44,7 +44,9 @@ public class TokenController : OidcOAuthControllerBase
         var client = clientAuthenticationResult.Client;
         var method = clientAuthenticationResult.Method;
 
-        var requestValidator = _requestValidatorResolver.Resolve(grantType);
+        if (!_requestValidatorResolver.TryResolve(grantType, out var requestValidator))
+            throw OAuthException.FromInvalidGrant();
+
         var requestContext = await requestValidator
             .ValidateAsync(request, client, method, HttpContext.RequestAborted);
 

@@ -35,4 +35,9 @@ public readonly record struct GrantType
             _ => throw OAuthException.FromUnsupportedGrantType(),
         };
     }
+
+    public override int GetHashCode()
+    {
+        return StringComparer.Ordinal.GetHashCode(Value);
+    }
 }

@@ -30,6 +30,7 @@ builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
 builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
 
+builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
 builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
 
 builder.Services.AddTransient<IPkceValidator, PlainPkceValidator>();
@@ -48,6 +49,7 @@ builder.Services.AddSingleton<ITokenRequestValidatorResolver, TokenRequestValida
 
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretBasicHandler>();
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretPostHandler>();
+builder.Services.AddScoped<IClientAuthenticationHandler, PrivateKeyJwtHandler>();
 
 builder.Services.AddTransient<ISecretHasher, Pbkdf2SecretHasher>();
 

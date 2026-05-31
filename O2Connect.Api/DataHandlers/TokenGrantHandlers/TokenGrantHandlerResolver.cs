@@ -1,27 +1,32 @@
-﻿using O2Connect.Api.Exceptions;
-using O2Connect.Api.Models;
+﻿using O2Connect.Api.Models;
+using System.Diagnostics.CodeAnalysis;
 
 namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
 
 public interface ITokenGrantHandlerResolver
 {
-    ITokenGrantHandler Resolve(GrantType grantType);
+    bool TryResolve(GrantType grantType, [NotNullWhen(true)] out ITokenGrantHandler handler);
 }
 
 public class TokenGrantHandlerResolver : ITokenGrantHandlerResolver
 {
-    private readonly Dictionary<string, ITokenGrantHandler> _handlers;
+    private readonly Dictionary<GrantType, ITokenGrantHandler> _handlers;
 
     public TokenGrantHandlerResolver(IEnumerable<ITokenGrantHandler> handlers)
     {
-        _handlers = handlers.ToDictionary(h => h.GrantType.Value, StringComparer.OrdinalIgnoreCase);
+        var dict = new Dictionary<GrantType, ITokenGrantHandler>();
+
+        foreach (var handler in handlers)
+        {
+            if (!dict.TryAdd(handler.GrantType, handler))
+                throw new InvalidOperationException($"Duplicate grant type validator registered: {handler.GrantType}");
+        }
+
+        _handlers = dict;
     }
 
-    public ITokenGrantHandler Resolve(GrantType grantType)
+    public bool TryResolve(GrantType grantType, [NotNullWhen(true)] out ITokenGrantHandler handler)
     {
-        if (!_handlers.TryGetValue(grantType.Value, out var handler))
-            throw OAuthException.FromUnsupportedGrantType();
-
-        return handler;
+        return _handlers.TryGetValue(grantType, out handler);
     }
 }
