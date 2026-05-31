@@ -1,8 +1,6 @@
-﻿using O2Connect.Api.Exceptions;
+﻿namespace O2Connect.Api.Models;
 
-namespace O2Connect.Api.Models;
-
-public readonly record struct PkceMethod
+public readonly record struct PkceMethod : ISmartEnum<PkceMethod>
 {
     public string Value { get; }
 
@@ -20,16 +18,25 @@ public readonly record struct PkceMethod
         Value = value;
     }
 
-    public static PkceMethod Parse(string? value)
+    public static bool TryParse(string? value, out PkceMethod result)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw OAuthException.FromInvalidRequest();
+        result = default;
 
-        return value switch
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        result = value switch
         {
             "plain" => Plain,
             "S256" => S256,
-            _ => throw OAuthException.FromInvalidRequest()
+            _ => default
         };
+
+        return result != default;
+    }
+
+    public override int GetHashCode()
+    {
+        return StringComparer.Ordinal.GetHashCode(Value);
     }
 }

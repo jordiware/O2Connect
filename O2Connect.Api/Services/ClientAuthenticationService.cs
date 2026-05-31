@@ -55,7 +55,15 @@ public class ClientAuthenticationService : IClientAuthenticationService
 
         if (client is null)
             throw OAuthException.FromInvalidClient();
-        if (!client.AllowedAuthenticationMethods.Select(ClientAuthenticationMethod.Parse).Contains(authMethod))
+
+        if (!client.AllowedAuthenticationMethods
+                   .Select(m =>
+                   {
+                       if (!ClientAuthenticationMethod.TryParse(m, out var method))
+                           throw OAuthException.FromInvalidClient();
+                       return method;
+                   })
+                   .Contains(authMethod))
             throw OAuthException.FromInvalidClient();
 
         return await authHandler.AuthenticateAsync(request, tokenRequest, client, ct);

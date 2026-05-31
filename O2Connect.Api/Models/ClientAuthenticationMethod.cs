@@ -1,8 +1,6 @@
-﻿using O2Connect.Api.Exceptions;
+﻿namespace O2Connect.Api.Models;
 
-namespace O2Connect.Api.Models;
-
-public readonly record struct ClientAuthenticationMethod
+public readonly record struct ClientAuthenticationMethod : ISmartEnum<ClientAuthenticationMethod>
 {
     public string Value { get; }
 
@@ -22,17 +20,26 @@ public readonly record struct ClientAuthenticationMethod
         Value = value;
     }
 
-    public static ClientAuthenticationMethod Parse(string? value)
+    public static bool TryParse(string? value, out ClientAuthenticationMethod result)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw OAuthException.FromInvalidRequest();
+        result = default;
 
-        return value switch
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        result = value switch
         {
             "client_secret_basic" => ClientSecretBasic,
             "client_secret_post" => ClientSecretPost,
             "private_key_jwt" => PrivateKeyJwt,
-            _ => throw OAuthException.FromInvalidRequest()
+            _ => default
         };
+
+        return result != default;
+    }
+
+    public override int GetHashCode()
+    {
+        return StringComparer.Ordinal.GetHashCode(Value);
     }
 }

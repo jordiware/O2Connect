@@ -75,7 +75,10 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
             if (string.IsNullOrWhiteSpace(context.CodeVerifier))
                 throw OAuthException.FromInvalidGrant();
 
-            var validator = _pkceResolver.Resolve(PkceMethod.Parse(code.CodeChallengeMethod));
+            if (!PkceMethod.TryParse(code.CodeChallengeMethod, out var pkceMethod))
+                throw OAuthException.FromInvalidGrant();
+
+            var validator = _pkceResolver.Resolve(pkceMethod);
             validator.Validate(context.Client, code, context.CodeVerifier);
         }
     }

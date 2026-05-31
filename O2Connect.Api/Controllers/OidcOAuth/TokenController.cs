@@ -33,7 +33,8 @@ public class TokenController : OidcOAuthControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var grantType = GrantType.Parse(request.GrantType);
+        if (!GrantType.TryParse(request.GrantType, out var grantType))
+            throw OAuthException.FromUnsupportedGrantType();
 
         var clientAuthenticationResult = await _clientAuthenticationService
             .AuthenticateAsync(Request, request, HttpContext.RequestAborted);

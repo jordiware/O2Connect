@@ -1,8 +1,6 @@
-﻿using O2Connect.Api.Exceptions;
+﻿namespace O2Connect.Api.Models;
 
-namespace O2Connect.Api.Models;
-
-public readonly record struct GrantType
+public readonly record struct GrantType : ISmartEnum<GrantType>
 {
     public string Value { get; }
 
@@ -22,18 +20,22 @@ public readonly record struct GrantType
         Value = value;
     }
 
-    public static GrantType Parse(string? value)
+    public static bool TryParse(string? value, out GrantType result)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            throw OAuthException.FromInvalidRequest("Missing grant_type.");
+        result = default;
 
-        return value switch
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        result = value switch
         {
             "authorization_code" => AuthorizationCode,
             "client_credentials" => ClientCredentials,
             "refresh_token" => RefreshToken,
-            _ => throw OAuthException.FromUnsupportedGrantType(),
+            _ => default
         };
+
+        return result != default;
     }
 
     public override int GetHashCode()

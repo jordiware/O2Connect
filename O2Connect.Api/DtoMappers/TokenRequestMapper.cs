@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Models;
+﻿using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models;
 using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.Store;
 using O2Connect.Dto.Requests;
@@ -17,11 +18,14 @@ public static class TokenRequestMapper
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
+        if (!GrantType.TryParse(request.GrantType, out var grantType))
+            throw OAuthException.FromUnsupportedGrantType();
+
         return new TokenRequestContext
         {
             // Core
             Client = client,
-            GrantType = GrantType.Parse(request.GrantType),
+            GrantType = grantType,
             // _client auth
             ClientAuthenticationMethod = method,
             // Authorization Code
