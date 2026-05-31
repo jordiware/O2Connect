@@ -78,6 +78,7 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
             GrantType = GrantType,
             Scopes = newToken.Scopes,
             TokenRequest = request,
+            RefreshToken = newToken
         };
 
         return context;

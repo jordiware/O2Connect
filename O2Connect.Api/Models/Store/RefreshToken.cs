@@ -14,5 +14,5 @@ public sealed record RefreshToken
     public DateTimeOffset? RevokedAt { get; set; }
     public string? ReplacedByToken { get; set; }
     public int Version { get; set; }
-    public string? SessionId { get; init; }
+    public required string SessionId { get; init; }
 }

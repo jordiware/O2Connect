@@ -12,4 +12,5 @@ public sealed class TokenRequestContext
     public required ValueSet Scopes { get; init; }
 
     public AuthorizationCode? AuthorizationCode { get; init; } = null;
+    public RefreshToken? RefreshToken { get; init; } = null;
 }
