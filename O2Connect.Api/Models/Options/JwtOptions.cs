@@ -2,7 +2,7 @@
 
 public class JwtOptions
 {
-    public required string Issuer { get; init; }
-    public required string SigningKey { get; init; }
+    public required string Issuer { get; init; } = default!;
+    public string ActiveKeyId { get; set; } = default!;
     public int AccessTokenLifetimeSeconds { get; init; } = 3600;
 }
