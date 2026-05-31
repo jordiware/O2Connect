@@ -1,6 +1,5 @@
 ﻿using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataFactories.RequestModels;
-using O2Connect.Api.DataValidators.Crypto;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Context;
@@ -26,14 +25,35 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
 
     public async Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
     {
-        var code = await _authorizationCodeRepository.RedeemAsync(context.AuthorizationCode.Code, ct)
+        var authCode = context.AuthorizationCode ?? throw OAuthException.FromInvalidRequest();
+
+        var storedCode = await _authorizationCodeRepository.RedeemAsync(authCode.Code, ct)
             ?? throw OAuthException.FromInvalidGrant();
+
+        if (storedCode.ClientId != context.Client.ClientId)
+            throw OAuthException.FromInvalidGrant();
+
+        if (storedCode.ExpiresAt <= DateTime.UtcNow)
+            throw OAuthException.FromInvalidGrant();
+
+        if (!Uri.TryCreate(authCode.RedirectUri, UriKind.Absolute, out var contextRedirectUri) 
+            || !Uri.TryCreate(storedCode.RedirectUri, UriKind.Absolute, out var storedRedirectUri))
+            throw OAuthException.FromInvalidGrant();
+
+        if (!contextRedirectUri.Equals(storedRedirectUri))
+            throw OAuthException.FromInvalidGrant();
+
+        var contextScopes = context.Scopes.Values.ToHashSet();
+        var grantedScopes = storedCode.Scopes.Values.ToHashSet();
+
+        if (!contextScopes.All(grantedScopes.Contains))
+            throw OAuthException.FromInvalidScope();
 
         return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
             Client = context.Client,
-            Scopes = context.AuthorizationCode.Scopes.Values,
-            Subject = code.SubjectId
+            Scopes = context.Scopes,
+            Subject = storedCode.SubjectId
         }, ct);
     }
 }

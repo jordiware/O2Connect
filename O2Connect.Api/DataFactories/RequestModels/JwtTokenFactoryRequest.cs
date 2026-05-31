@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Models.Store;
+﻿using O2Connect.Api.Models;
+using O2Connect.Api.Models.Store;
 
 namespace O2Connect.Api.DataFactories.RequestModels;
 
@@ -8,7 +9,7 @@ public sealed class JwtTokenFactoryRequest
 
     public required string Subject { get; init; }
 
-    public required IReadOnlyCollection<string> Scopes { get; init; }
+    public required ValueSet Scopes { get; init; }
 
     public Dictionary<string, object>? AdditionalClaims { get; init; }
 }

@@ -47,7 +47,7 @@ public class JwtTokenFactory : ITokenFactory
         {
             AccessToken = token,
             ExpiresIn = _options.AccessTokenLifetimeSeconds,
-            Scope = request.Scopes
+            Scope = request.Scopes.Values
         });
 
     }
@@ -56,7 +56,7 @@ public class JwtTokenFactory : ITokenFactory
         yield return new Claim(JwtRegisteredClaimNames.Sub, request.Subject);
         yield return new Claim("client_id", request.Client.ClientId);
 
-        foreach (var scope in request.Scopes)
+        foreach (var scope in request.Scopes.Values)
             yield return new Claim("scope", scope);
 
         if (request.AdditionalClaims != null)
