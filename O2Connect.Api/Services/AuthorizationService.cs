@@ -4,6 +4,7 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace O2Connect.Api.Services;
 
@@ -70,7 +71,7 @@ public class AuthorizationService : IAuthorizationService
             Code = code,
             ClientId = request.ClientId,
             RedirectUri = request.RedirectUri,
-            CodeChallenge = request.CodeChallenge,
+            CodeChallenge = Encoding.ASCII.GetBytes(request.CodeChallenge),
             CodeChallengeMethod = request.CodeChallengeMethod,
             Scopes = ValueSet.FromDataString(request.Scope, ' '),
             ExpiresAt = DateTime.UtcNow.AddMinutes(5)

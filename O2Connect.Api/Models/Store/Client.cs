@@ -8,8 +8,8 @@ public class Client
     public DateTime CreatedAt { get; set; }
     public string? ClientSecret { get; set; }
     public bool RequiresSecret { get; set; }
-    public bool RequirePkce { get; set; } = true;
-    public bool RequireConsent { get; set; } = true;
+    public bool RequiresPkce { get; set; } = true;
+    public bool RequiresConsent { get; set; } = true;
     public List<string> RedirectUris { get; set; } = new();
     public List<string> AllowedGrantTypes { get; set; } = new();
     public List<string> AllowedScopes { get; set; } = new();

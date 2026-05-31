@@ -1,5 +1,4 @@
-﻿using O2Connect.Api.DtoMappers;
-using O2Connect.Api.Exceptions;
+﻿using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.Store;
@@ -19,6 +18,6 @@ public class ClientCredentialsTokenRequestValidator : ITokenRequestValidator
         if (string.IsNullOrWhiteSpace(request.ClientId))
             throw OAuthException.FromInvalidRequest("Missing 'client_id'.");
 
-        return request.ToRequestContext(client, method);
+        return default!; // TODO
     }
 }

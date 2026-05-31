@@ -1,15 +1,16 @@
 ﻿namespace O2Connect.Api.Models.Store;
 
-public class AuthorizationCode
+public record AuthorizationCode
 {
-    public string Code { get; set; } = default!;
-    public string ClientId { get; set; } = default!;
-    public string RedirectUri { get; set; } = default!;
-    public string? CodeChallenge { get; set; }
-    public string? CodeChallengeMethod { get; set; }
-    public required ValueSet Scopes { get; set; }
-    public DateTime ExpiresAt { get; set; }
-    public string SubjectId { get; set; } = default!;
-    public string? Nonce { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public string Code { get; init; } = default!;
+    public string ClientId { get; init; } = default!;
+    public string RedirectUri { get; init; } = default!;
+    public byte[] CodeChallenge { get; init; } = [];
+    public string? CodeChallengeMethod { get; init; }
+    public required ValueSet Scopes { get; init; }
+    public DateTime ExpiresAt { get; init; }
+    public string SubjectId { get; init; } = default!;
+    public string? Nonce { get; init; }
+    public DateTime CreatedAt { get; init; }
+    public bool Consumed { get; init; } = false;
 }

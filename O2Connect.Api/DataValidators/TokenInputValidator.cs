@@ -23,7 +23,7 @@ public class TokenInputValidator : ITokenInputValidator
         if (!context.Client.AllowedGrantTypes.Contains(context.GrantType.Value))
             throw OAuthException.FromUnauthorizedClient();
 
-        var scopes = _scopeValidator.Validate(context.Scopes, context.Client);
+        var scopes = _scopeValidator.Validate(context.AuthorizationCode.Scopes, context.Client);
 
         return context;
     }

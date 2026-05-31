@@ -27,6 +27,6 @@ public class TokenGrantHandlerResolver : ITokenGrantHandlerResolver
 
     public bool TryResolve(GrantType grantType, [NotNullWhen(true)] out ITokenGrantHandler handler)
     {
-        return _handlers.TryGetValue(grantType, out handler);
+        return _handlers.TryGetValue(grantType, out handler!);
     }
 }

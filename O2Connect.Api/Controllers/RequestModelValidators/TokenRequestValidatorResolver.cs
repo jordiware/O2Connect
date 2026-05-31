@@ -27,6 +27,6 @@ public class TokenRequestValidatorResolver : ITokenRequestValidatorResolver
 
     public bool TryResolve(GrantType grantType, [NotNullWhen(true)] out ITokenRequestValidator validator)
     {
-        return _validators.TryGetValue(grantType, out validator);
+        return _validators.TryGetValue(grantType, out validator!);
     }
 }

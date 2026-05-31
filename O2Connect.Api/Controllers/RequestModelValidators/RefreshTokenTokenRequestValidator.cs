@@ -1,5 +1,4 @@
-﻿using O2Connect.Api.DtoMappers;
-using O2Connect.Api.Exceptions;
+﻿using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.Store;
@@ -22,6 +21,6 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
             throw OAuthException.FromInvalidRequest("Missing 'redirect_uri'.");
 
-        return request.ToRequestContext(client, method);
+        return default!; // TODO
     }
 }

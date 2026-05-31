@@ -8,6 +8,7 @@ public interface IAuthorizationCodeRepository
     Task StoreAsync(AuthorizationCode code, CancellationToken ct);
     Task<AuthorizationCode?> GetAsync(string code, CancellationToken ct);
     Task<AuthorizationCode?> RedeemAsync(string code, CancellationToken ct);
+    Task<bool> TryConsumeAsync(string code, CancellationToken ct);
     Task RemoveAsync(string code, CancellationToken ct);
 }
 
@@ -31,6 +32,22 @@ public class InMemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
     {
         _codes.TryRemove(code, out var value);
         return Task.FromResult(value);
+    }
+
+    public Task<bool> TryConsumeAsync(string code, CancellationToken ct)
+    {
+        if (!_codes.TryGetValue(code, out var value) || value.Consumed)
+            return Task.FromResult(false);
+
+        var updated = _codes.AddOrUpdate(code, _ => value, (_, existing) =>
+        {
+            if (existing.Consumed)
+                return existing;
+
+            return existing with { Consumed = true };
+        });
+
+        return Task.FromResult(code == updated.Code);
     }
 
     public Task RemoveAsync(string code, CancellationToken ct)
