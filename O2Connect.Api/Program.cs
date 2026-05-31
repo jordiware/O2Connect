@@ -5,7 +5,6 @@ using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.DataHandlers.TokenGrantHandlers;
 using O2Connect.Api.DataValidators;
-using O2Connect.Api.DataValidators.Crypto;
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Models.Options;
 using O2Connect.Api.Repositories;
@@ -36,10 +35,6 @@ builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
 builder.Services.AddSingleton<ISigningKeyProvider, RsaSigningKeyProvider>();
 builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
 
-builder.Services.AddTransient<IPkceValidator, PlainPkceValidator>();
-builder.Services.AddTransient<IPkceValidator, S256PkceValidator>();
-builder.Services.AddSingleton<IPkceValidatorResolver, PkceValidatorResolver>();
-
 builder.Services.AddTransient<ITokenGrantHandler, AuthorizationCodeGrantHandler>();
 builder.Services.AddTransient<ITokenGrantHandler, ClientCredentialsGrantHandler>();
 builder.Services.AddTransient<ITokenGrantHandler, RefreshTokenGrantHandler>();
@@ -61,7 +56,6 @@ builder.Services.AddScoped<ITokenInputValidator, TokenInputValidator>();
 
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
