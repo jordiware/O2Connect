@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.DataFactories;
+﻿using O2Connect.Api.Crypto;
+using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
@@ -6,7 +7,6 @@ using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
-using System.Security.Cryptography;
 
 namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
 
@@ -14,15 +14,18 @@ public class RefreshTokenGrantHandler : ITokenGrantHandler
 {
     private readonly ITokenFactory _tokenFactory;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly ISecureTokenGenerator _secureTokenGenerator;
 
     public GrantType GrantType => GrantType.RefreshToken;
 
     public RefreshTokenGrantHandler(
         ITokenFactory tokenFactory,
-        IRefreshTokenRepository refreshTokenRepository)
+        IRefreshTokenRepository refreshTokenRepository,
+        ISecureTokenGenerator secureTokenGenerator)
     {
         _tokenFactory = tokenFactory;
         _refreshTokenRepository = refreshTokenRepository;
+        _secureTokenGenerator = secureTokenGenerator;
     }
 
     public async Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
@@ -64,7 +67,7 @@ public class RefreshTokenGrantHandler : ITokenGrantHandler
 
         var newRefreshToken = new RefreshToken
         {
-            Token = GenerateSecureToken(),
+            Token = _secureTokenGenerator.GenerateSecureToken(),
             ClientId = storedToken.ClientId,
             Subject = storedToken.Subject,
             Scopes = context.Scopes,
@@ -85,21 +88,5 @@ public class RefreshTokenGrantHandler : ITokenGrantHandler
             Scopes = context.Scopes,
             RefreshToken = newRefreshToken.Token
         }, ct);
-    }
-
-    private static string GenerateSecureToken(int numBytes = 64)
-    {
-        Span<byte> bytes = numBytes <= 256
-            ? stackalloc byte[numBytes]
-            : new byte[numBytes];
-
-        RandomNumberGenerator.Fill(bytes);
-
-        var token = Convert.ToBase64String(bytes)
-                           .Replace("+", "-")
-                           .Replace("/", "_")
-                           .TrimEnd('=');
-
-        return $"rt_{token}";
     }
 }

@@ -31,6 +31,7 @@ builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
 builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
 
+builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
 builder.Services.AddSingleton<ISigningKeyProvider, RsaSigningKeyProvider>();
 builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();

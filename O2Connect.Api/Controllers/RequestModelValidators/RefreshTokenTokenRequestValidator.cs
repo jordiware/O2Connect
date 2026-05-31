@@ -1,22 +1,26 @@
-﻿using O2Connect.Api.Exceptions;
+﻿using O2Connect.Api.Crypto;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
-using System.Security.Cryptography;
 
 namespace O2Connect.Api.Controllers.RequestModelValidators;
 
 public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
 {
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly ISecureTokenGenerator _secureTokenGenerator;
 
     public GrantType GrantType => GrantType.RefreshToken;
 
-    public RefreshTokenTokenRequestValidator(IRefreshTokenRepository store)
+    public RefreshTokenTokenRequestValidator(
+        IRefreshTokenRepository store,
+        ISecureTokenGenerator secureTokenGenerator)
     {
         _refreshTokenRepository = store;
+        _secureTokenGenerator = secureTokenGenerator;
     }
 
     public async Task<TokenRequestContext> ValidateAsync(TokenRequest request,
@@ -59,7 +63,7 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
 
         var newToken = new RefreshToken
         {
-            Token = GenerateSecureToken(),
+            Token = _secureTokenGenerator.GenerateSecureToken(),
             ClientId = token.ClientId,
             Subject = token.Subject,
             Scopes = scopes,
@@ -82,21 +86,5 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
         };
 
         return context;
-    }
-
-    private static string GenerateSecureToken(int numBytes = 64)
-    {
-        Span<byte> bytes = numBytes <= 256
-            ? stackalloc byte[numBytes]
-            : new byte[numBytes];
-
-        RandomNumberGenerator.Fill(bytes);
-
-        var token = Convert.ToBase64String(bytes)
-                           .Replace("+", "-")
-                           .Replace("/", "_")
-                           .TrimEnd('=');
-
-        return $"rt_{token}";
     }
 }

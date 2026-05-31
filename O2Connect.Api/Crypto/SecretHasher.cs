@@ -2,6 +2,12 @@
 
 namespace O2Connect.Api.Crypto;
 
+public interface ISecretHasher
+{
+    string Hash(string secret);
+    bool Verify(string secret, string hashedSecret);
+}
+
 public class Pbkdf2SecretHasher : ISecretHasher
 {
     private const int SaltSize = 16;   // 128-bit
