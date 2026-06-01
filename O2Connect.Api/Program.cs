@@ -19,6 +19,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 });
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection("OAuth"));
+builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
 
 builder.Services.AddMemoryCache(options =>
 {

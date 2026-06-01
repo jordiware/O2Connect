@@ -1,8 +1,16 @@
-﻿namespace O2Connect.Api.Models.Options;
+﻿using O2Connect.Api.Helpers;
 
-public class JwtOptions
+namespace O2Connect.Api.Models.Options;
+
+public sealed record JwtOptions
 {
-    public required string Issuer { get; init; } = default!;
+    private string issuer = default!;
     public string ActiveKeyId { get; set; } = default!;
     public int AccessTokenLifetimeSeconds { get; init; } = 3600;
+
+    public string Issuer
+    {
+        get => issuer;
+        init => issuer = IssuerNormalizer.Normalize(value);
+    }
 }
