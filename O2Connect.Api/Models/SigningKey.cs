@@ -30,8 +30,8 @@ public sealed class SigningKey
             use = "sig",
             kid = KeyId,
             alg = Credentials.Algorithm,
-            n = Base64UrlEncode(modulus),
-            e = Base64UrlEncode(exponent)
+            n = Base64UrlEncoder.Encode(modulus),
+            e = Base64UrlEncoder.Encode(exponent)
         };
     }
 
@@ -44,13 +44,5 @@ public sealed class SigningKey
             throw new InvalidOperationException("Active RSA key is not valid or exportable.");
 
         return (parameters.Modulus, parameters.Exponent);
-    }
-
-    private static string Base64UrlEncode(byte[] input)
-    {
-        return Convert.ToBase64String(input)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
     }
 }

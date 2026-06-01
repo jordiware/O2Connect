@@ -2,6 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Options;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 
 namespace O2Connect.Api.Crypto;
@@ -9,7 +10,7 @@ namespace O2Connect.Api.Crypto;
 public interface ISigningKeyProvider
 {
     IReadOnlyCollection<SigningKey> GetSigningKeys();
-    SigningKey GetActiveKey();
+    bool TryGetActiveKey([NotNullWhen(true)] out SigningKey? activeKey);
 }
 
 public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
@@ -18,6 +19,7 @@ public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
 
     private readonly object _lock = new();
     private readonly Dictionary<string, SigningKey> _keys = new();
+    private readonly HashSet<RSA> _ownedRsa = new();
 
     public RsaSigningKeyProvider(IOptions<JwtOptions> options)
     {
@@ -30,37 +32,37 @@ public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
 
         rsa.ImportFromPem(File.ReadAllText("private_key.pem"));
 
-        var key = new RsaSecurityKey(rsa)
-        {
-            KeyId = _options.ActiveKeyId
-        };
-
-        var signingKey = new SigningKey
-        {
-            KeyId = _options.ActiveKeyId,
-            Key = key,
-            Credentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256),
-            Status = SigningKeyStatus.Active
-        };
-
-        _keys.Add(signingKey.KeyId, signingKey);
+        AddKey(rsa, _options.ActiveKeyId);
+        SetActiveKey(_options.ActiveKeyId);
     }
 
     public IReadOnlyCollection<SigningKey> GetSigningKeys()
     {
         lock (_lock)
         {
-            return _keys.Values.ToList();
+            return _keys.Values.Where(k => k.Status != SigningKeyStatus.Expired).ToList();
         }
     }
 
-    public SigningKey GetActiveKey()
+    public bool TryGetActiveKey([NotNullWhen(true)] out SigningKey? activeKey)
     {
         lock (_lock)
         {
-            return _keys.Values.Single(v => v.Status == SigningKeyStatus.Active);
-        }
+            activeKey = null;
 
+            foreach (var key in _keys.Values)
+            {
+                if (key.Status == SigningKeyStatus.Active)
+                {
+                    if (activeKey is not null)
+                        throw new InvalidOperationException("Exactly one active key required.");
+
+                    activeKey = key;
+                }
+            }
+
+            return activeKey is not null;
+        }
     }
 
     public void AddKey(RSA rsa, string keyId)
@@ -78,6 +80,8 @@ public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
 
         lock (_lock)
         {
+            _ownedRsa.Add(rsa);
+
             var newKey = new SigningKey
             {
                 KeyId = keyId,
@@ -101,20 +105,24 @@ public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
             if (_keys[newActiveKeyId].Status == SigningKeyStatus.Active)
                 return;
 
+            var updated = new Dictionary<string, SigningKey>();
+
             foreach (var (key, value) in _keys)
             {
                 if (key == newActiveKeyId)
-                {
-                    _keys[key] = value.Clone(SigningKeyStatus.Active);
-                }
+                    updated[key] = value.Clone(SigningKeyStatus.Active);
                 else if (value.Status == SigningKeyStatus.Active)
-                {
-                    _keys[key] = value.Clone(SigningKeyStatus.Retired);
-                }
+                    updated[key] = value.Clone(SigningKeyStatus.Retired);
+                else
+                    updated[key] = value;
             }
 
-            if (_keys.Values.Count(k => k.Status == SigningKeyStatus.Active) != 1)
+            if (updated.Values.Count(k => k.Status == SigningKeyStatus.Active) != 1)
                 throw new InvalidOperationException("Exactly one active key required.");
+
+            _keys.Clear();
+            foreach (var kv in updated)
+                _keys.Add(kv.Key, kv.Value);
         }
     }
 
@@ -122,9 +130,9 @@ public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
     {
         lock (_lock)
         {
-            foreach (var value in _keys.Values)
+            foreach (var rsa in _ownedRsa)
             {
-                value.Key.Rsa.Dispose();
+                rsa.Dispose();
             }
         }
     }
