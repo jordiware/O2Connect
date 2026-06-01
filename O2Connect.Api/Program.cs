@@ -57,6 +57,7 @@ builder.Services.AddScoped<ITokenInputValidator, TokenInputValidator>();
 
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
