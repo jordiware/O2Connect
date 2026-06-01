@@ -16,17 +16,23 @@ public interface IAuthorizationService
 
 public class AuthorizationService : IAuthorizationService
 {
+    public const string LoginUri = "/account/login";
+    public const string AuthorizeResumeUri = "/connect/authorize/resume";
+
     private readonly IClientRepository _clientRepository;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
+    private readonly IAuthorizationSessionRepository _authorizationSessionRepository;
     private readonly ISecureTokenGenerator _secureTokenGenerator;
 
     public AuthorizationService(
         IClientRepository clientRepository,
         IAuthorizationCodeRepository authorizationCodeRepository,
+        IAuthorizationSessionRepository authorizationSessionRepository,
         ISecureTokenGenerator secureTokenGenerator)
     {
         _clientRepository = clientRepository;
         _authorizationCodeRepository = authorizationCodeRepository;
+        _authorizationSessionRepository = authorizationSessionRepository;
         _secureTokenGenerator = secureTokenGenerator;
     }
 
@@ -56,7 +62,28 @@ public class AuthorizationService : IAuthorizationService
             return Error("invalid_scope", "Client is not allowed to request these scopes", request.State);
 
         if (user?.Identity?.IsAuthenticated != true)
-            return Error("login_required", "User is not authenticated", request.State);
+        {
+            var sessionId = _secureTokenGenerator.GenerateSecureToken();
+
+            var session = new AuthorizationSession
+            {
+                Id = sessionId,
+                Request = request,
+                CreatedAt = DateTimeOffset.UtcNow,
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10)
+            };
+
+            await _authorizationSessionRepository.StoreAsync(session, ct);
+
+            var loginRedirect = $"{LoginUri}?returnUrl={AuthorizeResumeUri}/{sessionId}";
+
+            return new AuthorizationResult
+            {
+                Success = false,
+                RedirectTo = loginRedirect,
+                Error = "login_required"
+            };
+        }
 
         var userId = user.FindFirst("sub")?.Value;
 
