@@ -23,7 +23,7 @@ public class DiscoveryController : ControllerBase
     [HttpGet("jwks.json")]
     public IActionResult Jwks()
     {
-        var jwks = _signingKeyProvider.GetSigningKeys()
+        var jwks = _signingKeyProvider.GetValidSigningKeys()
                                       .Select(k => k.ToJwk())
                                       .ToArray();
 

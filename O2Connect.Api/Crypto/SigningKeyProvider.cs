@@ -9,7 +9,7 @@ namespace O2Connect.Api.Crypto;
 
 public interface ISigningKeyProvider
 {
-    IReadOnlyCollection<SigningKey> GetSigningKeys();
+    IReadOnlyCollection<SigningKey> GetValidSigningKeys();
     bool TryGetActiveKey([NotNullWhen(true)] out SigningKey? activeKey);
 }
 
@@ -36,7 +36,7 @@ public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
         SetActiveKey(_options.ActiveKeyId);
     }
 
-    public IReadOnlyCollection<SigningKey> GetSigningKeys()
+    public IReadOnlyCollection<SigningKey> GetValidSigningKeys()
     {
         lock (_lock)
         {
@@ -48,19 +48,7 @@ public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
     {
         lock (_lock)
         {
-            activeKey = null;
-
-            foreach (var key in _keys.Values)
-            {
-                if (key.Status == SigningKeyStatus.Active)
-                {
-                    if (activeKey is not null)
-                        throw new InvalidOperationException("Exactly one active key required.");
-
-                    activeKey = key;
-                }
-            }
-
+            activeKey = _keys.Values.SingleOrDefault(k => k.Status == SigningKeyStatus.Active);
             return activeKey is not null;
         }
     }
