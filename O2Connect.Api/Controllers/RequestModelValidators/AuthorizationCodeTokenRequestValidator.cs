@@ -81,7 +81,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
 
             var expected = TransformVerifier(request.CodeVerifier, pkceMethod);
 
-            if (!CryptographicOperations.FixedTimeEquals(expected, code.CodeChallenge))
+            if (!CryptographicOperations.FixedTimeEquals(expected, Encoding.ASCII.GetBytes(code.CodeChallenge)))
                 throw OAuthException.FromInvalidGrant();
         }
 

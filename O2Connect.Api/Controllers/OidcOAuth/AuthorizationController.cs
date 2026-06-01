@@ -18,7 +18,7 @@ public class AuthorizationController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest request)
     {
-        var result = await _authorizationService.HandleAsync(request, User);
+        var result = await _authorizationService.HandleAsync(request, User, HttpContext.RequestAborted);
 
         if (!result.IsRedirect)
         {

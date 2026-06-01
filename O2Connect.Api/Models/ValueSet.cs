@@ -13,7 +13,7 @@ public class ValueSet
         _values = new HashSet<string>(values, StringComparer.Ordinal);
     }
 
-    public bool Contains(string value) => _values.Contains(value);
+    public bool Contains(string value) => _values.Contains(value, StringComparer.Ordinal);
 
     public bool IsSubsetOf(IEnumerable<string> other) =>
         _values.IsSubsetOf(other);

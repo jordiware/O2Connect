@@ -7,6 +7,7 @@ public sealed record Client
     public string? OwnerId { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? ClientSecret { get; set; }
+    public bool IsActive { get; set; }
     public bool RequiresSecret { get; set; }
     public bool RequiresPkce { get; set; } = true;
     public bool RequiresConsent { get; set; } = true;
