@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Crypto;
-using O2Connect.Api.Models;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -24,13 +23,11 @@ public class DiscoveryController : ControllerBase
     [HttpGet("jwks.json")]
     public IActionResult Jwks()
     {
-        var keys = _signingKeyProvider.GetSigningKeys();
+        var jwks = _signingKeyProvider.GetSigningKeys()
+                                      .Select(k => k.ToJwk())
+                                      .ToArray();
 
-        var jwks = keys.Where(k => k.Status != SigningKeyStatus.Expired)
-                       .Select(k => k.ToJwk())
-                       .ToArray();
-
-        Response.Headers.CacheControl = "public,max-age=3600";
+        Response.Headers.CacheControl = "public,max-age=300,stale-while-revalidate=3600";
 
         return Ok(new { keys = jwks });
     }
