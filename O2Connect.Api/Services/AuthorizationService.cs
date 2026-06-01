@@ -80,7 +80,8 @@ public class AuthorizationService : IAuthorizationService
             return new AuthorizationResult
             {
                 Success = false,
-                RedirectTo = loginRedirect,
+                IsRedirect = true,
+                RedirectUri = loginRedirect,
                 Error = "login_required"
             };
         }
