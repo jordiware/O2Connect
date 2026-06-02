@@ -2,29 +2,29 @@
 
 namespace O2Connect.Dto.Requests;
 
-public class AuthorizationRequest
+public sealed record AuthorizationRequest
 {
     [FromQuery(Name = "response_type")]
-    public string ResponseType { get; set; } = default!;
+    public string ResponseType { get; init; } = default!;
 
     [FromQuery(Name = "client_id")]
-    public string ClientId { get; set; } = default!;
+    public string ClientId { get; init; } = default!;
 
     [FromQuery(Name = "redirect_uri")]
-    public string RedirectUri { get; set; } = default!;
+    public string RedirectUri { get; init; } = default!;
 
     [FromQuery(Name = "scope")]
-    public string? Scope { get; set; }
+    public string? Scope { get; init; }
 
     [FromQuery(Name = "state")]
-    public string? State { get; set; }
+    public string? State { get; init; }
 
     [FromQuery(Name = "nonce")]
-    public string? Nonce { get; set; }
+    public string? Nonce { get; init; }
 
     [FromQuery(Name = "code_challenge")]
-    public string? CodeChallenge { get; set; }
+    public string? CodeChallenge { get; init; }
 
     [FromQuery(Name = "code_challenge_method")]
-    public string? CodeChallengeMethod { get; set; }
+    public string? CodeChallengeMethod { get; init; }
 }
