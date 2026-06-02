@@ -4,7 +4,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("account")]
-public class AuthController : ControllerBase
+public class AccountController : ControllerBase
 {
     [HttpPost("login")]
     public IActionResult Login()
