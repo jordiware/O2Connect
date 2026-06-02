@@ -54,20 +54,20 @@ public class AuthorizationService : IAuthorizationService
 
         if (session.Stage != AuthorizationStage.ConsentRequired
             && session.Stage != AuthorizationStage.Ready)
-            return Error("invalid_request", "Invalid session state", null);
+            return Error("invalid_request", "Invalid session state", session.Request.State, session.Request.RedirectUri);
 
         if (session.ExpiresAt <= DateTimeOffset.UtcNow)
-            return Error("invalid_request", "Session expired", null);
+            return Error("invalid_request", "Session expired", session.Request.State, session.Request.RedirectUri);
 
         var userId = user.FindFirst("sub")?.Value;
 
         if (session.UserId is null || session.UserId != userId)
-            return Error("invalid_request", "Session does not belong to user", null);
+            return Error("invalid_request", "Session does not belong to user", session.Request.State, session.Request.RedirectUri);
 
         var consumedSession = await _authorizationSessionRepository.TryConsumeAsync(sessionId, ct);
 
         if (consumedSession == null)
-            return Error("invalid_request", "Session already used or invalid", null);
+            return Error("invalid_request", "Session already used or invalid", session.Request.State, session.Request.RedirectUri);
 
         if (consumedSession.Stage == AuthorizationStage.Ready)
             return await IssueCodeAsync(consumedSession, ct);
@@ -79,17 +79,6 @@ public class AuthorizationService : IAuthorizationService
                                                        ClaimsPrincipal user,
                                                        CancellationToken ct)
     {
-        var sessionId = _secureTokenGenerator.GenerateSecureToken();
-
-        var session = new AuthorizationSession
-        {
-            Id = sessionId,
-            Request = request,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
-            Stage = AuthorizationStage.Created
-        };
-
         var validationError = ValidateRequest(request);
 
         if (validationError != null)
@@ -110,7 +99,19 @@ public class AuthorizationService : IAuthorizationService
                                                       UriComponents.AbsoluteUri,
                                                       UriFormat.Unescaped,
                                                       StringComparison.Ordinal) == 0))
-            return Error("invalid_request", "Client is not allowed to request these scopes", request.State);
+            return Error("invalid_request", "Invalid redirect_uri", request.State);
+
+        var sessionId = _secureTokenGenerator.GenerateSecureToken();
+
+        var session = new AuthorizationSession
+        {
+            Id = sessionId,
+            Request = request,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+            Stage = AuthorizationStage.Created,
+            RequestedScopes = requestScopes.ToImmutableHashSet()
+        };
 
         if (user?.Identity?.IsAuthenticated != true)
         {
@@ -135,12 +136,11 @@ public class AuthorizationService : IAuthorizationService
         var userId = user.FindFirst("sub")?.Value;
 
         if (string.IsNullOrWhiteSpace(userId))
-            return Error("invalid_user", "User subject missing", request.State);
+            return Error("invalid_user", "User subject missing", request.State, request.RedirectUri);
 
         session = session with
         {
             UserId = userId,
-            RequestedScopes = requestScopes.ToImmutableHashSet()
         };
 
         var consent = await _consentService.EvaluateAsync(userId, client.ClientId, requestScopes, ct);
@@ -166,7 +166,11 @@ public class AuthorizationService : IAuthorizationService
         session = session with { Stage = AuthorizationStage.Completed };
         await _authorizationSessionRepository.StoreAsync(session, ct);
 
-        return await IssueCodeAsync(session, ct);
+        var result = await IssueCodeAsync(session, ct);
+
+        await _authorizationSessionRepository.DeleteAsync(session.Id, ct);
+
+        return result;
     }
 
     private async Task<AuthorizationResult> IssueCodeAsync(AuthorizationSession session, CancellationToken ct)
@@ -200,17 +204,17 @@ public class AuthorizationService : IAuthorizationService
 
     private AuthorizationResult? ValidateRequest(AuthorizationRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.State))
+            return Error("invalid_request", "state is required", null);
+
+        if (string.IsNullOrWhiteSpace(request.RedirectUri))
+            return Error("invalid_request", "redirect_uri is required", request.State);
+
         if (request.ResponseType != "code")
             return Error("unsupported_response_type", "Only 'code' is supported", request.State);
 
         if (string.IsNullOrWhiteSpace(request.ClientId))
             return Error("invalid_request", "client_id is required", request.State);
-
-        if (string.IsNullOrWhiteSpace(request.RedirectUri))
-            return Error("invalid_request", "redirect_uri is required", request.State);
-
-        if (string.IsNullOrWhiteSpace(request.State))
-            return Error("invalid_request", "state is required", request.State);
 
         if (string.IsNullOrWhiteSpace(request.Scope))
             return Error("invalid_scope", "scope must include 'openid'", request.State);

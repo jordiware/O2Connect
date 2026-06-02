@@ -54,9 +54,6 @@ builder.Services.AddScoped<IClientAuthenticationHandler, PrivateKeyJwtHandler>()
 
 builder.Services.AddTransient<ISecretHasher, Pbkdf2SecretHasher>();
 
-builder.Services.AddScoped<IScopeValidator, ScopeValidator>();
-builder.Services.AddScoped<ITokenInputValidator, TokenInputValidator>();
-
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
