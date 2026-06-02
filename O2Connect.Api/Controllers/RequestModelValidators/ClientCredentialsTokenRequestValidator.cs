@@ -3,6 +3,7 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.Store;
 using O2Connect.Dto.Requests;
+using System.Collections.Immutable;
 
 namespace O2Connect.Api.Controllers.RequestModelValidators;
 
@@ -20,7 +21,7 @@ public class ClientCredentialsTokenRequestValidator : ITokenRequestValidator
         if (!client.AllowedGrantTypes.Contains(GrantType.Value, StringComparer.Ordinal))
             throw OAuthException.FromUnauthorizedClient();
 
-        var requestedScopes = ValueSet.FromDataString(request.Scope, ' ');
+        var requestedScopes = ValueSet.FromDataString(request.Scope, ' ').Values.ToImmutableHashSet();
 
         if (requestedScopes.IsEmpty)
             throw OAuthException.FromInvalidScope();

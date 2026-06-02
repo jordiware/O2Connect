@@ -1,4 +1,6 @@
-﻿namespace O2Connect.Dto.Responses;
+﻿using System.Collections.Immutable;
+
+namespace O2Connect.Dto.Responses;
 
 public class TokenResponse
 {
@@ -7,5 +9,5 @@ public class TokenResponse
     public int ExpiresIn { get; set; }
     public string? RefreshToken { get; set; }
     public string? IdToken { get; set; }
-    public IReadOnlyCollection<string>? Scope { get; init; }
+    public ImmutableHashSet<string>? Scope { get; init; }
 }

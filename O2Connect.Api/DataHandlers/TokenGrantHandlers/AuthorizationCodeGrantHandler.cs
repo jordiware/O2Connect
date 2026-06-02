@@ -43,8 +43,8 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
         if (!contextRedirectUri.Equals(storedRedirectUri))
             throw OAuthException.FromInvalidGrant();
 
-        var contextScopes = context.Scopes.Values.ToHashSet();
-        var grantedScopes = storedCode.Scopes.Values.ToHashSet();
+        var contextScopes = context.Scopes;
+        var grantedScopes = storedCode.Scopes;
 
         if (!contextScopes.All(grantedScopes.Contains))
             throw OAuthException.FromInvalidScope();

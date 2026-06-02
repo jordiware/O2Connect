@@ -27,7 +27,7 @@ public class ClientCredentialsGrantHandler : ITokenGrantHandler
         if (!context.Client.AllowedGrantTypes.Contains(GrantType.Value))
             throw OAuthException.FromUnauthorizedClient();
 
-        var requestedScopes = context.Scopes.Values.ToHashSet();
+        var requestedScopes = context.Scopes;
         var allowedScopes = context.Client.AllowedScopes.ToHashSet();
 
         if (!requestedScopes.All(allowedScopes.Contains))

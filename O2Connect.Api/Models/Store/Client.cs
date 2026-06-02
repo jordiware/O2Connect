@@ -1,4 +1,6 @@
-﻿namespace O2Connect.Api.Models.Store;
+﻿using System.Collections.Immutable;
+
+namespace O2Connect.Api.Models.Store;
 
 public sealed record Client
 {
@@ -11,9 +13,9 @@ public sealed record Client
     public bool RequiresSecret { get; set; }
     public bool RequiresPkce { get; set; } = true;
     public bool RequiresConsent { get; set; } = true;
-    public List<string> RedirectUris { get; set; } = new();
-    public List<string> AllowedGrantTypes { get; set; } = new();
-    public List<string> AllowedScopes { get; set; } = new();
-    public List<string> AllowedAuthenticationMethods { get; set; } = new();
+    public ImmutableHashSet<string> RedirectUris { get; set; } = [];
+    public ImmutableHashSet<string> AllowedGrantTypes { get; set; } = [];
+    public ImmutableHashSet<string> AllowedScopes { get; set; } = [];
+    public ImmutableHashSet<string> AllowedAuthenticationMethods { get; set; } = [];
     public string? JsonWebKeysUri { get; set; }
 }

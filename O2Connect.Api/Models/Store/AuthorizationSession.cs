@@ -1,4 +1,5 @@
 ﻿using O2Connect.Dto.Requests;
+using System.Collections.Immutable;
 
 namespace O2Connect.Api.Models.Store;
 
@@ -9,8 +10,8 @@ public sealed record AuthorizationSession
     public string? ClientDisplayName { get; init; }
     public string? UserId { get; init; }
     public string? UserDisplayName { get; init; }
-    public HashSet<string> RequestedScopes { get; init; } = new();
-    public HashSet<string>? MissingScopes { get; init; }
+    public ImmutableHashSet<string> RequestedScopes { get; init; } = [];
+    public ImmutableHashSet<string> MissingScopes { get; init; } = [];
     public AuthorizationStage Stage { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset ExpiresAt { get; init; }
@@ -18,7 +19,10 @@ public sealed record AuthorizationSession
 
 public enum AuthorizationStage
 {
+    Created,
     LoginRequired,
     ConsentRequired,
-    Ready
+    Ready,
+    Completed,
+    Cancelled
 }

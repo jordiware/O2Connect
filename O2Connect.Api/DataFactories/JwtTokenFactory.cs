@@ -52,7 +52,7 @@ public class JwtTokenFactory : ITokenFactory
         {
             AccessToken = token,
             ExpiresIn = _options.AccessTokenLifetimeSeconds,
-            Scope = request.Scopes.Values
+            Scope = request.Scopes
         });
 
     }
@@ -62,7 +62,7 @@ public class JwtTokenFactory : ITokenFactory
         yield return new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString());
         yield return new Claim(JwtRegisteredClaimNames.Sub, request.Subject);
         yield return new Claim("client_id", request.Client.ClientId);
-        yield return new Claim("scope", string.Join(" ", request.Scopes.Values));
+        yield return new Claim("scope", string.Join(" ", request.Scopes));
         yield return new Claim(JwtRegisteredClaimNames.Iat,
                                now.ToUnixTimeSeconds().ToString(),
                                ClaimValueTypes.Integer64);

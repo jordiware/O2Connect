@@ -17,9 +17,9 @@ public class InMemoryClientRepository : IClientRepository
         {
             ClientId = "test-client",
             ClientSecret = "secret",
-            RedirectUris = new List<string> { "https://example.com/callback" },
-            AllowedGrantTypes = new List<string> { "authorization_code", "client_credentials" },
-            AllowedScopes = new List<string> { "openid", "profile", "api" },
+            RedirectUris = ["https://example.com/callback"] ,
+            AllowedGrantTypes = ["authorization_code", "client_credentials"],
+            AllowedScopes = ["openid", "profile", "api"],
             RequiresSecret = false
         }
     };

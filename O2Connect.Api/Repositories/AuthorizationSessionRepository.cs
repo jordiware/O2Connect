@@ -8,6 +8,7 @@ public interface IAuthorizationSessionRepository
     Task<bool> StoreAsync(AuthorizationSession session, CancellationToken ct);
     Task<AuthorizationSession?> GetAsync(string id, CancellationToken ct);
     Task DeleteAsync(string id, CancellationToken ct);
+    Task<AuthorizationSession?> TryConsumeAsync(string id, CancellationToken ct);
 }
 
 public class InMemoryAuthorizationSessionRepository : IAuthorizationSessionRepository
@@ -36,5 +37,14 @@ public class InMemoryAuthorizationSessionRepository : IAuthorizationSessionRepos
                                                      (key, oldSession) => oldSession = session);
 
         return Task.FromResult(session == newStoredSession);
+    }
+
+    public Task<AuthorizationSession?> TryConsumeAsync(string id, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        _sessions.TryRemove(id, out var session);
+
+        return Task.FromResult(session);
     }
 }

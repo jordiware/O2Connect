@@ -59,8 +59,8 @@ public class RefreshTokenGrantHandler : ITokenGrantHandler
         if (storedToken.ClientId != context.Client.ClientId)
             throw OAuthException.FromInvalidGrant();
 
-        var originalScopes = storedToken.Scopes.Values.ToHashSet();
-        var requestedScopes = context.Scopes.Values.ToHashSet();
+        var originalScopes = storedToken.Scopes;
+        var requestedScopes = context.Scopes;
 
         if (!requestedScopes.All(originalScopes.Contains))
             throw OAuthException.FromInvalidScope();

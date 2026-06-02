@@ -3,6 +3,7 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
+using System.Collections.Immutable;
 using System.Security.Claims;
 
 namespace O2Connect.Api.Services;
@@ -47,30 +48,50 @@ public class AuthorizationService : IAuthorizationService
                                                           CancellationToken ct)
     {
         var session = await _authorizationSessionRepository.GetAsync(sessionId, ct);
-        
+
         if (session == null)
-        {
-            var loginRedirect = $"{LoginUri}?returnUrl={AuthorizeResumeUri}/{sessionId}";
+            return Error("invalid_request", "Session already used or invalid", null);
 
-            return new AuthorizationResult
-            {
-                Success = false,
-                IsRedirect = true,
-                RedirectUri = loginRedirect,
-                Error = "login_required"
-            };
-        }
+        if (session.Stage != AuthorizationStage.ConsentRequired
+            && session.Stage != AuthorizationStage.Ready)
+            return Error("invalid_request", "Invalid session state", null);
 
-        var result = await HandleAsync(session.Request, user, ct);
-        await _authorizationSessionRepository.DeleteAsync(sessionId, ct);
-        return result;
+        if (session.ExpiresAt <= DateTimeOffset.UtcNow)
+            return Error("invalid_request", "Session expired", null);
+
+        var userId = user.FindFirst("sub")?.Value;
+
+        if (session.UserId is null || session.UserId != userId)
+            return Error("invalid_request", "Session does not belong to user", null);
+
+        var consumedSession = await _authorizationSessionRepository.TryConsumeAsync(sessionId, ct);
+
+        if (consumedSession == null)
+            return Error("invalid_request", "Session already used or invalid", null);
+
+        if (consumedSession.Stage == AuthorizationStage.Ready)
+            return await IssueCodeAsync(consumedSession, ct);
+
+        return await HandleAsync(session.Request, user, ct);
     }
 
     public async Task<AuthorizationResult> HandleAsync(AuthorizationRequest request,
                                                        ClaimsPrincipal user,
                                                        CancellationToken ct)
     {
+        var sessionId = _secureTokenGenerator.GenerateSecureToken();
+
+        var session = new AuthorizationSession
+        {
+            Id = sessionId,
+            Request = request,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+            Stage = AuthorizationStage.Created
+        };
+
         var validationError = ValidateRequest(request);
+
         if (validationError != null)
             return validationError;
 
@@ -79,34 +100,28 @@ public class AuthorizationService : IAuthorizationService
         if (client == null || !client.IsActive)
             return Error("invalid_client", "Client not found or inactive", request.State);
 
-        var requestScopes = ValueSet.FromDataString(request.Scope, ' ');
+        var requestScopes = ValueSet.FromDataString(request.Scope, ' ').Values.ToHashSet();
         if (!requestScopes.IsSubsetOf(client.AllowedScopes))
-            return Error("invalid_client", "Scopes mismatch", request.State);
+            return Error("invalid_scope", "Scopes mismatch", request.State);
 
-        var requestUri = new Uri(request.RedirectUri);
-        if (!client.RedirectUris.Any(u =>
-        {
-            var uri = new Uri(u);
-            return uri.GetLeftPart(UriPartial.Path) == requestUri.GetLeftPart(UriPartial.Path);
-        }))
-            return Error("invalid_scope", "Client is not allowed to request these scopes", request.State);
+        if (!client.RedirectUris.Select(u => new Uri(u))
+                                .Any(u => Uri.Compare(u,
+                                                      new Uri(request.RedirectUri),
+                                                      UriComponents.AbsoluteUri,
+                                                      UriFormat.Unescaped,
+                                                      StringComparison.Ordinal) == 0))
+            return Error("invalid_request", "Client is not allowed to request these scopes", request.State);
 
         if (user?.Identity?.IsAuthenticated != true)
         {
-            var sessionId = _secureTokenGenerator.GenerateSecureToken();
-
-            var session = new AuthorizationSession
+            var loginSession = session with
             {
-                Id = sessionId,
-                Request = request,
-                CreatedAt = DateTimeOffset.UtcNow,
-                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
                 Stage = AuthorizationStage.LoginRequired
             };
+            await _authorizationSessionRepository.StoreAsync(loginSession, ct);
 
-            await _authorizationSessionRepository.StoreAsync(session, ct);
-
-            var loginRedirect = $"{LoginUri}?returnUrl={AuthorizeResumeUri}/{sessionId}";
+            var returnUrl = Uri.EscapeDataString($"{AuthorizeResumeUri}/{sessionId}");
+            var loginRedirect = $"{LoginUri}?returnUrl={returnUrl}";
 
             return new AuthorizationResult
             {
@@ -122,11 +137,23 @@ public class AuthorizationService : IAuthorizationService
         if (string.IsNullOrWhiteSpace(userId))
             return Error("invalid_user", "User subject missing", request.State);
 
-        var consent = await _consentService.EvaluateAsync(userId, client.ClientId, requestScopes.Values.ToHashSet(), ct);
+        session = session with
+        {
+            UserId = userId,
+            RequestedScopes = requestScopes.ToImmutableHashSet()
+        };
+
+        var consent = await _consentService.EvaluateAsync(userId, client.ClientId, requestScopes, ct);
 
         if (consent.RequiresConsent)
         {
-            var sessionId = await StoreConsentSession(request, userId, consent.MissingScopes, ct);
+            var consentSession = session with
+            {
+                Stage = AuthorizationStage.ConsentRequired,
+                MissingScopes = consent.MissingScopes.ToImmutableHashSet()
+            };
+
+            await _authorizationSessionRepository.StoreAsync(consentSession, ct);
 
             return new AuthorizationResult
             {
@@ -136,15 +163,24 @@ public class AuthorizationService : IAuthorizationService
             };
         }
 
+        session = session with { Stage = AuthorizationStage.Completed };
+        await _authorizationSessionRepository.StoreAsync(session, ct);
+
+        return await IssueCodeAsync(session, ct);
+    }
+
+    private async Task<AuthorizationResult> IssueCodeAsync(AuthorizationSession session, CancellationToken ct)
+    {
         var code = _secureTokenGenerator.GenerateSecureToken();
+        var request = session.Request;
 
         var authCode = new AuthorizationCode
         {
             Code = code,
             ClientId = request.ClientId,
-            UserId = userId,
+            UserId = session.UserId!,
             RedirectUri = request.RedirectUri,
-            Scopes = requestScopes,
+            Scopes = session.RequestedScopes.ToImmutableHashSet(),
             CodeChallenge = request.CodeChallenge!,
             CodeChallengeMethod = request.CodeChallengeMethod,
             CreatedAt = DateTimeOffset.UtcNow,
@@ -193,40 +229,16 @@ public class AuthorizationService : IAuthorizationService
         return null;
     }
 
-    private async Task<string> StoreConsentSession(AuthorizationRequest request,
-                                                   string userId,
-                                                   HashSet<string> missingScopes,
-                                                   CancellationToken ct)
-    {
-        var sessionId = _secureTokenGenerator.GenerateSecureToken();
-
-        var requestedScopes = ValueSet.FromDataString(request.Scope, ' ');
-
-        var session = new AuthorizationSession
-        {
-            Id = sessionId,
-            Request = request,
-            UserId = userId,
-            RequestedScopes = requestedScopes.Values.ToHashSet(),
-            MissingScopes = missingScopes,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
-            Stage = AuthorizationStage.ConsentRequired
-        };
-
-        await _authorizationSessionRepository.StoreAsync(session, ct);
-
-        return sessionId;
-    }
-
-    private AuthorizationResult Error(string code, string description, string? state)
+    private AuthorizationResult Error(string code, string description, string? state, string? redirectUri = null)
     {
         return new AuthorizationResult
         {
             Success = false,
             Error = code,
             ErrorDescription = description,
-            State = state
+            State = state,
+            IsRedirect = !string.IsNullOrWhiteSpace(redirectUri),
+            RedirectUri = redirectUri
         };
     }
 }
