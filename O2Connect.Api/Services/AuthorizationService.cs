@@ -15,7 +15,8 @@ public interface IAuthorizationService
                                              CancellationToken ct);
     Task<AuthorizationResult> HandleAsync(AuthorizationRequest request,
                                           ClaimsPrincipal user,
-                                          CancellationToken ct);
+                                          CancellationToken ct,
+                                          AuthorizationSession? previousSession = null);
 }
 
 public class AuthorizationService : IAuthorizationService
@@ -72,17 +73,21 @@ public class AuthorizationService : IAuthorizationService
         if (consumedSession.Stage == AuthorizationStage.Ready)
             return await IssueCodeAsync(consumedSession, ct);
 
-        return await HandleAsync(session.Request, user, ct);
+        return await HandleAsync(consumedSession.Request, user, ct, consumedSession);
     }
 
     public async Task<AuthorizationResult> HandleAsync(AuthorizationRequest request,
                                                        ClaimsPrincipal user,
-                                                       CancellationToken ct)
+                                                       CancellationToken ct,
+                                                       AuthorizationSession? previousSession = null)
     {
-        var validationError = ValidateRequest(request);
+        if (previousSession is null)
+        {
+            var validationError = ValidateRequest(request);
 
-        if (validationError != null)
-            return validationError;
+            if (validationError != null)
+                return validationError;
+        }
 
         var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
 
@@ -101,17 +106,21 @@ public class AuthorizationService : IAuthorizationService
                                                       StringComparison.Ordinal) == 0))
             return Error("invalid_request", "Invalid redirect_uri", request.State);
 
-        var sessionId = _secureTokenGenerator.GenerateSecureToken();
-
-        var session = new AuthorizationSession
+        var session = previousSession;
+        if (session is null)
         {
-            Id = sessionId,
-            Request = request,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
-            Stage = AuthorizationStage.Created,
-            RequestedScopes = requestScopes.ToImmutableHashSet()
-        };
+            var sessionId = _secureTokenGenerator.GenerateSecureToken();
+
+            session = new AuthorizationSession
+            {
+                Id = sessionId,
+                Request = request,
+                CreatedAt = DateTimeOffset.UtcNow,
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+                Stage = AuthorizationStage.Created,
+                RequestedScopes = requestScopes.ToImmutableHashSet()
+            };
+        }
 
         if (user?.Identity?.IsAuthenticated != true)
         {
@@ -121,7 +130,7 @@ public class AuthorizationService : IAuthorizationService
             };
             await _authorizationSessionRepository.StoreAsync(loginSession, ct);
 
-            var returnUrl = Uri.EscapeDataString($"{AuthorizeResumeUri}/{sessionId}");
+            var returnUrl = Uri.EscapeDataString($"{AuthorizeResumeUri}/{session.Id}");
             var loginRedirect = $"{LoginUri}?returnUrl={returnUrl}";
 
             return new AuthorizationResult
@@ -159,7 +168,7 @@ public class AuthorizationService : IAuthorizationService
             {
                 Success = false,
                 IsRedirect = true,
-                RedirectUri = $"/consent?sessionId={sessionId}"
+                RedirectUri = $"/consent?sessionId={session.Id}"
             };
         }
 
