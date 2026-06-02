@@ -12,14 +12,14 @@ public interface IUserConsentRepository
 
 public class InMemoryUserConsentRepository : IUserConsentRepository
 {
-    private readonly ConcurrentDictionary<UserClientKey, UserConsent> _sessions = new();
+    private readonly ConcurrentDictionary<UserClientKey, UserConsent> _consents = new();
 
     public Task<bool> DeleteAsync(string userId, string clientId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         var key = new UserClientKey(userId, clientId);
-        var removed = _sessions.TryRemove(key, out var value);
+        var removed = _consents.TryRemove(key, out var value);
         return Task.FromResult(removed);
     }
 
@@ -28,7 +28,7 @@ public class InMemoryUserConsentRepository : IUserConsentRepository
         ct.ThrowIfCancellationRequested();
 
         var key = new UserClientKey(userId, clientId);
-        _sessions.TryGetValue(key, out var value);
+        _consents.TryGetValue(key, out var value);
         return Task.FromResult(value);
     }
 
@@ -37,7 +37,7 @@ public class InMemoryUserConsentRepository : IUserConsentRepository
         ct.ThrowIfCancellationRequested();
 
         var key = new UserClientKey(consent.UserId, consent.ClientId);
-        var newStoredConsent = _sessions.AddOrUpdate(key, 
+        var newStoredConsent = _consents.AddOrUpdate(key, 
                                                      key => consent, 
                                                      (key, oldConsent) => oldConsent = consent);
         return Task.FromResult(consent == newStoredConsent);

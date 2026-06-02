@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Models.Store;
 using O2Connect.Api.Services;
+using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("consent")]
-public class ConsentController : ControllerBase
+public class ConsentController : OidcOAuthControllerBase
 {
     private readonly IConsentService _consentService;
 
@@ -24,36 +26,66 @@ public class ConsentController : ControllerBase
         if (session == null || session.ExpiresAt <= DateTimeOffset.UtcNow)
             return BadRequest("Consent session expired");
 
+        if (session.MissingScopes == null || session.MissingScopes.Count == 0)
+            return BadRequest("No consent required for this session");
+
         var response = new ConsentResponse
         {
             SessionId = sessionId,
             ClientId = session.Request.ClientId,
             ClientName = session.ClientDisplayName,
             UserDisplayName = session.UserDisplayName,
-            Scopes = session.MissingScopes ?? session.RequestedScopes
+            Scopes = session.MissingScopes
         };
 
         return Ok(response);
     }
 
-    [HttpPost("{sessionId}/{approved}")]
-    public async Task<IActionResult> PostConsent(string sessionId, bool approved)
+    [HttpPost("{sessionId}")]
+    public async Task<IActionResult> PostConsent(string sessionId, [FromBody] ConsentDecisionRequest request)
     {
         var session = await _consentService.GetSessionAsync(sessionId, HttpContext.RequestAborted);
 
-        if (session == null || session.ExpiresAt <= DateTimeOffset.UtcNow)
+        if (session == null 
+            || session.Stage != AuthorizationStage.ConsentRequired 
+            || session.ExpiresAt <= DateTimeOffset.UtcNow)
             return BadRequest("Consent session expired");
 
-        if (!approved)
+        if (session.MissingScopes == null || session.MissingScopes.Count == 0)
+            return BadRequest("No consent required for this session");
+
+        if (!request.Approved)
         {
-            return Redirect($"{session.Request.RedirectUri}?error=access_denied&state={session.Request.State}");
+            await _consentService.DeleteSessionAsync(sessionId, HttpContext.RequestAborted);
+
+            return Ok(new RedirectResponse
+            {
+                Action = "deny",
+                RedirectUrl = BuildErrorRedirect(session)
+            });
         }
+
+        if (request.ApprovedScopes == null || request.ApprovedScopes.Count == 0)
+            return BadRequest("No scopes approved");
+
+        if (!request.ApprovedScopes.All(session.MissingScopes.Contains))
+            return BadRequest("Invalid scopes in approval");
+
+        var scopesToPersist = request.ApprovedScopes;
+
+        var sessionReady = await _consentService.TrySetReadySessionAsync(sessionId, HttpContext.RequestAborted);
+        if (!sessionReady)
+            return BadRequest("Session already used");
 
         await _consentService.SaveConsentAsync(session.UserId!,
                                                session.Request.ClientId,
-                                               session.RequestedScopes,
+                                               scopesToPersist,
                                                HttpContext.RequestAborted);
 
-        return Redirect($"/connect/authorize/resume/{sessionId}");
+        return Ok(new RedirectResponse
+        {
+            Action = "resume",
+            RedirectUrl = $"/connect/authorize/resume/{sessionId}"
+        });
     }
 }

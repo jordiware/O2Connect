@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
+using O2Connect.Api.Models.Store;
 using System.Net;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
@@ -15,5 +17,16 @@ public abstract class OidcOAuthControllerBase : ControllerBase
             StatusCode = (int)HttpStatusCode.OK,
             ContentType = "application/json"
         };
+    }
+
+    public string BuildErrorRedirect(AuthorizationSession session)
+    {
+        return QueryHelpers.AddQueryString(
+            session.Request.RedirectUri,
+            new Dictionary<string, string?>
+            {
+                ["error"] = "access_denied",
+                ["state"] = session.Request.State
+            });
     }
 }

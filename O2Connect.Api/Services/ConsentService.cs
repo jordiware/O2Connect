@@ -6,6 +6,10 @@ namespace O2Connect.Api.Services;
 
 public interface IConsentService
 {
+    Task<bool> TrySetReadySessionAsync(string sessionId,
+                                       CancellationToken ct);
+    Task DeleteSessionAsync(string sessionId,
+                            CancellationToken ct);
     Task<ConsentEvaluationResult> EvaluateAsync(string userId,
                                                 string clientId,
                                                 HashSet<string> requestedScopes,
@@ -56,10 +60,26 @@ public class ConsentService : IConsentService
         };
     }
 
-    public async Task<AuthorizationSession?> GetSessionAsync(string sessionId, CancellationToken ct)
+    public async Task<bool> TrySetReadySessionAsync(string sessionId, CancellationToken ct)
     {
         var session = await _authorizationSessionRepository.GetAsync(sessionId, ct);
-        return session;
+
+        if (session == null)
+            return false;
+
+        var updatedSession = session with { Stage = AuthorizationStage.Ready };
+
+        return await _authorizationSessionRepository.StoreAsync(updatedSession, ct);
+    }
+
+    public async Task DeleteSessionAsync(string sessionId, CancellationToken ct)
+    {
+        await _authorizationSessionRepository.DeleteAsync(sessionId, ct);
+    }
+
+    public async Task<AuthorizationSession?> GetSessionAsync(string sessionId, CancellationToken ct)
+    {
+        return await _authorizationSessionRepository.GetAsync(sessionId, ct);
     }
 
     public async Task SaveConsentAsync(string userId,
