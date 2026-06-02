@@ -7,6 +7,9 @@ public sealed record AuthorizationRequest
     [FromQuery(Name = "response_type")]
     public string ResponseType { get; init; } = default!;
 
+    [FromQuery(Name = "response_mode")]
+    public string ResponseMode { get; init; } = "query";
+
     [FromQuery(Name = "client_id")]
     public string ClientId { get; init; } = default!;
 

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.WebUtilities;
 using O2Connect.Api.Models;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
@@ -20,36 +19,49 @@ public class AuthorizationController : OidcOAuthControllerBase
     [HttpGet]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest request)
     {
-        var result = await _authorizationService.HandleAsync(request, User, HttpContext.RequestAborted);
-        return BuildRedirect(result);
+        var result = await _authorizationService.ProcessAuthorizationAsync(request, User, HttpContext.RequestAborted);
+        return BuildAuthorizationRedirectResult(result);
     }
 
     [HttpGet("resume/{sessionId}")]
     public async Task<IActionResult> Resume(string sessionId, CancellationToken ct)
     {
-        var result = await _authorizationService.AuthorizeAsync(sessionId, User, ct);
-        return BuildRedirect(result);
+        var result = await _authorizationService.ProcessSessionAsync(sessionId, User, ct);
+        return BuildAuthorizationRedirectResult(result);
     }
 
-    private IActionResult BuildRedirect(AuthorizationResult result)
+    private IActionResult BuildAuthorizationRedirectResult(AuthorizationResult result)
     {
-        if (!result.Success)
-        {
-            var errorUrl = QueryHelpers.AddQueryString(result.RedirectUri, new Dictionary<string, string?>
-            {
-                ["error"] = result.Error,
-                ["error_description"] = result.ErrorDescription,
-                ["state"] = result.State
-            });
+        if (!Uri.TryCreate(result.RedirectUri, UriKind.Absolute, out _))
+            return BadRequest("Invalid redirect URI");
 
-            return Redirect(errorUrl);
+        var baseUri = result.RedirectUri;
+
+        var parameters = new Dictionary<string, string?>
+        {
+            ["state"] = result.State
+        };
+
+        if (result.Success)
+        {
+            parameters["code"] = result.Code;
+        }
+        else
+        {
+            parameters["error"] = result.Error;
+            parameters["error_description"] = result.ErrorDescription;
         }
 
-        var url = QueryHelpers.AddQueryString(result.RedirectUri, new Dictionary<string, string?>
+        var paramsString = QueryString.Create(parameters).ToString().TrimStart('?', '#');
+
+        var separator = result.ResponseMode switch
         {
-            ["code"] = result.Code,
-            ["state"] = result.State
-        });
+            AuthorizationResultResponseMode.Query => "?",
+            AuthorizationResultResponseMode.Fragment => "#",
+            _ => throw new ArgumentException(),
+        };
+
+        var url = baseUri + separator + paramsString;
 
         return Redirect(url);
     }
