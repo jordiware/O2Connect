@@ -1,24 +1,25 @@
 ﻿using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
+using System.Collections.Immutable;
 
 namespace O2Connect.Api.Services;
 
 public interface IConsentService
 {
-    Task<bool> TrySetReadySessionAsync(string sessionId,
-                                       CancellationToken ct);
+    Task<bool> SetConsentGrantedSessionAsync(string sessionId,
+                                             CancellationToken ct);
     Task DeleteSessionAsync(string sessionId,
                             CancellationToken ct);
     Task<ConsentEvaluationResult> EvaluateAsync(string userId,
                                                 string clientId,
-                                                HashSet<string> requestedScopes,
+                                                ImmutableHashSet<string> requestedScopes,
                                                 CancellationToken ct);
     Task<AuthorizationSession?> GetSessionAsync(string sessionId,
                                                 CancellationToken ct);
     Task SaveConsentAsync(string userId,
                           string clientId,
-                          HashSet<string> approvedScopes,
+                          ImmutableHashSet<string> approvedScopes,
                           CancellationToken ct);
 }
 
@@ -37,7 +38,7 @@ public class ConsentService : IConsentService
 
     public async Task<ConsentEvaluationResult> EvaluateAsync(string userId,
                                                              string clientId,
-                                                             HashSet<string> requestedScopes,
+                                                             ImmutableHashSet<string> requestedScopes,
                                                              CancellationToken ct)
     {
         var existing = await _userConsentRepository.GetAsync(userId, clientId, ct);
@@ -51,7 +52,7 @@ public class ConsentService : IConsentService
             };
         }
 
-        var missing = requestedScopes.Except(existing.GrantedScopes).ToHashSet();
+        var missing = requestedScopes.Except(existing.GrantedScopes).ToImmutableHashSet();
 
         return new ConsentEvaluationResult
         {
@@ -60,21 +61,23 @@ public class ConsentService : IConsentService
         };
     }
 
-    public async Task<bool> TrySetReadySessionAsync(string sessionId, CancellationToken ct)
+    public async Task<bool> SetConsentGrantedSessionAsync(string sessionId, CancellationToken ct)
     {
         var session = await _authorizationSessionRepository.GetAsync(sessionId, ct);
 
         if (session == null)
             return false;
 
-        var updatedSession = session with { Stage = AuthorizationStage.Ready };
+        var updatedSession = session with { Stage = AuthorizationStage.ConsentGranted };
 
-        return await _authorizationSessionRepository.StoreAsync(updatedSession, ct);
+        await _authorizationSessionRepository.StoreAsync(updatedSession, ct);
+
+        return true;
     }
 
     public async Task DeleteSessionAsync(string sessionId, CancellationToken ct)
     {
-        await _authorizationSessionRepository.DeleteAsync(sessionId, ct);
+        await _authorizationSessionRepository.TryConsumeAsync(sessionId, ct);
     }
 
     public async Task<AuthorizationSession?> GetSessionAsync(string sessionId, CancellationToken ct)
@@ -84,7 +87,7 @@ public class ConsentService : IConsentService
 
     public async Task SaveConsentAsync(string userId,
                                        string clientId,
-                                       HashSet<string> approvedScopes,
+                                       ImmutableHashSet<string> approvedScopes,
                                        CancellationToken ct)
     {
         var existing = await _userConsentRepository.GetAsync(userId, clientId, ct);
@@ -104,14 +107,14 @@ public class ConsentService : IConsentService
             return;
         }
 
-        existing.GrantedScopes.UnionWith(approvedScopes);
+        var grantedScopes = existing.GrantedScopes.Union(approvedScopes);
 
         var updatedConsent = new UserConsent
         {
             Id = existing.Id,
             UserId = userId,
             ClientId = clientId,
-            GrantedScopes = approvedScopes,
+            GrantedScopes = grantedScopes,
             CreatedAt = existing.CreatedAt,
             UpdatedAt = DateTimeOffset.UtcNow
         };

@@ -48,13 +48,13 @@ public class AuthorizationService : IAuthorizationService
                                                           ClaimsPrincipal user,
                                                           CancellationToken ct)
     {
-        var session = await _authorizationSessionRepository.GetAsync(sessionId, ct);
+        var session = await _authorizationSessionRepository.TryConsumeAsync(sessionId, ct);
 
         if (session == null)
             return Error("invalid_request", "Session already used or invalid", null);
 
-        if (session.Stage != AuthorizationStage.ConsentRequired
-            && session.Stage != AuthorizationStage.Ready)
+        if (session.Stage != AuthorizationStage.LoggedIn
+            && session.Stage != AuthorizationStage.ConsentGranted)
             return Error("invalid_request", "Invalid session state", session.Request.State, session.Request.RedirectUri);
 
         if (session.ExpiresAt <= DateTimeOffset.UtcNow)
@@ -65,15 +65,10 @@ public class AuthorizationService : IAuthorizationService
         if (session.UserId is null || session.UserId != userId)
             return Error("invalid_request", "Session does not belong to user", session.Request.State, session.Request.RedirectUri);
 
-        var consumedSession = await _authorizationSessionRepository.TryConsumeAsync(sessionId, ct);
+        if (session.Stage == AuthorizationStage.ConsentGranted)
+            return await IssueCodeAsync(session, ct);
 
-        if (consumedSession == null)
-            return Error("invalid_request", "Session already used or invalid", session.Request.State, session.Request.RedirectUri);
-
-        if (consumedSession.Stage == AuthorizationStage.Ready)
-            return await IssueCodeAsync(consumedSession, ct);
-
-        return await HandleAsync(consumedSession.Request, user, ct, consumedSession);
+        return await HandleAsync(session.Request, user, ct, session);
     }
 
     public async Task<AuthorizationResult> HandleAsync(AuthorizationRequest request,
@@ -81,9 +76,10 @@ public class AuthorizationService : IAuthorizationService
                                                        CancellationToken ct,
                                                        AuthorizationSession? previousSession = null)
     {
+        var requestScopes = previousSession?.RequestedScopes ?? ImmutableHashSet<string>.Empty;
         if (previousSession is null)
         {
-            var validationError = ValidateRequest(request);
+            var validationError = ValidateRequest(request, out requestScopes);
 
             if (validationError != null)
                 return validationError;
@@ -94,7 +90,6 @@ public class AuthorizationService : IAuthorizationService
         if (client == null || !client.IsActive)
             return Error("invalid_client", "Client not found or inactive", request.State);
 
-        var requestScopes = ValueSet.FromDataString(request.Scope, ' ').Values.ToHashSet();
         if (!requestScopes.IsSubsetOf(client.AllowedScopes))
             return Error("invalid_scope", "Scopes mismatch", request.State);
 
@@ -109,11 +104,8 @@ public class AuthorizationService : IAuthorizationService
         var session = previousSession;
         if (session is null)
         {
-            var sessionId = _secureTokenGenerator.GenerateSecureToken();
-
             session = new AuthorizationSession
             {
-                Id = sessionId,
                 Request = request,
                 CreatedAt = DateTimeOffset.UtcNow,
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
@@ -126,11 +118,13 @@ public class AuthorizationService : IAuthorizationService
         {
             var loginSession = session with
             {
+                Id = _secureTokenGenerator.GenerateSecureToken(),
                 Stage = AuthorizationStage.LoginRequired
             };
+
             await _authorizationSessionRepository.StoreAsync(loginSession, ct);
 
-            var returnUrl = Uri.EscapeDataString($"{AuthorizeResumeUri}/{session.Id}");
+            var returnUrl = Uri.EscapeDataString($"{AuthorizeResumeUri}/{loginSession.Id}");
             var loginRedirect = $"{LoginUri}?returnUrl={returnUrl}";
 
             return new AuthorizationResult
@@ -158,6 +152,7 @@ public class AuthorizationService : IAuthorizationService
         {
             var consentSession = session with
             {
+                Id = _secureTokenGenerator.GenerateSecureToken(),
                 Stage = AuthorizationStage.ConsentRequired,
                 MissingScopes = consent.MissingScopes.ToImmutableHashSet()
             };
@@ -168,18 +163,11 @@ public class AuthorizationService : IAuthorizationService
             {
                 Success = false,
                 IsRedirect = true,
-                RedirectUri = $"/consent?sessionId={session.Id}"
+                RedirectUri = $"/consent?sessionId={consentSession.Id}"
             };
         }
 
-        session = session with { Stage = AuthorizationStage.Completed };
-        await _authorizationSessionRepository.StoreAsync(session, ct);
-
-        var result = await IssueCodeAsync(session, ct);
-
-        await _authorizationSessionRepository.DeleteAsync(session.Id, ct);
-
-        return result;
+        return await IssueCodeAsync(session, ct);
     }
 
     private async Task<AuthorizationResult> IssueCodeAsync(AuthorizationSession session, CancellationToken ct)
@@ -211,8 +199,10 @@ public class AuthorizationService : IAuthorizationService
         };
     }
 
-    private AuthorizationResult? ValidateRequest(AuthorizationRequest request)
+    private AuthorizationResult? ValidateRequest(AuthorizationRequest request, out ImmutableHashSet<string> requestScopes)
     {
+        requestScopes = [];
+
         if (string.IsNullOrWhiteSpace(request.State))
             return Error("invalid_request", "state is required", null);
 
@@ -228,7 +218,7 @@ public class AuthorizationService : IAuthorizationService
         if (string.IsNullOrWhiteSpace(request.Scope))
             return Error("invalid_scope", "scope must include 'openid'", request.State);
 
-        var requestScopes = ValueSet.FromDataString(request.Scope, ' ');
+        requestScopes = ValueSet.FromDataString(request.Scope, ' ').Values.ToImmutableHashSet();
 
         if (!requestScopes.Contains("openid"))
             return Error("invalid_scope", "scope must include 'openid'", request.State);

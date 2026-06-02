@@ -3,6 +3,7 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
+using System.Collections.Immutable;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -71,11 +72,12 @@ public class ConsentController : OidcOAuthControllerBase
         if (!request.ApprovedScopes.All(session.MissingScopes.Contains))
             return BadRequest("Invalid scopes in approval");
 
-        var scopesToPersist = request.ApprovedScopes;
-
-        var sessionReady = await _consentService.TrySetReadySessionAsync(sessionId, HttpContext.RequestAborted);
+        var sessionReady = await _consentService.SetConsentGrantedSessionAsync(sessionId, HttpContext.RequestAborted);
+        
         if (!sessionReady)
             return BadRequest("Session already used");
+
+        var scopesToPersist = request.ApprovedScopes.ToImmutableHashSet();
 
         await _consentService.SaveConsentAsync(session.UserId!,
                                                session.Request.ClientId,

@@ -21,8 +21,8 @@ public enum AuthorizationStage
 {
     Created,
     LoginRequired,
+    LoggedIn,
     ConsentRequired,
-    Ready,
-    Completed,
+    ConsentGranted,
     Cancelled
 }
