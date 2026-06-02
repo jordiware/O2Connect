@@ -9,6 +9,9 @@ namespace O2Connect.Api.Services;
 
 public interface IAuthorizationService
 {
+    Task<AuthorizationResult> AuthorizeAsync(string sessionId,
+                                             ClaimsPrincipal user,
+                                             CancellationToken ct);
     Task<AuthorizationResult> HandleAsync(AuthorizationRequest request,
                                           ClaimsPrincipal user,
                                           CancellationToken ct);
@@ -22,18 +25,45 @@ public class AuthorizationService : IAuthorizationService
     private readonly IClientRepository _clientRepository;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IAuthorizationSessionRepository _authorizationSessionRepository;
+    private readonly IConsentService _consentService;
     private readonly ISecureTokenGenerator _secureTokenGenerator;
 
     public AuthorizationService(
         IClientRepository clientRepository,
         IAuthorizationCodeRepository authorizationCodeRepository,
         IAuthorizationSessionRepository authorizationSessionRepository,
+        IConsentService consentService,
         ISecureTokenGenerator secureTokenGenerator)
     {
         _clientRepository = clientRepository;
         _authorizationCodeRepository = authorizationCodeRepository;
         _authorizationSessionRepository = authorizationSessionRepository;
+        _consentService = consentService;
         _secureTokenGenerator = secureTokenGenerator;
+    }
+
+    public async Task<AuthorizationResult> AuthorizeAsync(string sessionId,
+                                                          ClaimsPrincipal user,
+                                                          CancellationToken ct)
+    {
+        var session = await _authorizationSessionRepository.GetAsync(sessionId, ct);
+        
+        if (session == null)
+        {
+            var loginRedirect = $"{LoginUri}?returnUrl={AuthorizeResumeUri}/{sessionId}";
+
+            return new AuthorizationResult
+            {
+                Success = false,
+                IsRedirect = true,
+                RedirectUri = loginRedirect,
+                Error = "login_required"
+            };
+        }
+
+        var result = await HandleAsync(session.Request, user, ct);
+        await _authorizationSessionRepository.DeleteAsync(sessionId, ct);
+        return result;
     }
 
     public async Task<AuthorizationResult> HandleAsync(AuthorizationRequest request,
@@ -70,7 +100,8 @@ public class AuthorizationService : IAuthorizationService
                 Id = sessionId,
                 Request = request,
                 CreatedAt = DateTimeOffset.UtcNow,
-                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10)
+                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+                Stage = AuthorizationStage.LoginRequired
             };
 
             await _authorizationSessionRepository.StoreAsync(session, ct);
@@ -90,6 +121,20 @@ public class AuthorizationService : IAuthorizationService
 
         if (string.IsNullOrWhiteSpace(userId))
             return Error("invalid_user", "User subject missing", request.State);
+
+        var consent = await _consentService.EvaluateAsync(userId, client.ClientId, requestScopes.Values.ToHashSet(), ct);
+
+        if (consent.RequiresConsent)
+        {
+            var sessionId = await StoreConsentSession(request, userId, consent.MissingScopes, ct);
+
+            return new AuthorizationResult
+            {
+                Success = false,
+                IsRedirect = true,
+                RedirectUri = $"/consent?sessionId={sessionId}"
+            };
+        }
 
         var code = _secureTokenGenerator.GenerateSecureToken();
 
@@ -146,6 +191,32 @@ public class AuthorizationService : IAuthorizationService
             return Error("invalid_request", "code_challenge_method is required", request.State);
 
         return null;
+    }
+
+    private async Task<string> StoreConsentSession(AuthorizationRequest request,
+                                                   string userId,
+                                                   HashSet<string> missingScopes,
+                                                   CancellationToken ct)
+    {
+        var sessionId = _secureTokenGenerator.GenerateSecureToken();
+
+        var requestedScopes = ValueSet.FromDataString(request.Scope, ' ');
+
+        var session = new AuthorizationSession
+        {
+            Id = sessionId,
+            Request = request,
+            UserId = userId,
+            RequestedScopes = requestedScopes.Values.ToHashSet(),
+            MissingScopes = missingScopes,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
+            Stage = AuthorizationStage.ConsentRequired
+        };
+
+        await _authorizationSessionRepository.StoreAsync(session, ct);
+
+        return sessionId;
     }
 
     private AuthorizationResult Error(string code, string description, string? state)

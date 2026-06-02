@@ -29,8 +29,9 @@ builder.Services.AddMemoryCache(options =>
 builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>(); 
 builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
-builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
 builder.Services.AddSingleton<IAuthorizationSessionRepository, InMemoryAuthorizationSessionRepository>();
+builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
+builder.Services.AddSingleton<IUserConsentRepository, InMemoryUserConsentRepository>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
@@ -59,6 +60,7 @@ builder.Services.AddScoped<ITokenInputValidator, TokenInputValidator>();
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+builder.Services.AddScoped<IConsentService, ConsentService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
