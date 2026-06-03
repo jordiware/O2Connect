@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataFactories.RequestModels;
-using O2Connect.Api.Models.Store;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
@@ -16,13 +15,16 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 public class AccountController : ControllerBase
 {
     private readonly ILoginService _loginService;
+    private readonly IClientAuthenticationService _clientAuthenticationService;
     private readonly ITokenFactory _tokenFactory;
 
     public AccountController(
         ILoginService loginService,
+        IClientAuthenticationService clientAuthenticationService,
         ITokenFactory tokenFactory)
     {
         _loginService = loginService;
+        _clientAuthenticationService = clientAuthenticationService;
         _tokenFactory = tokenFactory;
     }
 
@@ -32,30 +34,42 @@ public class AccountController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
             return BadRequest(new { message = "Invalid credentials" });
 
+        if (string.IsNullOrWhiteSpace(request.ClientId))
+            return BadRequest(new { message = "Invalid client" });
+
         var user = await _loginService.ValidateCredentialsAsync(request.Username.Trim(),
                                                                 request.Password,
                                                                 HttpContext.RequestAborted);
 
-        if (user is null)
+        var client = await _clientAuthenticationService.GetClientAsync(request.ClientId,
+                                                                       HttpContext.RequestAborted);
+
+        if (user is null || client is null)
             return Unauthorized(new { message = "Invalid credentials" });
+
+        var allowedScopes = user.Scopes.Intersect(client.AllowedScopes).ToImmutableHashSet();
+
+        if (allowedScopes.IsEmpty)
+            return Forbid();
 
         var tokenFactoryRequest = new JwtTokenFactoryRequest
         {
-            ClientId = request.ClientId,
+            ClientId = client.ClientId,
             Subject = user.Id,
-            Scopes = user.Scopes.ToImmutableHashSet(),
+            Scopes = allowedScopes,
             AdditionalClaims = new Dictionary<string, object>
             {
                 { "name", user.Username }
             }
         };
 
-        if (!string.IsNullOrWhiteSpace(user.Role))
+        if (user.Roles is not null && user.Roles.Count > 0)
         {
-            tokenFactoryRequest.AdditionalClaims["role"] = user.Role;
+            tokenFactoryRequest.AdditionalClaims["roles"] = user.Roles.ToArray();
         }
 
-        var tokenResponse = await _tokenFactory.GenerateAsync(tokenFactoryRequest, HttpContext.RequestAborted);
+        var tokenResponse = await _tokenFactory.GenerateAsync(tokenFactoryRequest,
+                                                              HttpContext.RequestAborted);
 
         return Ok(tokenResponse);
     }

@@ -1,6 +1,7 @@
 ﻿using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
+using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 
@@ -9,6 +10,7 @@ namespace O2Connect.Api.Services;
 public interface IClientAuthenticationService
 {
     Task<ClientAuthenticationResult> AuthenticateAsync(HttpRequest request, TokenRequest tokenRequest, CancellationToken ct);
+    Task<Client?> GetClientAsync(string clientId, CancellationToken ct);
 }
 
 public class ClientAuthenticationService : IClientAuthenticationService
@@ -67,5 +69,10 @@ public class ClientAuthenticationService : IClientAuthenticationService
             throw OAuthException.FromInvalidClient();
 
         return await authHandler.AuthenticateAsync(request, tokenRequest, client, ct);
+    }
+
+    public async Task<Client?> GetClientAsync(string clientId, CancellationToken ct)
+    {
+        return await _clientRepository.GetByIdAsync(clientId, ct);
     }
 }
