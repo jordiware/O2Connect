@@ -53,12 +53,11 @@ public class InMemoryRefreshTokenRepository : IRefreshTokenRepository
 
         var updated = _tokens.AddOrUpdate(token, _ => default!, (_, existing) =>
         {
-            if (existing.Consumed)
-                return existing;
-
-            existing.Consumed = true;
-            existing.ConsumedAt = DateTimeOffset.UtcNow;
-            return existing;
+            return existing with
+            {
+                Consumed = true,
+                ConsumedAt = DateTimeOffset.UtcNow
+            };
         });
 
         return Task.FromResult(updated.Consumed);
@@ -70,8 +69,11 @@ public class InMemoryRefreshTokenRepository : IRefreshTokenRepository
 
         if (_tokens.TryGetValue(token, out var existing))
         {
-            existing.Revoked = true;
-            existing.RevokedAt = DateTimeOffset.UtcNow;
+            _tokens[token] = existing with
+            {
+                Revoked = true,
+                RevokedAt = DateTimeOffset.UtcNow
+            };
         }
 
         return Task.CompletedTask;
@@ -81,16 +83,16 @@ public class InMemoryRefreshTokenRepository : IRefreshTokenRepository
     {
         ct.ThrowIfCancellationRequested();
 
-        foreach (var kvp in _tokens)
-        {
-            var token = kvp.Value;
+        var kvp = _tokens.SingleOrDefault(kvp => kvp.Value.SessionId.Equals(sessionId, StringComparison.Ordinal));
 
-            if (token.SessionId == sessionId)
-            {
-                token.Revoked = true;
-                token.RevokedAt = DateTimeOffset.UtcNow;
-            }
-        }
+        if (!_tokens.ContainsKey(kvp.Key))
+            return Task.CompletedTask;
+
+        _tokens[kvp.Key] = kvp.Value with
+        {
+            Revoked = true,
+            RevokedAt = DateTimeOffset.UtcNow
+        };
 
         return Task.CompletedTask;
     }

@@ -8,6 +8,7 @@ namespace O2Connect.Api.Services;
 public interface ILoginService
 {
     Task<User?> ValidateCredentialsAsync(string username, string password, CancellationToken ct);
+    Task LogoutAsync(string token, CancellationToken ct);
 }
 
 public class LoginService : ILoginService
@@ -15,13 +16,16 @@ public class LoginService : ILoginService
     private static readonly string DummyHash = CreateDummyHash();
 
     private readonly IUserRepository _userRepository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly ISecretHasher _secretHasher;
 
     public LoginService(
         IUserRepository userRepository,
+        IRefreshTokenRepository refreshTokenRepository,
         ISecretHasher secretHasher)
     {
         _userRepository = userRepository;
+        _refreshTokenRepository = refreshTokenRepository;
         _secretHasher = secretHasher;
     }
 
@@ -49,6 +53,11 @@ public class LoginService : ILoginService
         }
 
         return storedUser;
+    }
+
+    public async Task LogoutAsync(string token, CancellationToken ct)
+    {
+        await _refreshTokenRepository.RevokeAsync(token, ct);
     }
 
     private static string CreateDummyHash()

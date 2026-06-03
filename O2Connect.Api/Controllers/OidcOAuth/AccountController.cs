@@ -75,15 +75,18 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("logout")]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
-        return Ok("/auth/logout endpoint");
+        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+            return BadRequest(new { message = "Missing refresh token" });
+
+        await _loginService.LogoutAsync(request.RefreshToken, HttpContext.RequestAborted);
+
+        return NoContent();
     }
 
     [HttpGet("me")]
     [Authorize]
-    [ProducesResponseType(typeof(MyAccountResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult Me()
     {
         Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
