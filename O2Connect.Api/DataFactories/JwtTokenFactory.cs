@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories.RequestModels;
-using O2Connect.Api.Models;
 using O2Connect.Api.Models.Options;
 using O2Connect.Dto.Responses;
 using System.Globalization;
@@ -38,7 +37,7 @@ public class JwtTokenFactory : ITokenFactory
 
         var jwt = new JwtSecurityToken(
             issuer: _options.Issuer,
-            audience: request.Client.ClientId,
+            audience: request.ClientId,
             claims: claims,
             notBefore: now.UtcDateTime,
             expires: now.AddSeconds(_options.AccessTokenLifetimeSeconds).UtcDateTime,
@@ -61,7 +60,7 @@ public class JwtTokenFactory : ITokenFactory
     {
         yield return new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString());
         yield return new Claim(JwtRegisteredClaimNames.Sub, request.Subject);
-        yield return new Claim("client_id", request.Client.ClientId);
+        yield return new Claim("client_id", request.ClientId);
         yield return new Claim("scope", string.Join(" ", request.Scopes));
         yield return new Claim(JwtRegisteredClaimNames.Iat,
                                now.ToUnixTimeSeconds().ToString(),

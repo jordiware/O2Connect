@@ -83,7 +83,7 @@ public class RefreshTokenGrantHandler : ITokenGrantHandler
 
         return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
-            Client = context.Client,
+            ClientId = context.Client.ClientId,
             Subject = storedToken.Subject,
             Scopes = context.Scopes,
             RefreshToken = newRefreshToken.Token

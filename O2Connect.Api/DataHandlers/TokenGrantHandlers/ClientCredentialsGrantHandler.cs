@@ -35,7 +35,7 @@ public class ClientCredentialsGrantHandler : ITokenGrantHandler
 
         return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
-            Client = context.Client,
+            ClientId = context.Client.ClientId,
             Scopes = context.Scopes,
             Subject = context.Client.ClientId
         }, ct);
