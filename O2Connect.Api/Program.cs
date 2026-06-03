@@ -31,11 +31,13 @@ builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizatio
 builder.Services.AddSingleton<IAuthorizationSessionRepository, InMemoryAuthorizationSessionRepository>();
 builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
 builder.Services.AddSingleton<IUserConsentRepository, InMemoryUserConsentRepository>();
+builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
 builder.Services.AddSingleton<ISigningKeyProvider, RsaSigningKeyProvider>();
 builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
+builder.Services.AddSingleton<ISecretHasher, Pbkdf2SecretHasher>();
 
 builder.Services.AddTransient<ITokenGrantHandler, AuthorizationCodeGrantHandler>();
 builder.Services.AddTransient<ITokenGrantHandler, ClientCredentialsGrantHandler>();
@@ -50,8 +52,6 @@ builder.Services.AddSingleton<ITokenRequestValidatorResolver, TokenRequestValida
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretBasicHandler>();
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretPostHandler>();
 builder.Services.AddScoped<IClientAuthenticationHandler, PrivateKeyJwtHandler>();
-
-builder.Services.AddTransient<ISecretHasher, Pbkdf2SecretHasher>();
 
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
@@ -25,34 +26,52 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("login")]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> PostLogin([FromForm] LoginRequest request)
     {
+        if (!string.IsNullOrWhiteSpace(request.ReturnUrl) && !Url.IsLocalUrl(request.ReturnUrl))
+            return BadRequest(new { message = "Invalid return URL" });
+
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-            return BadRequest("Invalid credentials");
+            return Unauthorized(new { message = "Invalid credentials" });
 
-        if (!Url.IsLocalUrl(request.ReturnUrl))
-            return BadRequest("Invalid return URL");
-
-        var user = await _loginService.ValidateCredentialsAsync(request.Username, request.Password, HttpContext.RequestAborted);
+        var user = await _loginService.ValidateCredentialsAsync(request.Username.Trim(),
+                                                                request.Password,
+                                                                HttpContext.RequestAborted);
 
         if (user is null)
-            return BadRequest("Invalid credentials");
+            return Unauthorized(new { message = "Invalid credentials" });
 
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.Username)
+            new Claim(ClaimTypes.Name, user.Username),
         };
 
-        var identity = new ClaimsIdentity(claims, "cookie");
-        var principal = new ClaimsPrincipal(identity);
+        if (!string.IsNullOrWhiteSpace(user.Role))
+        {
+            claims.Add(new Claim(ClaimTypes.Role, user.Role));
+        }
 
-        await HttpContext.SignInAsync("cookie", principal);
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+        var now = DateTimeOffset.UtcNow;
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = request.RememberMe,
+            AllowRefresh = false,
+            IssuedUtc = now,
+            ExpiresUtc = now.AddDays(30),
+        };
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                                      principal,
+                                      authProperties);
 
         if (!string.IsNullOrWhiteSpace(request.ReturnUrl))
-            return Redirect(request.ReturnUrl);
+            return LocalRedirect(request.ReturnUrl);
 
-        return Ok();
+        return Ok(new { message = "Login successful" });
     }
 
     [HttpPost("logout")]
