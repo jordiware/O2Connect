@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Services;
+using O2Connect.Dto.Requests;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -6,8 +8,22 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [Route("account")]
 public class AccountController : ControllerBase
 {
+    private readonly ILoginService _loginService;
+
+    public AccountController(
+        ILoginService loginService)
+    {
+        _loginService = loginService;
+    }
+
+    [HttpGet("login")]
+    public IActionResult GetLogin([FromQuery] string? returnUrl)
+    {
+        return Ok("/auth/login endpoint");
+    }
+
     [HttpPost("login")]
-    public IActionResult Login()
+    public IActionResult PostLogin([FromForm] LoginRequest request)
     {
         return Ok("/auth/login endpoint");
     }

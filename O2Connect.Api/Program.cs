@@ -57,6 +57,7 @@ builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationSer
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 builder.Services.AddScoped<IConsentService, ConsentService>();
+builder.Services.AddScoped<ILoginService, LoginService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
