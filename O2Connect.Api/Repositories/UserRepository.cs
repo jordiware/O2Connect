@@ -6,6 +6,7 @@ namespace O2Connect.Api.Repositories;
 public interface IUserRepository
 {
     Task<User?> GetByUsernameAsync(string username, CancellationToken ct);
+    Task UpdateAsync(User user, CancellationToken ct);
 }
 
 public class InMemoryUserRepository : IUserRepository
@@ -19,5 +20,14 @@ public class InMemoryUserRepository : IUserRepository
         _users.TryGetValue(username, out var value);
 
         return Task.FromResult(value);
+    }
+
+    public Task UpdateAsync(User user, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        _users[user.Username] = user;
+
+        return Task.CompletedTask;
     }
 }
