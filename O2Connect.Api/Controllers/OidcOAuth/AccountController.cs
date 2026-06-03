@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
+using System.Security.Claims;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -23,9 +25,34 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("login")]
-    public IActionResult PostLogin([FromForm] LoginRequest request)
+    public async Task<IActionResult> PostLogin([FromForm] LoginRequest request)
     {
-        return Ok("/auth/login endpoint");
+        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest("Invalid credentials");
+
+        if (!Url.IsLocalUrl(request.ReturnUrl))
+            return BadRequest("Invalid return URL");
+
+        var user = await _loginService.ValidateCredentialsAsync(request.Username, request.Password, HttpContext.RequestAborted);
+
+        if (user is null)
+            return BadRequest("Invalid credentials");
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.Name, user.Username)
+        };
+
+        var identity = new ClaimsIdentity(claims, "cookie");
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync("cookie", principal);
+
+        if (!string.IsNullOrWhiteSpace(request.ReturnUrl))
+            return Redirect(request.ReturnUrl);
+
+        return Ok();
     }
 
     [HttpPost("logout")]
