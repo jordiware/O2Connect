@@ -4,7 +4,6 @@ using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.DataHandlers.TokenGrantHandlers;
-using O2Connect.Api.DataValidators;
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Models.Options;
 using O2Connect.Api.Repositories;

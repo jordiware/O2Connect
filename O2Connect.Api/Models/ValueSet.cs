@@ -1,22 +1,21 @@
-﻿namespace O2Connect.Api.Models;
+﻿using System.Collections.Immutable;
+
+namespace O2Connect.Api.Models;
 
 public class ValueSet
 {
-    private readonly HashSet<string> _values;
+    public ImmutableHashSet<string> Values { get; init; }
 
-    public IReadOnlyCollection<string> Values => _values;
-
-    public bool IsEmpty => _values.Count == 0;
+    public bool IsEmpty => Values.Count == 0;
 
     public ValueSet(IEnumerable<string> values)
     {
-        _values = new HashSet<string>(values, StringComparer.Ordinal);
+        Values = new HashSet<string>(values, StringComparer.Ordinal).ToImmutableHashSet();
     }
 
-    public bool Contains(string value) => _values.Contains(value, StringComparer.Ordinal);
+    public bool Contains(string value) => Values.Contains(value, StringComparer.Ordinal);
 
-    public bool IsSubsetOf(IEnumerable<string> other) =>
-        _values.IsSubsetOf(other);
+    public bool IsSubsetOf(IEnumerable<string> other) => Values.IsSubsetOf(other);
 
     public static ValueSet FromDataString(string? data, char separator)
     {

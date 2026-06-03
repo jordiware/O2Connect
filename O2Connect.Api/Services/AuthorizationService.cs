@@ -226,7 +226,7 @@ public class AuthorizationService : IAuthorizationService
         if (string.IsNullOrWhiteSpace(request.Scope))
             return Error(responseMode, "invalid_scope", "scope must include 'openid'", request.State);
 
-        requestScopes = ValueSet.FromDataString(request.Scope, ' ').Values.ToImmutableHashSet();
+        requestScopes = ValueSet.FromDataString(request.Scope, ' ').Values;
 
         if (!requestScopes.Contains("openid"))
             return Error(responseMode, "invalid_scope", "scope must include 'openid'", request.State);

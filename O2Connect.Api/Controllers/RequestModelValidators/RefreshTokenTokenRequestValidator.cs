@@ -58,7 +58,7 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
         }
 
         var scopes = token.Scopes;
-        var requestedScopes = ValueSet.FromDataString(request.Scope, ' ').Values.ToImmutableHashSet();
+        var requestedScopes = ValueSet.FromDataString(request.Scope, ' ').Values;
 
         if (!requestedScopes.IsEmpty && requestedScopes.IsSubsetOf(scopes))
             scopes = requestedScopes;

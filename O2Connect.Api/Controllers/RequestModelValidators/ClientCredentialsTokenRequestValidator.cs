@@ -21,7 +21,7 @@ public class ClientCredentialsTokenRequestValidator : ITokenRequestValidator
         if (!client.AllowedGrantTypes.Contains(GrantType.Value, StringComparer.Ordinal))
             throw OAuthException.FromUnauthorizedClient();
 
-        var requestedScopes = ValueSet.FromDataString(request.Scope, ' ').Values.ToImmutableHashSet();
+        var requestedScopes = ValueSet.FromDataString(request.Scope, ' ').Values;
 
         if (requestedScopes.IsEmpty)
             throw OAuthException.FromInvalidScope();
