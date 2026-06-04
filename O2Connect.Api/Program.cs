@@ -29,6 +29,8 @@ builder.Services.AddMemoryCache(options =>
 });
 
 builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
+builder.Services.AddSingleton<ITokenReplayCache, MemoryTokenReplayCache>();
+
 builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
 builder.Services.AddSingleton<IAuthorizationSessionRepository, InMemoryAuthorizationSessionRepository>();
@@ -52,25 +54,38 @@ builder.Services.AddSingleton(sp =>
         ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
         RequireSignedTokens = true,
 
+        NameClaimType = "sub",
+        RoleClaimType = "role",
+
         ValidateIssuer = true,
-        ValidIssuer = "your-issuer",
+        ValidIssuers = ["your-issuer"],
 
         ValidateAudience = true,
-        ValidAudience = "your-audience",
+        ValidAudiences = ["your-audience"],
 
         ValidateLifetime = true,
+        RequireExpirationTime = true,
         ClockSkew = TimeSpan.FromSeconds(30),
 
-        ValidateIssuerSigningKey = true,
+        ValidateTokenReplay = true,
+        TokenReplayCache = sp.GetRequiredService<ITokenReplayCache>(),
 
+        ValidateIssuerSigningKey = true,
         IssuerSigningKeyResolver = (token, securityToken, kid, parameters) =>
         {
+            if (string.IsNullOrWhiteSpace(kid))
+                return [];
+
             var signingKeys = keys.GetValidSigningKeys();
 
-            if (!string.IsNullOrWhiteSpace(kid))
-                return signingKeys.Where(k => k.Key.KeyId == kid).Select(k => k.Key);
+            var matches = signingKeys.Where(k => k.Key.KeyId == kid)
+                                     .Select(k => k.Key)
+                                     .ToList();
 
-            return signingKeys.Select(k => k.Key);
+            if (matches.Count == 1)
+                return matches;
+
+            return [];
         }
     };
 });
