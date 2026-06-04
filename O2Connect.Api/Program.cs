@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using O2Connect.Api.Controllers.RequestModelValidators;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.DataHandlers.TokenGrantHandlers;
+using O2Connect.Api.DataValidators;
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Models.Options;
 using O2Connect.Api.Repositories;
@@ -36,9 +38,42 @@ builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
+builder.Services.AddSingleton<IJwtValidator, JwtValidator>();
 builder.Services.AddSingleton<ISigningKeyProvider, RsaSigningKeyProvider>();
 builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
 builder.Services.AddSingleton<ISecretHasher, Pbkdf2SecretHasher>();
+
+builder.Services.AddSingleton(sp =>
+{
+    var keys = sp.GetRequiredService<ISigningKeyProvider>();
+
+    return new TokenValidationParameters
+    {
+        ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
+        RequireSignedTokens = true,
+
+        ValidateIssuer = true,
+        ValidIssuer = "your-issuer",
+
+        ValidateAudience = true,
+        ValidAudience = "your-audience",
+
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromSeconds(30),
+
+        ValidateIssuerSigningKey = true,
+
+        IssuerSigningKeyResolver = (token, securityToken, kid, parameters) =>
+        {
+            var signingKeys = keys.GetValidSigningKeys();
+
+            if (!string.IsNullOrWhiteSpace(kid))
+                return signingKeys.Where(k => k.Key.KeyId == kid).Select(k => k.Key);
+
+            return signingKeys.Select(k => k.Key);
+        }
+    };
+});
 
 builder.Services.AddTransient<ITokenGrantHandler, AuthorizationCodeGrantHandler>();
 builder.Services.AddTransient<ITokenGrantHandler, ClientCredentialsGrantHandler>();

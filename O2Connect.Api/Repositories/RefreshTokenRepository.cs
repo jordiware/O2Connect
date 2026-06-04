@@ -10,6 +10,7 @@ public interface IRefreshTokenRepository
     Task ConsumeAndCreateAsync(RefreshToken token, RefreshToken newToken, CancellationToken ct);
     Task<bool> TryConsumeAsync(string token, CancellationToken ct);
     Task<bool> IsConsumedAsync(string token, CancellationToken ct);
+    Task<bool> IsSessionActiveAsync(string sessionId, CancellationToken ct);
     Task RevokeAsync(string token, CancellationToken ct);
     Task RevokeSessionAsync(string sessionId, CancellationToken ct);
     Task<RefreshToken?> RotateAsync(string token, RefreshToken newToken, CancellationToken ct);
@@ -137,5 +138,15 @@ public class InMemoryRefreshTokenRepository : IRefreshTokenRepository
         _tokens[newToken.Token] = newToken;
 
         return Task.CompletedTask;
+    }
+
+    public Task<bool> IsSessionActiveAsync(string sessionId, CancellationToken ct)
+    {
+        var kvp = _tokens.Where(kvp => kvp.Value.SessionId.Equals(sessionId, StringComparison.Ordinal)
+                                       && !kvp.Value.Consumed
+                                       && !kvp.Value.Revoked
+                                       && kvp.Value.ExpiresAt > DateTimeOffset.UtcNow);
+
+        return Task.FromResult(kvp.Any());
     }
 }
