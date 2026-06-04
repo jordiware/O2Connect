@@ -22,9 +22,7 @@ public class IntrospectionController : ControllerBase
     public async Task<IActionResult> Introspect([FromForm] string token)
     {
         if (string.IsNullOrWhiteSpace(token))
-        {
             return Ok(new { active = false });
-        }
 
         var clientId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 

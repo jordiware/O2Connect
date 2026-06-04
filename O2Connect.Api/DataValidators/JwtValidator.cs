@@ -101,11 +101,9 @@ public class JwtValidator : IJwtValidator
             if (!long.TryParse(exp, out var parsedExp))
                 parsedExp = new DateTimeOffset(validatedToken.ValidTo).ToUnixTimeSeconds();
 
-            var isValid = tokenType.Equals(tokenType, StringComparison.Ordinal);
-
             return new JwtValidationResult
             {
-                IsValid = isValid,
+                IsValid = true,
                 Subject = subject,
                 ClientId = clientId,
                 Scopes = scopes,

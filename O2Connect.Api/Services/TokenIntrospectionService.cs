@@ -1,4 +1,5 @@
 ﻿using O2Connect.Api.DataValidators;
+using O2Connect.Api.Models;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
 
@@ -31,58 +32,54 @@ public class TokenIntrospectionService : ITokenIntrospectionService
         ct.ThrowIfCancellationRequested();
         var jwt = _jwtValidator.Validate(token);
 
-        if (jwt.IsValid)
+        if (!jwt.IsValid)
+            return IntrospectionResponse.Inactive;
+
+        return jwt.TokenType switch
         {
-            if (string.IsNullOrWhiteSpace(jwt.Subject))
+            "access_token" => await FromAccessToken(jwt, callingClientId, ct),
+            "refresh_token" => await FromRefreshToken(token, callingClientId, ct),
+            _ => IntrospectionResponse.Inactive
+        };
+    }
+
+    private async Task<IntrospectionResponse> FromAccessToken(JwtValidationResult jwt,
+                                                              string callingClientId,
+                                                              CancellationToken ct)
+    {
+        if (!IsValid(jwt.Subject, jwt.ClientId, callingClientId))
+            return IntrospectionResponse.Inactive;
+
+        if (!string.IsNullOrWhiteSpace(jwt.SessionId))
+        {
+            var sessionValid = await _refreshTokenRepository.IsSessionActiveAsync(jwt.SessionId, ct);
+
+            if (!sessionValid)
                 return IntrospectionResponse.Inactive;
-
-            if (string.IsNullOrWhiteSpace(jwt.ClientId))
-                return IntrospectionResponse.Inactive;
-
-            if (!jwt.Scopes.Any())
-                return IntrospectionResponse.Inactive;
-
-            if (jwt.ClientId != callingClientId)
-                return IntrospectionResponse.Inactive;
-
-            if (jwt.TokenType != "access_token")
-                return IntrospectionResponse.Inactive;
-
-            if (!string.IsNullOrWhiteSpace(jwt.SessionId))
-            {
-                var sessionValid = await _refreshTokenRepository.IsSessionActiveAsync(jwt.SessionId, ct);
-
-                if (!sessionValid)
-                    return IntrospectionResponse.Inactive;
-            }
-
-            return new IntrospectionResponse
-            {
-                Active = true,
-                Sub = jwt.Subject,
-                ClientId = jwt.ClientId,
-                Scopes = jwt.Scopes,
-                Exp = jwt.ExpUnix,
-                Iat = jwt.IatUnix,
-                TokenType = "access_token"
-            };
         }
 
+        return new IntrospectionResponse
+        {
+            Active = true,
+            Sub = jwt.Subject,
+            ClientId = jwt.ClientId,
+            Scopes = jwt.Scopes,
+            Exp = jwt.ExpUnix,
+            Iat = jwt.IatUnix,
+            TokenType = "access_token"
+        };
+    }
+
+    private async Task<IntrospectionResponse> FromRefreshToken(string token,
+                                                               string callingClientId,
+                                                               CancellationToken ct)
+    {
         var refresh = await _refreshTokenRepository.GetAsync(token, ct);
 
         if (refresh is null || refresh.Revoked)
             return IntrospectionResponse.Inactive;
 
-        if (string.IsNullOrWhiteSpace(refresh.Subject))
-            return IntrospectionResponse.Inactive;
-
-        if (string.IsNullOrWhiteSpace(refresh.ClientId))
-            return IntrospectionResponse.Inactive;
-
-        if (!refresh.Scopes.Any())
-            return IntrospectionResponse.Inactive;
-
-        if (refresh.ClientId != callingClientId)
+        if (!IsValid(refresh.Subject, refresh.ClientId, callingClientId)) 
             return IntrospectionResponse.Inactive;
 
         return new IntrospectionResponse
@@ -95,5 +92,22 @@ public class TokenIntrospectionService : ITokenIntrospectionService
             Iat = refresh.CreatedAt.ToUnixTimeSeconds(),
             TokenType = "refresh_token"
         };
+    }
+
+    private bool IsValid(string? subject, string? clientId, string? callingClientId)
+    {
+        if (string.IsNullOrWhiteSpace(subject))
+            return false;
+
+        if (string.IsNullOrWhiteSpace(clientId))
+            return false;
+
+        if (string.IsNullOrWhiteSpace(callingClientId))
+            return false;
+
+        if (!clientId.Equals(callingClientId, StringComparison.Ordinal))
+            return false;
+
+        return true;
     }
 }
