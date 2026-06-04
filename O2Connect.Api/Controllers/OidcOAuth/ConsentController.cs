@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
@@ -20,6 +21,7 @@ public class ConsentController : OidcOAuthControllerBase
     }
 
     [HttpGet("{sessionId}")]
+    [Authorize(Policy = "RequireProfileScope")]
     public async Task<IActionResult> GetConsent(string sessionId)
     {
         var session = await _consentService.GetSessionAsync(sessionId, HttpContext.RequestAborted);
@@ -43,6 +45,7 @@ public class ConsentController : OidcOAuthControllerBase
     }
 
     [HttpPost("{sessionId}")]
+    [Authorize(Policy = "RequireProfileScope")]
     public async Task<IActionResult> PostConsent(string sessionId, [FromBody] ConsentDecisionRequest request)
     {
         var session = await _consentService.GetSessionAsync(sessionId, HttpContext.RequestAborted);

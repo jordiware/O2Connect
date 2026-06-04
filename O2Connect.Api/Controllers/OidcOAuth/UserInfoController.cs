@@ -6,7 +6,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("connect/userinfo")]
-[Authorize(AuthenticationSchemes = "Bearer")]
+[Authorize(Policy = "RequireProfileScope")]
 public class UserInfoController : ControllerBase
 {
     private readonly IUserInfoService _userInfoService;
@@ -18,10 +18,13 @@ public class UserInfoController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> UserInfo()
+    public async Task<IActionResult> UserInfoGet()
     {
         var result = await _userInfoService.GetUserInfoAsync(User, HttpContext.RequestAborted);
 
         return Ok(result);
     }
+
+    [HttpPost]
+    public Task<IActionResult> UserInfoPost() => UserInfoGet();
 }

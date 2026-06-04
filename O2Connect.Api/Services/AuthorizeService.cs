@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace O2Connect.Api.Services;
 
-public interface IAuthorizationService
+public interface IAuthorizeService
 {
     Task<AuthorizationResult> ProcessAuthorizationAsync(AuthorizationRequest request,
                                                         ClaimsPrincipal user,
@@ -19,7 +19,7 @@ public interface IAuthorizationService
                                                   CancellationToken ct);
 }
 
-public class AuthorizationService : IAuthorizationService
+public class AuthorizeService : IAuthorizeService
 {
     public const string LoginUri = "/account/login";
     public const string AuthorizeResumeUri = "/connect/authorize/resume";
@@ -30,7 +30,7 @@ public class AuthorizationService : IAuthorizationService
     private readonly IConsentService _consentService;
     private readonly ISecureTokenGenerator _secureTokenGenerator;
 
-    public AuthorizationService(
+    public AuthorizeService(
         IClientRepository clientRepository,
         IAuthorizationCodeRepository authorizationCodeRepository,
         IAuthorizationSessionRepository authorizationSessionRepository,

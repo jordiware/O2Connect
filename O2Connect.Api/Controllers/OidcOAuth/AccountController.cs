@@ -86,7 +86,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpGet("me")]
-    [Authorize]
+    [Authorize(Policy = "RequireProfileScope")]
     public IActionResult Me()
     {
         Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Controllers.RequestModelValidators;
 using O2Connect.Api.Crypto;
@@ -25,7 +26,7 @@ builder.Services.AddMemoryCache(options =>
     options.SizeLimit = 1000;
 });
 
-builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>(); 
+builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
 builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
 builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
 builder.Services.AddSingleton<IAuthorizationSessionRepository, InMemoryAuthorizationSessionRepository>();
@@ -55,10 +56,25 @@ builder.Services.AddScoped<IClientAuthenticationHandler, PrivateKeyJwtHandler>()
 
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+builder.Services.AddScoped<IAuthorizeService, AuthorizeService>();
 builder.Services.AddScoped<IConsentService, ConsentService>();
 builder.Services.AddScoped<ILoginService, LoginService>();
 builder.Services.AddScoped<IUserInfoService, UserInfoService>();
+
+builder.Services.AddAuthorizationBuilder()
+                .AddPolicy("RequireProfileScope", policy =>
+                {
+                    policy.RequireAssertion(ctx =>
+                    {
+                        var scopeClaims = ctx.User.FindAll("scope").Concat(ctx.User.FindAll("scp"));
+
+                        return scopeClaims.SelectMany(c => c.Value.Split(' '))
+                                          .Any(s => s.Equals("profile", StringComparison.OrdinalIgnoreCase));
+                    });
+                })
+                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer")
+                .RequireAuthenticatedUser()
+                .Build());
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
