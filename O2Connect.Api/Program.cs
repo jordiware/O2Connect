@@ -111,6 +111,7 @@ builder.Services.AddScoped<IConsentService, ConsentService>();
 builder.Services.AddScoped<ILoginService, LoginService>();
 builder.Services.AddScoped<IUserInfoService, UserInfoService>();
 builder.Services.AddScoped<ITokenIntrospectionService, TokenIntrospectionService>();
+builder.Services.AddScoped<IRevocationService, RevocationService>();
 
 builder.Services.AddAuthorizationBuilder()
                 .AddPolicy("RequireProfileScope", policy =>
@@ -123,9 +124,7 @@ builder.Services.AddAuthorizationBuilder()
                                           .Any(s => s.Equals("profile", StringComparison.OrdinalIgnoreCase));
                     });
                 })
-                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer")
-                .RequireAuthenticatedUser()
-                .Build());
+                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser().Build());
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
