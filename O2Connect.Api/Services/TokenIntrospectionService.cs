@@ -31,16 +31,21 @@ public class TokenIntrospectionService : ITokenIntrospectionService
         ct.ThrowIfCancellationRequested();
         var jwt = _jwtValidator.Validate(token);
 
-        if (jwt is not null)
+        if (jwt.IsValid)
         {
-            var sessionValid = await _refreshTokenRepository.IsSessionActiveAsync(jwt.SessionId, ct);
+            if (jwt.TokenType != "access_token")
+                return IntrospectionResponse.Inactive;
 
-            if (!sessionValid)
-                return new IntrospectionResponse { Active = false };
+            if (!string.IsNullOrWhiteSpace(jwt.SessionId))
+            {
+                var sessionValid = await _refreshTokenRepository.IsSessionActiveAsync(jwt.SessionId, ct);
+
+                if (!sessionValid)
+                    return IntrospectionResponse.Inactive;
+            }
 
             return new IntrospectionResponse
             {
-                Active = true,
                 Sub = jwt.Subject,
                 ClientId = jwt.ClientId,
                 Scopes = jwt.Scopes,
@@ -53,14 +58,13 @@ public class TokenIntrospectionService : ITokenIntrospectionService
         var refresh = await _refreshTokenRepository.GetAsync(token, ct);
 
         if (refresh is null || refresh.Revoked)
-            return new IntrospectionResponse { Active = false };
+            return IntrospectionResponse.Inactive;
 
         if (refresh.ClientId != callingClientId)
-            return new IntrospectionResponse { Active = false };
+            return IntrospectionResponse.Inactive;
 
         return new IntrospectionResponse
         {
-            Active = !refresh.Revoked,
             Sub = refresh.Subject,
             ClientId = refresh.ClientId,
             Scopes = refresh.Scopes,

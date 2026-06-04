@@ -2,7 +2,12 @@
 
 public sealed record IntrospectionResponse
 {
-    public bool Active { get; init; }
+    public static IntrospectionResponse Inactive { get; } = new()
+    {
+        Active = false
+    };
+
+    public bool Active { get; init; } = true;
     public string? Sub { get; init; }
     public string? ClientId { get; init; }
     public IEnumerable<string> Scopes { get; init; } = [];
