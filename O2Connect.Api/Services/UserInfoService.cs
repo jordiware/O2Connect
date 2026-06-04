@@ -46,6 +46,15 @@ public class UserInfoService : IUserInfoService
         var claimMap = claims.GroupBy(c => c.Type)
                              .ToDictionary(g => g.Key, g => g.Select(c => c.Value).ToList());
 
+        PopulateClaims(response, scopes, claimMap);
+
+        return Task.FromResult(response);
+    }
+
+    private static void PopulateClaims(IDictionary<string, object> response,
+                                       HashSet<string> scopes,
+                                       IDictionary<string, List<string>> claimMap)
+    {
         if (scopes.Contains("profile"))
         {
             AddIfExists(response, claimMap, "name");
@@ -79,8 +88,6 @@ public class UserInfoService : IUserInfoService
         {
             AddIfExists(response, claimMap, "address");
         }
-
-        return Task.FromResult(response);
     }
 
     private static void AddIfExists(IDictionary<string, object> response,
