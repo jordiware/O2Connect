@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Services;
+using O2Connect.Dto.Responses;
 using System.Security.Claims;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
@@ -22,12 +23,15 @@ public class IntrospectionController : ControllerBase
     public async Task<IActionResult> Introspect([FromForm] string token)
     {
         if (string.IsNullOrWhiteSpace(token))
-            return Ok(new { active = false });
+            return Ok(IntrospectionResponse.Inactive);
 
-        var clientId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var clientId = User.FindFirstValue("client_id");
+
+        if (string.IsNullOrWhiteSpace(clientId))
+            return Ok(IntrospectionResponse.Inactive);
 
         var result = await _tokenIntrospectionService.IntrospectAsync(token,
-                                                                      clientId!,
+                                                                      clientId,
                                                                       HttpContext.RequestAborted);
 
         return Ok(result);
