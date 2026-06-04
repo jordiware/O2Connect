@@ -44,12 +44,6 @@ public class DiscoveryController : ControllerBase
             token_endpoint = tokenEndpoint.ToString(),
             token_endpoint_auth_signing_alg_values_supported = new[] { "RS256" },
             revocation_endpoint = revocationEndpoint.ToString(),
-            revocation_endpoint_auth_methods_supported = new[]
-            {
-                "client_secret_basic",
-                "client_secret_post",
-                "private_key_jwt"
-            },
             introspection_endpoint = introspectionEndpoint.ToString(),
             jwks_uri = jwksEndpoint.ToString(),
 
@@ -72,6 +66,12 @@ public class DiscoveryController : ControllerBase
                 .ToArray(),
 
             token_endpoint_auth_methods_supported =
+                ClientAuthenticationMethod.Supported
+                    .Select(t => t.Value)
+                    .Order(StringComparer.Ordinal)
+                    .ToArray(),
+
+            revocation_endpoint_auth_methods_supported =
                 ClientAuthenticationMethod.Supported
                     .Select(t => t.Value)
                     .Order(StringComparer.Ordinal)
