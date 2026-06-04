@@ -6,7 +6,7 @@ namespace O2Connect.Api.Services;
 
 public interface IRevocationService
 {
-    Task HandleAsync(RevocationRequest request, string clientId, CancellationToken ct);
+    Task HandleAsync(RevocationRequest request, string? clientId, CancellationToken ct);
 }
 
 public class RevocationService : IRevocationService
@@ -19,12 +19,15 @@ public class RevocationService : IRevocationService
         _refreshTokenRepository = refreshTokenRepository;
     }
 
-    public async Task HandleAsync(RevocationRequest request, string clientId, CancellationToken ct)
+    public async Task HandleAsync(RevocationRequest request, string? clientId, CancellationToken ct)
     {
         var token = request.Token?.Trim();
 
         if (string.IsNullOrWhiteSpace(token))
             throw OAuthException.FromInvalidRequest("token is required");
+
+        if (string.IsNullOrWhiteSpace(clientId))
+            throw OAuthException.FromInvalidClient();
 
         if (token.Length > 512)
             return;
