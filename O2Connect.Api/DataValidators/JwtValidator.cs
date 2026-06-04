@@ -16,14 +16,14 @@ public class JwtValidator : IJwtValidator
         { SecurityAlgorithms.RsaSha256 };
 
     private static readonly HashSet<string> ExcludedClaims = new(StringComparer.Ordinal)
-        { "nbf", "exp", "iat", "iss", "aud" };
+        { "nbf", "exp", "iat", "iss", "aud", "sub", "client_id", "azp", "scope", "scp" };
 
     private readonly JwtSecurityTokenHandler _tokenHandler = new();
     private readonly TokenValidationParameters _tokenValidationParameters;
     private readonly ILogger<JwtValidator> _logger;
 
     public JwtValidator(
-        TokenValidationParameters tokenValidationParameters, 
+        TokenValidationParameters tokenValidationParameters,
         ILogger<JwtValidator> logger)
     {
         _tokenValidationParameters = tokenValidationParameters;
@@ -41,52 +41,79 @@ public class JwtValidator : IJwtValidator
                                                         _tokenValidationParameters,
                                                         out var validatedToken);
 
+            if (principal.Identity is not ClaimsIdentity identity || !identity.IsAuthenticated)
+                return JwtValidationResult.Invalid;
+
             if (validatedToken is not JwtSecurityToken jwt)
+                return JwtValidationResult.Invalid;
+
+            if (string.IsNullOrEmpty(jwt.Header.Alg))
                 return JwtValidationResult.Invalid;
 
             if (!AllowedAlgs.Contains(jwt.Header.Alg))
                 return JwtValidationResult.Invalid;
 
-            var clientId = principal.FindFirstValue("client_id") ?? principal.FindFirstValue("azp");
-
-            if (clientId is null)
+            if (jwt.Issuer != _tokenValidationParameters.ValidIssuer)
                 return JwtValidationResult.Invalid;
 
-            var subject = principal.FindFirstValue("sub");
-            var scope = principal.FindFirstValue("scope") ?? principal.FindFirstValue("scp");
-            var sessionId = principal.FindFirstValue("sid");
-            var tokenType = principal.FindFirstValue("token_type");
+            var clientId = principal.FindFirst("client_id")?.Value ?? principal.FindFirst("azp")?.Value;
+
+            if (string.IsNullOrWhiteSpace(clientId))
+                return JwtValidationResult.Invalid;
+
+            var subject = principal.FindFirst("sub")?.Value;
+            var tokenType = principal.FindFirst("token_type")?.Value;
+
+            var isClientCredentials = string.IsNullOrWhiteSpace(subject);
 
             if (string.IsNullOrWhiteSpace(tokenType))
             {
-                if (subject != null)
-                    tokenType = "access_token";
-                else 
+                if (isClientCredentials)
                     tokenType = "client_credentials";
-
+                else
+                    tokenType = "access_token";
             }
 
-            var isClientCredentials = subject is null;
-
-            if (isClientCredentials && tokenType != "client_credentials")
+            if (isClientCredentials && !string.Equals(tokenType, "client_credentials", StringComparison.Ordinal))
                 return JwtValidationResult.Invalid;
 
-            if (!isClientCredentials && tokenType == "client_credentials")
+            if (!isClientCredentials && string.Equals(tokenType, "client_credentials", StringComparison.Ordinal))
                 return JwtValidationResult.Invalid;
+
+            var scopes = principal.FindAll(c => c.Type == "scope" || c.Type == "scp")
+                                  .SelectMany(c => c.Value.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries))
+                                  .Distinct(StringComparer.Ordinal);
+
+            if (!isClientCredentials && !scopes.Any())
+                return JwtValidationResult.Invalid;
+
+            var sessionId = principal.FindFirst("sid")?.Value;
+
+            var nbf = principal.FindFirst("nbf")?.Value;
+            if (!long.TryParse(nbf, out var parsedNbf))
+                parsedNbf = new DateTimeOffset(validatedToken.ValidFrom).ToUnixTimeSeconds();
+
+            var iat = principal.FindFirst("iat")?.Value;
+            if (!long.TryParse(iat, out var parsedIat))
+                parsedIat = parsedNbf;
+
+            var exp = principal.FindFirst("exp")?.Value;
+            if (!long.TryParse(exp, out var parsedExp))
+                parsedExp = new DateTimeOffset(validatedToken.ValidTo).ToUnixTimeSeconds();
+
+            var isValid = tokenType.Equals(tokenType, StringComparison.Ordinal);
 
             return new JwtValidationResult
             {
-                IsValid = true,
+                IsValid = isValid,
                 Subject = subject,
                 ClientId = clientId,
-                Scopes = scope?.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries) ?? [],
+                Scopes = scopes,
                 SessionId = sessionId,
                 TokenType = tokenType,
-                ExpUnix = jwt.Payload.Expiration,
-                IatUnix = jwt.Payload.IssuedAt == DateTime.MinValue
-                          ? null 
-                          : new DateTimeOffset(jwt.Payload.IssuedAt).ToUnixTimeSeconds(),
-                NotBeforeUnix = jwt.Payload.NotBefore,
+                NotBeforeUnix = parsedNbf,
+                IatUnix = parsedIat,
+                ExpUnix = parsedExp,
                 Claims = principal.Claims.Where(c => !ExcludedClaims.Contains(c.Type))
                                          .GroupBy(c => c.Type)
                                          .ToDictionary(g => g.Key,

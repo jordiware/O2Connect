@@ -33,6 +33,18 @@ public class TokenIntrospectionService : ITokenIntrospectionService
 
         if (jwt.IsValid)
         {
+            if (string.IsNullOrWhiteSpace(jwt.Subject))
+                return IntrospectionResponse.Inactive;
+
+            if (string.IsNullOrWhiteSpace(jwt.ClientId))
+                return IntrospectionResponse.Inactive;
+
+            if (!jwt.Scopes.Any())
+                return IntrospectionResponse.Inactive;
+
+            if (jwt.ClientId != callingClientId)
+                return IntrospectionResponse.Inactive;
+
             if (jwt.TokenType != "access_token")
                 return IntrospectionResponse.Inactive;
 
@@ -46,6 +58,7 @@ public class TokenIntrospectionService : ITokenIntrospectionService
 
             return new IntrospectionResponse
             {
+                Active = true,
                 Sub = jwt.Subject,
                 ClientId = jwt.ClientId,
                 Scopes = jwt.Scopes,
@@ -60,11 +73,21 @@ public class TokenIntrospectionService : ITokenIntrospectionService
         if (refresh is null || refresh.Revoked)
             return IntrospectionResponse.Inactive;
 
+        if (string.IsNullOrWhiteSpace(refresh.Subject))
+            return IntrospectionResponse.Inactive;
+
+        if (string.IsNullOrWhiteSpace(refresh.ClientId))
+            return IntrospectionResponse.Inactive;
+
+        if (!refresh.Scopes.Any())
+            return IntrospectionResponse.Inactive;
+
         if (refresh.ClientId != callingClientId)
             return IntrospectionResponse.Inactive;
 
         return new IntrospectionResponse
         {
+            Active = true,
             Sub = refresh.Subject,
             ClientId = refresh.ClientId,
             Scopes = refresh.Scopes,
