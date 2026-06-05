@@ -112,6 +112,7 @@ builder.Services.AddScoped<ILoginService, LoginService>();
 builder.Services.AddScoped<IUserInfoService, UserInfoService>();
 builder.Services.AddScoped<ITokenIntrospectionService, TokenIntrospectionService>();
 builder.Services.AddScoped<IRevocationService, RevocationService>();
+builder.Services.AddScoped<IDiscoveryMetadataService, DiscoveryMetadataService>();
 
 builder.Services.AddAuthorizationBuilder()
                 .AddPolicy("RequireProfileScope", policy =>
