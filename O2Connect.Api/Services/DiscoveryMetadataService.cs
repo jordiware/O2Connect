@@ -16,31 +16,27 @@ public sealed class DiscoveryMetadataService : IDiscoveryMetadataService
     private readonly JwtOptions _jwtOptions;
     private readonly DiscoveryEndpoints _endpoints;
 
+    private Uri IssuerUri { get; }
+
     public DiscoveryMetadataService(
         IOptions<JwtOptions> jwtOptions,
         IOptions<DiscoveryEndpoints> endpoints)
     {
         _jwtOptions = jwtOptions.Value;
         _endpoints = endpoints.Value;
-    }
 
-    private Uri BaseUri()
-    {
-        var issuer = _jwtOptions.Issuer.TrimEnd('/');
-        return new Uri(issuer);
+        IssuerUri = new Uri(_jwtOptions.Issuer.TrimEnd('/'));
     }
 
     private DiscoveryMetadata BaseMetadata()
     {
-        var issuerUri = BaseUri();
-
         return new DiscoveryMetadata
         {
-            Issuer = issuerUri.ToString(),
+            Issuer = IssuerUri.ToString(),
 
-            AuthorizationEndpoint = new Uri(issuerUri, "/connect/authorize").ToString(),
-            TokenEndpoint = new Uri(issuerUri, "/connect/token").ToString(),
-            JwksUri = new Uri(issuerUri, "/.well-known/jwks.json").ToString(),
+            AuthorizationEndpoint = new Uri(IssuerUri, "/connect/authorize").ToString(),
+            TokenEndpoint = new Uri(IssuerUri, "/connect/token").ToString(),
+            JwksUri = new Uri(IssuerUri, "/.well-known/jwks.json").ToString(),
 
             GrantTypesSupported = GrantType.Supported
                 .Select(x => x.Value)
@@ -70,8 +66,8 @@ public sealed class DiscoveryMetadataService : IDiscoveryMetadataService
     {
         var m = BaseMetadata() with
         {
-            RevocationEndpoint = new Uri(BaseUri(), "/connect/revocation").ToString(),
-            IntrospectionEndpoint = new Uri(BaseUri(), "/connect/introspect").ToString(),
+            RevocationEndpoint = new Uri(IssuerUri, "/connect/revocation").ToString(),
+            IntrospectionEndpoint = new Uri(IssuerUri, "/connect/introspect").ToString(),
 
             ScopesSupported =
             [
@@ -84,40 +80,6 @@ public sealed class DiscoveryMetadataService : IDiscoveryMetadataService
             ]
         };
 
-        return MapOAuthAuthorizationServerMetadata(m);
-    }
-
-    public OpenIdProviderMetadataResponse GetOpenIdConfiguration()
-    {
-        var m = BaseMetadata() with
-        {
-            UserInfoEndpoint = new Uri(BaseUri(), "/connect/userinfo").ToString(),
-
-            IdTokenSigningAlgValuesSupported = "RS256",
-
-            ScopesSupported =
-            [
-                "openid",
-                "profile",
-                "email"
-            ],
-
-            ClaimsSupported =
-            [
-                "sub",
-                "email",
-                "name",
-                "preferred_username",
-                "given_name",
-                "family_name"
-            ]
-        };
-
-        return MapOpenIdProviderMetadata(m);
-    }
-
-    public static OAuthAuthorizationServerMetadataResponse MapOAuthAuthorizationServerMetadata(DiscoveryMetadata m)
-    {
         return new OAuthAuthorizationServerMetadataResponse
         {
             Issuer = m.Issuer,
@@ -144,8 +106,32 @@ public sealed class DiscoveryMetadataService : IDiscoveryMetadataService
         };
     }
 
-    public static OpenIdProviderMetadataResponse MapOpenIdProviderMetadata(DiscoveryMetadata m)
+    public OpenIdProviderMetadataResponse GetOpenIdConfiguration()
     {
+        var m = BaseMetadata() with
+        {
+            UserInfoEndpoint = new Uri(IssuerUri, "/connect/userinfo").ToString(),
+
+            IdTokenSigningAlgValuesSupported = "RS256",
+
+            ScopesSupported =
+            [
+                "openid",
+                "profile",
+                "email"
+            ],
+
+            ClaimsSupported =
+            [
+                "sub",
+                "email",
+                "name",
+                "preferred_username",
+                "given_name",
+                "family_name"
+            ]
+        };
+
         return new OpenIdProviderMetadataResponse
         {
             Issuer = m.Issuer,
