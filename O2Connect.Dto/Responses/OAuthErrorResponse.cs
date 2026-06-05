@@ -2,14 +2,16 @@
 
 namespace O2Connect.Dto.Responses;
 
-public class OAuthErrorResponse
+public sealed record OAuthErrorResponse
 {
     [JsonPropertyName("error")]
-    public string Error { get; init; } = default!;
+    public required string Error { get; init; }
 
     [JsonPropertyName("error_description")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ErrorDescription { get; init; }
 
     [JsonPropertyName("error_uri")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ErrorUri { get; init; }
 }

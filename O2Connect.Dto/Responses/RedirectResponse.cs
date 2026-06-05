@@ -5,8 +5,8 @@ namespace O2Connect.Dto.Responses;
 public sealed record RedirectResponse
 {
     [JsonPropertyName("action")]
-    public string Action { get; init; } = default!;
+    public required string Action { get; init; }
 
-    [JsonPropertyName("redirectUrl")]
-    public string RedirectUrl { get; init; } = default!;
+    [JsonPropertyName("redirect_url")]
+    public required string RedirectUrl { get; init; }
 }

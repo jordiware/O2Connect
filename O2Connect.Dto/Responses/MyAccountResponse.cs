@@ -1,9 +1,18 @@
-﻿namespace O2Connect.Dto.Responses;
+﻿using System.Text.Json.Serialization;
+
+namespace O2Connect.Dto.Responses;
 
 public sealed record MyAccountResponse
 {
-    public bool IsAuthenticated { get; init; }
-    public string Id { get; init; } = default!;
-    public string Username { get; init; } = default!;
-    public string[] Roles { get; init; } = [];
+    [JsonPropertyName("is_authenticated")]
+    public required bool IsAuthenticated { get; init; }
+
+    [JsonPropertyName("id")]
+    public required string Id { get; init; }
+
+    [JsonPropertyName("username")]
+    public required string Username { get; init; }
+
+    [JsonPropertyName("roles")]
+    public required string[] Roles { get; init; }
 }

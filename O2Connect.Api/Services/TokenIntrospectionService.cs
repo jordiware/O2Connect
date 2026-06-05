@@ -63,7 +63,7 @@ public class TokenIntrospectionService : ITokenIntrospectionService
             Active = true,
             Sub = jwt.Subject,
             ClientId = jwt.ClientId,
-            Scopes = jwt.Scopes,
+            Scope = string.Join(' ', jwt.Scopes.Order()),
             Exp = jwt.ExpUnix,
             Iat = jwt.IatUnix,
             TokenType = "access_token"
@@ -87,7 +87,7 @@ public class TokenIntrospectionService : ITokenIntrospectionService
             Active = true,
             Sub = refresh.Subject,
             ClientId = refresh.ClientId,
-            Scopes = refresh.Scopes,
+            Scope = string.Join(' ', refresh.Scopes.Order()),
             Exp = refresh.ExpiresAt.ToUnixTimeSeconds(),
             Iat = refresh.CreatedAt.ToUnixTimeSeconds(),
             TokenType = "refresh_token"

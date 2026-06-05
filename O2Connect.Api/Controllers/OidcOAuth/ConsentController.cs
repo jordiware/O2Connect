@@ -38,7 +38,7 @@ public class ConsentController : OidcOAuthControllerBase
             ClientId = session.Request.ClientId,
             ClientName = session.ClientDisplayName,
             UserDisplayName = session.UserDisplayName,
-            Scopes = session.MissingScopes
+            Scope = string.Join(' ', session.MissingScopes.Order())
         };
 
         return Ok(response);

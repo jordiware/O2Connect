@@ -50,10 +50,10 @@ public class JwtTokenFactory : ITokenFactory
         return Task.FromResult(new TokenResponse
         {
             AccessToken = token,
+            TokenType = "Bearer",
             ExpiresIn = _options.AccessTokenLifetimeSeconds,
-            Scope = request.Scopes
+            Scope = string.Join(' ', request.Scopes.Order())
         });
-
     }
 
     private IEnumerable<Claim> BuildClaims(JwtTokenFactoryRequest request, DateTimeOffset now)

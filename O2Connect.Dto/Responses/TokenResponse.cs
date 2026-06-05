@@ -1,13 +1,27 @@
-﻿using System.Collections.Immutable;
+﻿using System.Text.Json.Serialization;
 
 namespace O2Connect.Dto.Responses;
 
-public class TokenResponse
+public sealed record TokenResponse
 {
-    public string AccessToken { get; set; } = default!;
-    public string TokenType { get; set; } = "Bearer";
-    public int ExpiresIn { get; set; }
-    public string? RefreshToken { get; set; }
-    public string? IdToken { get; set; }
-    public ImmutableHashSet<string>? Scope { get; init; }
+    [JsonPropertyName("access_token")]
+    public required string AccessToken { get; init; }
+
+    [JsonPropertyName("token_type")]
+    public required string TokenType { get; init; }
+
+    [JsonPropertyName("expires_in")]
+    public required int ExpiresIn { get; init; }
+
+    [JsonPropertyName("refresh_token")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? RefreshToken { get; init; }
+
+    [JsonPropertyName("id_token")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? IdToken { get; init; }
+
+    [JsonPropertyName("scope")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Scope { get; init; }
 }
