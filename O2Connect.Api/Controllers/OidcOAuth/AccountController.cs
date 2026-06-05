@@ -77,10 +77,10 @@ public class AccountController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
+        if (string.IsNullOrWhiteSpace(request.Token))
             return BadRequest(new { message = "Missing refresh token" });
 
-        await _loginService.LogoutAsync(request.RefreshToken, HttpContext.RequestAborted);
+        await _loginService.LogoutAsync(request.Token, HttpContext.RequestAborted);
 
         return NoContent();
     }

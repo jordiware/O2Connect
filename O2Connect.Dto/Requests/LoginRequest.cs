@@ -5,14 +5,14 @@ namespace O2Connect.Dto.Requests;
 public sealed record LoginRequest
 {
     [JsonPropertyName("username")]
-    public string Username { get; init; } = default!;
+    public required string Username { get; init; }
 
     [JsonPropertyName("password")]
-    public string Password { get; init; } = default!;
+    public required string Password { get; init; }
 
     [JsonPropertyName("remember_me")]
-    public bool RememberMe { get; init; } = false;
+    public required bool RememberMe { get; init; }
 
     [JsonPropertyName("client_id")]
-    public string ClientId { get; init; } = default!;
+    public required string ClientId { get; init; }
 }

@@ -1,47 +1,45 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 
 namespace O2Connect.Dto.Requests;
 
-public class TokenRequest
+public sealed record TokenRequest
 {
-    [Required]
     [FromForm(Name = "grant_type")]
-    public string GrantType { get; set; } = default!;
+    public required string GrantType { get; init; }
 
     [FromForm(Name = "client_id")]
-    public string? ClientId { get; set; }
+    public string? ClientId { get; init; }
 
     [FromForm(Name = "client_secret")]
-    public string? ClientSecret { get; set; }
+    public string? ClientSecret { get; init; }
 
     [FromForm(Name = "client_assertion")]
-    public string? ClientAssertion { get; set; }
+    public string? ClientAssertion { get; init; }
 
     [FromForm(Name = "client_assertion_type")]
-    public string? ClientAssertionType { get; set; }
+    public string? ClientAssertionType { get; init; }
 
     [FromForm(Name = "code")]
-    public string? Code { get; set; }
+    public string? Code { get; init; }
 
     [FromForm(Name = "device_code")]
-    public string? DeviceCode { get; set; }
+    public string? DeviceCode { get; init; }
 
     [FromForm(Name = "redirect_uri")]
-    public string? RedirectUri { get; set; }
+    public string? RedirectUri { get; init; }
 
     [FromForm(Name = "code_verifier")]
-    public string? CodeVerifier { get; set; }
+    public string? CodeVerifier { get; init; }
 
     [FromForm(Name = "refresh_token")]
-    public string? RefreshToken { get; set; }
+    public string? RefreshToken { get; init; }
 
     [FromForm(Name = "scope")]
-    public string? Scope { get; set; }
+    public string? Scope { get; init; }
 
     [FromForm(Name = "resource")]
-    public string? Resource { get; set; }
+    public string? Resource { get; init; }
 
     [FromForm(Name = "audience")]
-    public string? Audience { get; set; }
+    public string? Audience { get; init; }
 }

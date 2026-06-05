@@ -1,7 +1,12 @@
-﻿namespace O2Connect.Dto.Requests;
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace O2Connect.Dto.Requests;
 
 public sealed record RevocationRequest
 {
-    public string Token { get; init; } = default!;
+    [FromForm(Name = "token")]
+    public required string Token { get; init; }
+
+    [FromForm(Name = "token_type_hint")]
     public string? TokenTypeHint { get; init; }
 }

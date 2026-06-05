@@ -69,10 +69,12 @@ public class ConsentController : OidcOAuthControllerBase
             });
         }
 
-        if (request.ApprovedScopes == null || request.ApprovedScopes.Count == 0)
+        if (string.IsNullOrWhiteSpace(request.ApprovedScopes) 
+            || request.ApprovedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length == 0)
             return BadRequest("No scopes approved");
 
-        if (!request.ApprovedScopes.All(session.MissingScopes.Contains))
+        if (!request.ApprovedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                                   .All(session.MissingScopes.Contains))
             return BadRequest("Invalid scopes in approval");
 
         var sessionReady = await _consentService.SetConsentGrantedSessionAsync(sessionId, HttpContext.RequestAborted);
@@ -80,7 +82,7 @@ public class ConsentController : OidcOAuthControllerBase
         if (!sessionReady)
             return BadRequest("Session already used");
 
-        var scopesToPersist = request.ApprovedScopes.ToImmutableHashSet();
+        var scopesToPersist = request.ApprovedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToImmutableHashSet();
 
         await _consentService.SaveConsentAsync(session.UserId!,
                                                session.Request.ClientId,
