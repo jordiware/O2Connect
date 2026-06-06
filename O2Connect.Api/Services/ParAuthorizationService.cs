@@ -19,20 +19,17 @@ public class ParAuthorizationService : IParAuthorizationService
 {
     private readonly IParEntryRepository _parEntryRepository;
     private readonly IParAuthorizationSessionRepository _parSessionRepository;
-    private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IUserRepository _userRepository;
     private readonly IUserConsentRepository _userConsentRepository;
 
     public ParAuthorizationService(
         IParEntryRepository parEntryRepository,
         IParAuthorizationSessionRepository parAuthorizationSessionRepository,
-        IRefreshTokenRepository refreshTokenRepository,
         IUserRepository userRepository,
         IUserConsentRepository userConsentRepository)
     {
         _parEntryRepository = parEntryRepository;
         _parSessionRepository = parAuthorizationSessionRepository;
-        _refreshTokenRepository = refreshTokenRepository;
         _userRepository = userRepository;
         _userConsentRepository = userConsentRepository;
     }
@@ -43,39 +40,34 @@ public class ParAuthorizationService : IParAuthorizationService
     {
         var utcNow = DateTimeOffset.UtcNow;
 
-        var parEntry = await _parEntryRepository.GetAsync(requestUri, ct);
+        var entry = await _parEntryRepository.GetAsync(requestUri, ct);
 
-        if (parEntry is null)
+        if (entry is null)
             throw OAuthException.FromInvalidRequest();
 
-        if (parEntry.State != ParState.Created)
+        if (entry.State != ParState.Created)
             throw OAuthException.FromInvalidRequest();
 
-        if (parEntry.ExpiresAt < DateTimeOffset.UtcNow)
+        if (entry.ExpiresAt < DateTimeOffset.UtcNow)
         {
-            var updatedEntry = parEntry with { State = ParState.Expired };
+            var updatedEntry = entry with { State = ParState.Expired };
             await _parEntryRepository.StoreAsync(updatedEntry.RequestUri, updatedEntry, ct);
             throw OAuthException.FromInvalidRequest();
         }
 
-        var session = await _parSessionRepository.GetAsync(parEntry.RequestUri, ct);
+        var session = await _parSessionRepository.GetAsync(entry.RequestUri, ct);
 
         if (session is null)
             throw OAuthException.FromInvalidRequest();
 
-        var entry = parEntry with { State = ParState.Consumed };
-
         var username = httpContext.User?.Identity?.Name;
 
         if (string.IsNullOrWhiteSpace(username))
-        {
-
             return new RedirectResponse
             {
                 Action = "redirect",
                 RedirectUrl = $"/account/login?request_uri={Uri.EscapeDataString(requestUri)}"
             };
-        }
 
         var user = await _userRepository.GetByUsernameAsync(username, ct);
 
@@ -107,7 +99,6 @@ public class ParAuthorizationService : IParAuthorizationService
         session = session with { State = ParAuthState.CodeIssued };
         await _parSessionRepository.StoreAsync(session, ct);
 
-        // TO-DO redirect response
         return new RedirectResponse
         {
             Action = "redirect",
