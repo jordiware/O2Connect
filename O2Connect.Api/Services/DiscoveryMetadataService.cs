@@ -111,6 +111,7 @@ public sealed class DiscoveryMetadataService : IDiscoveryMetadataService
         var m = BaseMetadata() with
         {
             UserInfoEndpoint = new Uri(IssuerUri, "/connect/userinfo").ToString(),
+            EndSessionEndpoint = new Uri(IssuerUri, "/connect/logout").ToString(),
 
             IdTokenSigningAlgValuesSupported = "RS256",
 
@@ -139,6 +140,7 @@ public sealed class DiscoveryMetadataService : IDiscoveryMetadataService
             AuthorizationEndpoint = m.AuthorizationEndpoint,
             TokenEndpoint = m.TokenEndpoint,
             UserInfoEndpoint = m.UserInfoEndpoint,
+            EndSessionEndpoint = m.EndSessionEndpoint,
             JwksUri = m.JwksUri,
 
             ResponseTypesSupported = m.ResponseTypesSupported,

@@ -14,7 +14,10 @@ public sealed record OpenIdProviderMetadataResponse
     public required string TokenEndpoint { get; init; }
 
     [JsonPropertyName("userinfo_endpoint")]
-    public string? UserInfoEndpoint { get; init; }
+    public required string UserInfoEndpoint { get; init; }
+
+    [JsonPropertyName("end_session_endpoint")]
+    public required string EndSessionEndpoint { get; init; }
 
     [JsonPropertyName("jwks_uri")]
     public required string JwksUri { get; init; }

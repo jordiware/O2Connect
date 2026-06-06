@@ -11,6 +11,7 @@ public sealed record DiscoveryMetadata
     public string? UserInfoEndpoint { get; init; }
     public string? RevocationEndpoint { get; init; }
     public string? IntrospectionEndpoint { get; init; }
+    public string? EndSessionEndpoint { get; init; }
 
     public required string[] GrantTypesSupported { get; init; }
     public required string[] ResponseTypesSupported { get; init; }
