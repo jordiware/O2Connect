@@ -1,5 +1,4 @@
 ﻿using O2Connect.Api.DataValidators;
-using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
@@ -18,15 +17,18 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
 {
     private readonly IPushedAuthorizationValidator _pushedAuthorizationValidator;
     private readonly IParEntryRepository _parEntryRepository;
+    private readonly IParAuthorizationSessionRepository _parAuthorizationSessionRepository;
     private readonly IClientRepository _clientRepository;
 
     public PushedAuthorizationService(
         IPushedAuthorizationValidator pushedAuthorizationValidator,
         IParEntryRepository parEntryRepository,
+        IParAuthorizationSessionRepository parAuthorizationSessionRepository,
         IClientRepository clientRepository)
     {
         _pushedAuthorizationValidator = pushedAuthorizationValidator;
         _parEntryRepository = parEntryRepository;
+        _parAuthorizationSessionRepository = parAuthorizationSessionRepository;
         _clientRepository = clientRepository;
     }
 
@@ -38,21 +40,39 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
         _pushedAuthorizationValidator.Validate(request, client);
 
         var requestUri = GenerateRequestUri();
+        var now = DateTimeOffset.UtcNow;
+
+        Enum.TryParse<ParState>(request.State, out var entryState);
 
         var entry = new ParEntry
         {
+            RequestUri = requestUri,
             ClientId = request.ClientId,
             RedirectUri = request.RedirectUri,
             Scope = request.Scope,
             ResponseType = request.ResponseType,
-            State = request.State,
+            State = entryState,
             CodeChallenge = request.CodeChallenge,
             CodeChallengeMethod = request.CodeChallengeMethod,
-            CreatedAt = DateTimeOffset.UtcNow,
-            ExpiresInSeconds = 600
+            CreatedAt = now,
+            ExpiresAt = now.AddSeconds(600)
         };
 
         await _parEntryRepository.StoreAsync(requestUri, entry, ct);
+
+        var parSession = new ParAuthorizationSession
+        {
+            ClientId = request.ClientId,
+            CodeChallenge = request.CodeChallenge,
+            CodeChallengeMethod = request.CodeChallengeMethod,
+            CreatedAt = now,
+            RedirectUri = request.RedirectUri,
+            Scope = request.Scope,
+            SessionId = entry.RequestUri,
+            State = ParAuthState.Initialized
+        };
+
+        await _parAuthorizationSessionRepository.StoreAsync(parSession, ct);
 
         return new PushedAuthorizationResponse
         {
@@ -65,7 +85,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
     {
         Span<byte> bytes = stackalloc byte[32];
         RandomNumberGenerator.Fill(bytes);
-        
+
         var code = Convert.ToBase64String(bytes)
                           .TrimEnd('=')
                           .Replace('+', '-')

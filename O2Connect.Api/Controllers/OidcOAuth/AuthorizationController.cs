@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
@@ -10,10 +11,14 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 public class AuthorizationController : OidcOAuthControllerBase
 {
     private readonly IAuthorizeService _authorizationService;
+    private readonly IParAuthorizationService _parAuthorizationService;
 
-    public AuthorizationController(IAuthorizeService authorizationService)
+    public AuthorizationController(
+        IAuthorizeService authorizationService,
+        IParAuthorizationService parAuthorizationService)
     {
         _authorizationService = authorizationService;
+        _parAuthorizationService = parAuthorizationService;
     }
 
     [HttpGet]
@@ -24,10 +29,26 @@ public class AuthorizationController : OidcOAuthControllerBase
     }
 
     [HttpGet("resume/{sessionId}")]
-    public async Task<IActionResult> Resume(string sessionId, CancellationToken ct)
+    public async Task<IActionResult> Resume(string sessionId)
     {
-        var result = await _authorizationService.ProcessSessionAsync(sessionId, User, ct);
+        var result = await _authorizationService.ProcessSessionAsync(sessionId, User, HttpContext.RequestAborted);
         return BuildAuthorizationRedirectResult(result);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Authorize([FromQuery(Name = "request_uri")] string requestUri)
+    {
+        var result = await _parAuthorizationService.HandleAsync(requestUri,
+                                                                     HttpContext,
+                                                                     HttpContext.RequestAborted);
+
+        if (result is null
+            || string.IsNullOrWhiteSpace(result.Action)
+            || !string.Equals("redirect", result.Action, StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(result.RedirectUrl))
+            throw OAuthException.FromServerError();
+
+        return Redirect(result.RedirectUrl);
     }
 
     private IActionResult BuildAuthorizationRedirectResult(AuthorizationResult result)
