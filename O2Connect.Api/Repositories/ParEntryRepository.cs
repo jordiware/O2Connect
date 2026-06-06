@@ -23,16 +23,16 @@ public class InMemoryParEntryRepository : IParEntryRepository
         if (parEntry is null)
             throw new InvalidOperationException("invalid_request_uri");
 
-        if (parEntry.State != ParState.Created)
+        if (parEntry.Status != ParStatus.Created)
             throw new InvalidOperationException("request_uri_already_used");
 
         if (parEntry.ExpiresAt < DateTimeOffset.UtcNow)
         {
-            _entries[requestUri] = parEntry with { State = ParState.Expired };
+            _entries[requestUri] = parEntry with { Status = ParStatus.Expired };
             throw new InvalidOperationException("request_uri_expired");
         }
 
-        _entries[requestUri] = parEntry with { State = ParState.Consumed };
+        _entries[requestUri] = parEntry with { Status = ParStatus.Consumed };
 
         return Task.FromResult(_entries[requestUri]);
     }

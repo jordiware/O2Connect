@@ -9,7 +9,7 @@ public sealed record ParEntry
     public required string Scope { get; init; }
     public required string ResponseType { get; init; }
 
-    public required ParState State { get; init; }
+    public required ParStatus Status { get; init; }
 
     public required string CodeChallenge { get; init; }
     public required string CodeChallengeMethod { get; init; }
@@ -18,7 +18,7 @@ public sealed record ParEntry
     public required DateTimeOffset ExpiresAt { get; init; }
 }
 
-public enum ParState
+public enum ParStatus
 {
     Created,
     Consumed,

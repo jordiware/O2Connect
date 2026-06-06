@@ -1,4 +1,5 @@
 ﻿using O2Connect.Api.DataValidators;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
@@ -35,14 +36,15 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
     public async Task<PushedAuthorizationResponse> HandleAsync(PushedAuthorizationRequest request,
                                                                CancellationToken ct)
     {
+        if (request.CodeChallengeMethod != "S256")
+            throw OAuthException.FromInvalidRequest();
+
         var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
 
         _pushedAuthorizationValidator.Validate(request, client);
 
         var requestUri = GenerateRequestUri();
         var now = DateTimeOffset.UtcNow;
-
-        Enum.TryParse<ParState>(request.State, out var entryState);
 
         var entry = new ParEntry
         {
@@ -51,7 +53,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
             RedirectUri = request.RedirectUri,
             Scope = request.Scope,
             ResponseType = request.ResponseType,
-            State = entryState,
+            Status = ParStatus.Created,
             CodeChallenge = request.CodeChallenge,
             CodeChallengeMethod = request.CodeChallengeMethod,
             CreatedAt = now,
@@ -66,10 +68,13 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
             CodeChallenge = request.CodeChallenge,
             CodeChallengeMethod = request.CodeChallengeMethod,
             CreatedAt = now,
+            ExpiresAt = now.AddSeconds(600),
             RedirectUri = request.RedirectUri,
+            RequestUri = requestUri,
             Scope = request.Scope,
-            SessionId = entry.RequestUri,
-            State = ParAuthState.Initialized
+            SessionId = GenerateCode(),
+            State = request.State,
+            Status = ParAuthStatus.Initialized
         };
 
         await _parAuthorizationSessionRepository.StoreAsync(parSession, ct);
@@ -83,6 +88,13 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
 
     private static string GenerateRequestUri()
     {
+        var code = GenerateCode();
+
+        return $"urn:ietf:params:oauth:request_uri:{code}";
+    }
+
+    private static string GenerateCode()
+    {
         Span<byte> bytes = stackalloc byte[32];
         RandomNumberGenerator.Fill(bytes);
 
@@ -91,6 +103,6 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
                           .Replace('+', '-')
                           .Replace('/', '_');
 
-        return $"urn:ietf:params:oauth:request_uri:{code}";
+        return code;
     }
 }

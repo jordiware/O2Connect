@@ -6,6 +6,7 @@ namespace O2Connect.Api.Repositories;
 public interface IParAuthorizationSessionRepository
 {
     Task<ParAuthorizationSession?> GetAsync(string sessionId, CancellationToken ct);
+    Task<ParAuthorizationSession?> GetFromRequestUriAsync(string requestUri, CancellationToken ct);
     Task StoreAsync(ParAuthorizationSession parAuthSession, CancellationToken ct);
 }
 
@@ -18,6 +19,13 @@ public class InMemoryParAuthorizationSessionRepository : IParAuthorizationSessio
         ct.ThrowIfCancellationRequested();
         _entries.TryGetValue(sessionId, out var parAuthSession);
         return Task.FromResult(parAuthSession);
+    }
+
+    public Task<ParAuthorizationSession?> GetFromRequestUriAsync(string requestUri, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var entry = _entries.Values.SingleOrDefault(entry => string.Equals(requestUri, entry.RedirectUri));
+        return Task.FromResult(entry);
     }
 
     public Task StoreAsync(ParAuthorizationSession parAuthSession, CancellationToken ct)
