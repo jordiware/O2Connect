@@ -1,4 +1,5 @@
 ﻿using O2Connect.Api.Models.Store;
+using System.Collections.Concurrent;
 
 namespace O2Connect.Api.Repositories;
 
@@ -11,17 +12,22 @@ public interface IClientRepository
 
 public class InMemoryClientRepository : IClientRepository
 {
-    private readonly List<Client> _clients = new();
+    private static readonly ConcurrentDictionary<string, Client> _clients = new();
 
     public Task<Client?> GetByIdAsync(string clientId, CancellationToken ct)
     {
-        var client = _clients.FirstOrDefault(c => c.ClientId == clientId);
+        ct.ThrowIfCancellationRequested();
+
+        _clients.TryGetValue(clientId, out var client);
+
         return Task.FromResult(client);
     }
 
     public Task<bool> ValidateClientAsync(string clientId, string? clientSecret, CancellationToken ct)
     {
-        var client = _clients.FirstOrDefault(c => c.ClientId == clientId);
+        ct.ThrowIfCancellationRequested();
+
+        _clients.TryGetValue(clientId, out var client);
 
         if (client == null)
             return Task.FromResult(false);
@@ -34,7 +40,9 @@ public class InMemoryClientRepository : IClientRepository
 
     public Task<bool> ValidateRedirectUriAsync(string clientId, string redirectUri, CancellationToken ct)
     {
-        var client = _clients.FirstOrDefault(c => c.ClientId == clientId);
+        ct.ThrowIfCancellationRequested();
+
+        _clients.TryGetValue(clientId, out var client);
 
         if (client == null)
             return Task.FromResult(false);
