@@ -186,9 +186,9 @@ public class AuthorizeService : IAuthorizeService
             ClientId = session.Request.ClientId,
             UserId = session.UserId!,
             RedirectUri = session.Request.RedirectUri,
-            Scopes = session.RequestedScopes.ToImmutableHashSet(),
+            Scopes = string.Join(' ', session.RequestedScopes),
             CodeChallenge = session.Request.CodeChallenge!,
-            CodeChallengeMethod = session.Request.CodeChallengeMethod,
+            CodeChallengeMethod = session.Request.CodeChallengeMethod!,
             CreatedAt = DateTimeOffset.UtcNow,
             ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5)
         };

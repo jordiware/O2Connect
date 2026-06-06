@@ -53,7 +53,7 @@ public class AuthorizationCodeGrantHandler : ITokenGrantHandler
         {
             ClientId = context.Client.ClientId,
             Scopes = context.Scopes,
-            Subject = storedCode.SubjectId
+            Subject = storedCode.SubjectId!
         }, ct);
     }
 }

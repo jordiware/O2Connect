@@ -64,7 +64,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
         if (!string.Equals(code.RedirectUri, request.RedirectUri, StringComparison.Ordinal))
             throw OAuthException.FromInvalidGrant();
 
-        if (!code.Scopes.IsSubsetOf(client.AllowedScopes))
+        if (!ValueSet.FromDataString(code.Scopes, ' ').IsSubsetOf(client.AllowedScopes))
             throw OAuthException.FromInvalidGrant();
 
         if (client.RequiresPkce && code.CodeChallenge.Length == 0)
@@ -91,7 +91,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
             Client = client,
             ClientAuthenticationMethod = method,
             GrantType = GrantType,
-            Scopes = code.Scopes,
+            Scopes = ValueSet.FromDataString(code.Scopes, ' ').Values,
             TokenRequest = request
         };
 

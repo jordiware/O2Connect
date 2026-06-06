@@ -1,19 +1,17 @@
-﻿using System.Collections.Immutable;
-
-namespace O2Connect.Api.Models.Store;
+﻿namespace O2Connect.Api.Models.Store;
 
 public sealed record AuthorizationCode
 {
-    public string Code { get; init; } = default!;
-    public string ClientId { get; init; } = default!;
-    public string UserId { get; init; } = default!;
-    public string RedirectUri { get; init; } = default!;
-    public string CodeChallenge { get; init; } = default!;
-    public string? CodeChallengeMethod { get; init; }
-    public ImmutableHashSet<string> Scopes { get; init; } = [];
-    public DateTimeOffset ExpiresAt { get; init; }
-    public string SubjectId { get; init; } = default!;
+    public required string Code { get; init; }
+    public required string ClientId { get; init; }
+    public required string UserId { get; init; }
+    public required string RedirectUri { get; init; }
+    public required string CodeChallenge { get; init; }
+    public required string CodeChallengeMethod { get; init; }
+    public required string Scopes { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
+    public required DateTimeOffset ExpiresAt { get; init; }
+    public string? SubjectId { get; init; }
     public string? Nonce { get; init; }
-    public DateTimeOffset CreatedAt { get; init; }
     public bool Consumed { get; init; } = false;
 }
