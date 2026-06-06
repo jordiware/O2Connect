@@ -13,6 +13,7 @@ public interface IRefreshTokenRepository
     Task<bool> IsSessionActiveAsync(string sessionId, CancellationToken ct);
     Task RevokeAsync(string token, CancellationToken ct);
     Task RevokeSessionAsync(string sessionId, CancellationToken ct);
+    Task RevokeSubjectAsync(string subjectId, CancellationToken ct);
     Task<RefreshToken?> RotateAsync(string token, RefreshToken newToken, CancellationToken ct);
 }
 
@@ -85,6 +86,24 @@ public class InMemoryRefreshTokenRepository : IRefreshTokenRepository
         ct.ThrowIfCancellationRequested();
 
         var kvp = _tokens.SingleOrDefault(kvp => kvp.Value.SessionId.Equals(sessionId, StringComparison.Ordinal));
+
+        if (!_tokens.ContainsKey(kvp.Key))
+            return Task.CompletedTask;
+
+        _tokens[kvp.Key] = kvp.Value with
+        {
+            Revoked = true,
+            RevokedAt = DateTimeOffset.UtcNow
+        };
+
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeSubjectAsync(string subjectId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var kvp = _tokens.SingleOrDefault(kvp => kvp.Value.Subject.Equals(subjectId, StringComparison.Ordinal));
 
         if (!_tokens.ContainsKey(kvp.Key))
             return Task.CompletedTask;

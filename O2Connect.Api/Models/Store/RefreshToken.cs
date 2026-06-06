@@ -6,7 +6,7 @@ public sealed record RefreshToken
 {
     public required string Token { get; init; }
     public required string ClientId { get; init; }
-    public required string Subject { get; init; } // user or client identity
+    public required string Subject { get; init; }
     public required ImmutableHashSet<string> Scopes { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
     public required DateTimeOffset ExpiresAt { get; init; }
