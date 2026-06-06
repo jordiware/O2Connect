@@ -37,6 +37,7 @@ builder.Services.AddSingleton<IAuthorizationSessionRepository, InMemoryAuthoriza
 builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
 builder.Services.AddSingleton<IUserConsentRepository, InMemoryUserConsentRepository>();
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+builder.Services.AddSingleton<IParEntryRepository, InMemoryParEntryRepository>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
@@ -44,6 +45,7 @@ builder.Services.AddSingleton<IJwtValidator, JwtValidator>();
 builder.Services.AddSingleton<ISigningKeyProvider, RsaSigningKeyProvider>();
 builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
 builder.Services.AddSingleton<ISecretHasher, Pbkdf2SecretHasher>();
+builder.Services.AddSingleton<IPushedAuthorizationValidator, PushedAuthorizationValidator>();
 
 builder.Services.AddSingleton(sp =>
 {
@@ -114,6 +116,7 @@ builder.Services.AddScoped<ITokenIntrospectionService, TokenIntrospectionService
 builder.Services.AddScoped<IRevocationService, RevocationService>();
 builder.Services.AddScoped<IDiscoveryMetadataService, DiscoveryMetadataService>();
 builder.Services.AddScoped<IEndSessionService, EndSessionService>();
+builder.Services.AddScoped<IPushedAuthorizationService, PushedAuthorizationService>();
 
 builder.Services.AddAuthorizationBuilder()
                 .AddPolicy("RequireProfileScope", policy =>

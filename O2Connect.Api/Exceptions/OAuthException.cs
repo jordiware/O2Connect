@@ -4,20 +4,33 @@ public sealed class OAuthException : Exception
 {
     public static OAuthException FromAccessDenied(string? description = null, string? errorUri = null) =>
         new OAuthException("access_denied", StatusCodes.Status403Forbidden, description, errorUri);
+
     public static OAuthException FromInvalidGrant(string? description = null, string? errorUri = null) =>
         new OAuthException("invalid_grant", StatusCodes.Status400BadRequest, description, errorUri);
+    
     public static OAuthException FromInvalidRequest(string? description = null, string? errorUri = null) =>
         new OAuthException("invalid_request", StatusCodes.Status400BadRequest, description, errorUri);
+
     public static OAuthException FromInvalidScope(string? description = null, string? errorUri = null) =>
         new OAuthException("invalid_scope", StatusCodes.Status400BadRequest, description, errorUri);
+
+    public static OAuthException FromInvalidRedirectUri(string? description = null, string? errorUri = null) =>
+        new OAuthException("invalid_redirect_uri", StatusCodes.Status400BadRequest, description, errorUri);
+
     public static OAuthException FromServerError(string? description = null, string? errorUri = null) =>
         new OAuthException("server_error", StatusCodes.Status500InternalServerError, description, errorUri);
+    
     public static OAuthException FromTemporarilyUnavailable(string? description = null, string? errorUri = null) =>
         new OAuthException("temporarily_unavailable", StatusCodes.Status503ServiceUnavailable, description, errorUri);
+    
     public static OAuthException FromUnauthorizedClient(string? description = null, string? errorUri = null) =>
         new OAuthException("unauthorized_client", StatusCodes.Status400BadRequest, description, errorUri);
+    
     public static OAuthException FromUnsupportedGrantType(string? description = null, string? errorUri = null) =>
         new OAuthException("unsupported_grant_type", StatusCodes.Status400BadRequest, description, errorUri);
+    
+    public static OAuthException FromUnsupportedResponseType(string? description = null, string? errorUri = null) =>
+        new OAuthException("unsupported_response_type", StatusCodes.Status400BadRequest, description, errorUri);
 
     public static OAuthException FromInvalidClient(
         string? description = null,

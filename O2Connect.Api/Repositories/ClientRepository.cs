@@ -11,18 +11,7 @@ public interface IClientRepository
 
 public class InMemoryClientRepository : IClientRepository
 {
-    private readonly List<Client> _clients = new()
-    {
-        new Client
-        {
-            ClientId = "test-client",
-            ClientSecret = "secret",
-            RedirectUris = ["https://example.com/callback"] ,
-            AllowedGrantTypes = ["authorization_code", "client_credentials"],
-            AllowedScopes = ["openid", "profile", "api"],
-            RequiresSecret = false
-        }
-    };
+    private readonly List<Client> _clients = new();
 
     public Task<Client?> GetByIdAsync(string clientId, CancellationToken ct)
     {
@@ -37,7 +26,6 @@ public class InMemoryClientRepository : IClientRepository
         if (client == null)
             return Task.FromResult(false);
 
-        // Public client (no secret)
         if (string.IsNullOrEmpty(client.ClientSecret))
             return Task.FromResult(true);
 
