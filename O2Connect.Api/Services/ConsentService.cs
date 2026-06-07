@@ -1,7 +1,11 @@
-﻿using O2Connect.Api.Models;
+﻿using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
+using O2Connect.Dto.Requests;
+using O2Connect.Dto.Responses;
 using System.Collections.Immutable;
+using System.Net.NetworkInformation;
 
 namespace O2Connect.Api.Services;
 
@@ -21,19 +25,28 @@ public interface IConsentService
                           string clientId,
                           ImmutableHashSet<string> approvedScopes,
                           CancellationToken ct);
+    Task<RedirectResponse> HandleParSessionAsync(string sessionId,
+                                                 ConsentDecisionRequest request,
+                                                 CancellationToken ct);
 }
 
 public class ConsentService : IConsentService
 {
     private readonly IUserConsentRepository _userConsentRepository;
     private readonly IAuthorizationSessionRepository _authorizationSessionRepository;
+    private readonly IParAuthorizationSessionRepository _parAuthorizationSessionRepository;
+    private readonly IParEntryRepository _parEntryRepository;
 
     public ConsentService(
         IUserConsentRepository userConsentRepository,
-        IAuthorizationSessionRepository authorizationSessionRepository)
+        IAuthorizationSessionRepository authorizationSessionRepository,
+        IParAuthorizationSessionRepository parAuthorizationSessionRepository,
+        IParEntryRepository parEntryRepository)
     {
         _userConsentRepository = userConsentRepository;
         _authorizationSessionRepository = authorizationSessionRepository;
+        _parAuthorizationSessionRepository = parAuthorizationSessionRepository;
+        _parEntryRepository = parEntryRepository;
     }
 
     public async Task<ConsentEvaluationResult> EvaluateAsync(string userId,
@@ -120,5 +133,79 @@ public class ConsentService : IConsentService
         };
 
         await _userConsentRepository.StoreAsync(updatedConsent, ct);
+    }
+
+    public async Task<RedirectResponse> HandleParSessionAsync(string sessionId,
+                                                              ConsentDecisionRequest request,
+                                                              CancellationToken ct)
+    {
+        var session = await _parAuthorizationSessionRepository.GetAsync(sessionId, ct);
+
+        if (session is null)
+            throw OAuthException.FromInvalidRequest("Invalid session");
+
+        if (session.Status != ParAuthStatus.AwaitingConsent)
+            throw OAuthException.FromInvalidRequest("Invalid session state for consent");
+
+        if (session.UserId is null)
+            throw OAuthException.FromAccessDenied("User not authenticated");
+
+        var entry = await _parEntryRepository.GetAsync(session.RequestUriCode, ct);
+
+        if (entry is null)
+            throw OAuthException.FromInvalidRequest("PAR entry missing");
+
+        var requestedScopes = ParseScope(entry.Scope);
+
+        if (!request.Approved)
+        {
+            session = session with { Status = ParAuthStatus.Aborted };
+            await _parAuthorizationSessionRepository.StoreAsync(session, ct);
+            return BuildErrorRedirect(entry, "access_denied");
+        }
+
+        await SaveConsentAsync(session.UserId,
+                               entry.ClientId,
+                               requestedScopes.ToImmutableHashSet(),
+                               ct);
+
+        session = session with { Status = ParAuthStatus.Consented };
+        await _parAuthorizationSessionRepository.StoreAsync(session, ct);
+
+        return new RedirectResponse
+        {
+            Action = "redirect",
+            RedirectUrl = $"/connect/authorize?request_uri={BuildRequestUri(session.RequestUriCode)}"
+        };
+    }
+
+    private static HashSet<string> ParseScope(string scope)
+    {
+        return scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private static string BuildRequestUri(string code)
+    {
+        return $"urn:ietf:params:oauth:request_uri:{code}";
+    }
+
+    private static RedirectResponse BuildErrorRedirect(ParEntry entry, string error)
+    {
+        var uri = new UriBuilder(entry.RedirectUri);
+
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        query["error"] = error;
+
+        if (!string.IsNullOrEmpty(entry.State))
+            query["state"] = entry.State;
+
+        uri.Query = query.ToString()!;
+
+        return new RedirectResponse
+        {
+            Action = "redirect",
+            RedirectUrl = uri.ToString()
+        };
     }
 }

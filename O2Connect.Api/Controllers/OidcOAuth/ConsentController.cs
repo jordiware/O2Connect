@@ -95,4 +95,15 @@ public class ConsentController : OidcOAuthControllerBase
             RedirectUrl = $"/connect/authorize/resume/{sessionId}"
         });
     }
+
+    [HttpPost("/consent")]
+    public async Task<IActionResult> PostParConsent([FromQuery(Name = "session")] string sessionId,
+                                                    [FromBody] ConsentDecisionRequest request)
+    {
+        var result = await _consentService.HandleParSessionAsync(sessionId,
+                                                                 request,
+                                                                 HttpContext.RequestAborted);
+
+        return Ok(result);
+    }
 }
