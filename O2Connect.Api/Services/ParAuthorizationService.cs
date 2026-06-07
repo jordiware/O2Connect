@@ -18,166 +18,187 @@ public class ParAuthorizationService : IParAuthorizationService
 {
     private readonly IParEntryRepository _parEntryRepository;
     private readonly IParAuthorizationSessionRepository _parSessionRepository;
-    private readonly IUserRepository _userRepository;
-    private readonly IUserConsentRepository _userConsentRepository;
+    private readonly IClientRepository _clientRepository;
+    private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
 
     public ParAuthorizationService(
         IParEntryRepository parEntryRepository,
         IParAuthorizationSessionRepository parAuthorizationSessionRepository,
-        IUserRepository userRepository,
-        IUserConsentRepository userConsentRepository)
+        IClientRepository clientRepository,
+        IAuthorizationCodeRepository authorizationCodeRepository)
     {
         _parEntryRepository = parEntryRepository;
         _parSessionRepository = parAuthorizationSessionRepository;
-        _userRepository = userRepository;
-        _userConsentRepository = userConsentRepository;
+        _clientRepository = clientRepository;
+        _authorizationCodeRepository = authorizationCodeRepository;
     }
 
     public async Task<RedirectResponse> HandleAsync(string requestUri,
                                                     HttpContext httpContext,
                                                     CancellationToken ct)
     {
-        var utcNow = DateTimeOffset.UtcNow;
+        var code = ExtractCode(requestUri);
 
-        var entry = await _parEntryRepository.GetAsync(requestUri, ct);
+        var entry = await _parEntryRepository.GetAsync(code, ct);
 
         if (entry is null)
             throw OAuthException.FromInvalidRequest();
 
-        if (entry.ExpiresAt <= utcNow)
-        {
-            entry = entry with { Status = ParStatus.Expired };
-
-            await _parEntryRepository.StoreAsync(entry.RequestUri, entry, ct);
-
-            throw OAuthException.FromInvalidRequest();
-        }
-
-        if (entry.Status != ParStatus.Created)
-            throw OAuthException.FromInvalidRequest();
-
-        if (!string.Equals(entry.ResponseType, "code", StringComparison.Ordinal))
-            throw OAuthException.FromUnsupportedResponseType();
-
-        var session = await _parSessionRepository.GetFromRequestUriAsync(requestUri, ct);
+        var session = await _parSessionRepository.GetFromRequestUriCodeAsync(requestUri, ct);
 
         if (session is null)
             throw OAuthException.FromInvalidRequest();
 
-        if (session.ExpiresAt <= utcNow)
-        {
-            session = session with { Status = ParAuthStatus.Aborted };
+        var utcNow = DateTimeOffset.UtcNow;
 
-            await _parSessionRepository.StoreAsync(session, ct);
-
+        if (entry.ExpiresAt <= utcNow || session.ExpiresAt <= utcNow)
             throw OAuthException.FromInvalidRequest();
+
+        var client = await _clientRepository.GetByIdAsync(entry.ClientId, ct);
+
+        if (client is null) 
+            throw OAuthException.FromInvalidClient();
+
+        if (session.Status is ParAuthStatus.CodeIssued or ParAuthStatus.Aborted)
+            throw OAuthException.FromInvalidRequest();
+
+        var user = httpContext.User;
+
+        if (user?.Identity?.IsAuthenticated != true)
+        {
+            await UpdateSession(session with { Status = ParAuthStatus.Initialized }, ct);
+
+            return BuildRedirect("/login?session=" + session.SessionId);
         }
 
-        if (!string.Equals(entry.RedirectUri, session.RedirectUri, StringComparison.Ordinal))
-            throw OAuthException.FromInvalidRequest();
+        var userId = user.FindFirst("sub")?.Value;
 
-        if (!string.Equals(entry.ClientId, session.ClientId, StringComparison.Ordinal))
-            throw OAuthException.FromInvalidRequest();
-
-        if (!string.Equals(entry.Scope, session.Scope, StringComparison.Ordinal))
-            throw OAuthException.FromInvalidRequest();
-
-        var username = httpContext.User?.Identity?.Name;
-
-        if (string.IsNullOrWhiteSpace(username))
-        {
-            session = session with { Status = ParAuthStatus.AwaitingLogin };
-            await _parSessionRepository.StoreAsync(session, ct);
-
-            return new RedirectResponse
-            {
-                Action = "redirect",
-                RedirectUrl = $"/account/login?session_id={Uri.EscapeDataString(session.SessionId)}"
-            };
-        }
-
-        var user = await _userRepository.GetByUsernameAsync(username, ct);
-
-        if (user is null)
-            throw OAuthException.FromUnauthorizedClient();
+        if (userId is null)
+            throw OAuthException.FromAccessDenied();
 
         session = session with
         {
             Status = ParAuthStatus.Authenticated,
-            UserId = user.Id
-        };
-        await _parSessionRepository.StoreAsync(session, ct);
-
-        var consent = await _userConsentRepository.GetAsync(user.Id, session.ClientId, ct);
-
-        if (consent is null)
-        {
-            session = session with { Status = ParAuthStatus.AwaitingConsent };
-            await _parSessionRepository.StoreAsync(session, ct);
-
-            return new RedirectResponse
-            {
-                Action = "redirect",
-                RedirectUrl = $"/account/consent?session_id={session.SessionId}"
-            };
-        }
-
-        var sessionScopes = ValueSet.FromDataString(session.Scope, ' ').Values;
-
-        if (!sessionScopes.IsSubsetOf(consent.GrantedScopes))
-        {
-            session = session with { Status = ParAuthStatus.AwaitingConsent };
-            await _parSessionRepository.StoreAsync(session, ct);
-
-            return new RedirectResponse
-            {
-                Action = "redirect",
-                RedirectUrl = $"/account/consent?session_id={session.SessionId}"
-            };
-        }
-
-        session = session with { Status = ParAuthStatus.Consented };
-        await _parSessionRepository.StoreAsync(session, ct);
-
-        var code = GenerateCode();
-        session = session with
-        {
-            Status = ParAuthStatus.CodeIssued,
-            Code = code
-        };
-        await _parSessionRepository.StoreAsync(session, ct);
-
-        entry = entry with { Status = ParStatus.Consumed };
-        await _parEntryRepository.StoreAsync(entry.RequestUri, entry, ct);
-
-        var query = new List<string>
-        {
-            $"code={Uri.EscapeDataString(code)}"
+            UserId = userId
         };
 
-        if (!string.IsNullOrEmpty(session.State))
+        await UpdateSession(session, ct);
+
+        var requestedScopes = ParseScope(entry.Scope);
+
+        var missingScopes = await GetMissingScopes(userId, client.ClientId, requestedScopes, ct);
+
+        if (missingScopes.Count > 0)
         {
-            query.Add($"state={Uri.EscapeDataString(session.State)}");
+            session = session with { Status = ParAuthStatus.Consented }; // waiting for consent
+
+            await UpdateSession(session, ct);
+
+            return BuildRedirect("/consent?session=" + session.SessionId);
         }
+
+        return await IssueCode(entry, session, ct);
+    }
+
+    private async Task<RedirectResponse> IssueCode(
+        ParEntry entry,
+        ParAuthorizationSession session,
+        CancellationToken ct)
+    {
+        var authCode = GenerateSecureCode();
+
+        await _authorizationCodeRepository.StoreAsync(new AuthorizationCode
+        {
+            Code = authCode,
+            ClientId = entry.ClientId,
+            RedirectUri = entry.RedirectUri,
+            Scopes = entry.Scope,
+            CodeChallenge = entry.CodeChallenge,
+            CodeChallengeMethod = entry.CodeChallengeMethod,
+            UserId = session.UserId!,
+            CreatedAt = DateTimeOffset.UtcNow,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5)
+        }, ct);
+
+        // mark session as consumed
+        await UpdateSession(session with { Status = ParAuthStatus.CodeIssued }, ct);
+
+        var redirectUrl = BuildCallbackUrl(entry, authCode);
 
         return new RedirectResponse
         {
             Action = "redirect",
-            RedirectUrl = $"{session.RedirectUri}?{string.Join('&', query)}"
+            RedirectUrl = redirectUrl
         };
     }
 
-    private static string GenerateCode()
+    // =========================
+
+    private static string ExtractCode(string requestUri)
+    {
+        const string prefix = "urn:ietf:params:oauth:request_uri:";
+
+        if (!requestUri.StartsWith(prefix, StringComparison.Ordinal))
+            throw OAuthException.FromInvalidRequest("Invalid request_uri format");
+
+        return requestUri.Substring(prefix.Length);
+    }
+
+    private static RedirectResponse BuildRedirect(string url)
+        => new()
+        {
+            Action = "redirect",
+            RedirectUrl = url
+        };
+
+    private static string BuildCallbackUrl(ParEntry entry, string code)
+    {
+        var uri = new UriBuilder(entry.RedirectUri);
+
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        query["code"] = code;
+
+        if (!string.IsNullOrEmpty(entry.State))
+            query["state"] = entry.State;
+
+        uri.Query = query.ToString()!;
+
+        return uri.ToString();
+    }
+
+    private static HashSet<string> ParseScope(string scope)
+    {
+        return scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private async Task<HashSet<string>> GetMissingScopes(
+        string userId,
+        string clientId,
+        HashSet<string> requestedScopes,
+        CancellationToken ct)
+    {
+        // TODO: plug real consent store
+        var grantedScopes = new HashSet<string>();
+
+        return requestedScopes
+            .Except(grantedScopes, StringComparer.Ordinal)
+            .ToHashSet();
+    }
+
+    private async Task UpdateSession(ParAuthorizationSession session, CancellationToken ct)
+    {
+        await _parSessionRepository.StoreAsync(session, ct);
+    }
+
+    private static string GenerateSecureCode()
     {
         Span<byte> bytes = stackalloc byte[32];
         RandomNumberGenerator.Fill(bytes);
 
-        var code = Convert.ToBase64String(bytes)
-                          .TrimEnd('=')
-                          .Replace('+', '-')
-                          .Replace('/', '_');
-
-        return code;
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
     }
-
 }

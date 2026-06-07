@@ -16,6 +16,8 @@ public interface IPushedAuthorizationService
 
 public sealed class PushedAuthorizationService : IPushedAuthorizationService
 {
+    private const int ParLifetimeSeconds = 600;
+
     private readonly IPushedAuthorizationValidator _pushedAuthorizationValidator;
     private readonly IParEntryRepository _parEntryRepository;
     private readonly IParAuthorizationSessionRepository _parAuthorizationSessionRepository;
@@ -36,45 +38,47 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
     public async Task<PushedAuthorizationResponse> HandleAsync(PushedAuthorizationRequest request,
                                                                CancellationToken ct)
     {
-        if (request.CodeChallengeMethod != "S256")
+        if (!string.Equals(request.CodeChallengeMethod, "S256", StringComparison.Ordinal))
             throw OAuthException.FromInvalidRequest();
 
         var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
 
+        if (client is null)
+            throw OAuthException.FromInvalidClient();
+
         _pushedAuthorizationValidator.Validate(request, client);
 
-        var requestUri = GenerateRequestUri();
+        var normalizedScope = NormalizeScope(request.Scope);
+        
+        var code = GenerateSecureCode();
+        var requestUri = BuildRequestUri(code);
+
         var now = DateTimeOffset.UtcNow;
+        var expiresAt = now.AddSeconds(ParLifetimeSeconds);
 
         var entry = new ParEntry
         {
-            RequestUri = requestUri,
-            ClientId = request.ClientId,
+            RequestUriCode = code,
+            ClientId = client.ClientId,
             RedirectUri = request.RedirectUri,
-            Scope = request.Scope,
+            Scope = normalizedScope,
             ResponseType = request.ResponseType,
-            Status = ParStatus.Created,
             CodeChallenge = request.CodeChallenge,
             CodeChallengeMethod = request.CodeChallengeMethod,
+            State = request.State,
             CreatedAt = now,
-            ExpiresAt = now.AddSeconds(600)
+            ExpiresAt = expiresAt
         };
 
         await _parEntryRepository.StoreAsync(requestUri, entry, ct);
 
         var parSession = new ParAuthorizationSession
         {
-            ClientId = request.ClientId,
-            CodeChallenge = request.CodeChallenge,
-            CodeChallengeMethod = request.CodeChallengeMethod,
+            SessionId = GenerateSecureCode(),
+            RequestUriCode = code,
+            Status = ParAuthStatus.Initialized,
             CreatedAt = now,
-            ExpiresAt = now.AddSeconds(600),
-            RedirectUri = request.RedirectUri,
-            RequestUri = requestUri,
-            Scope = request.Scope,
-            SessionId = GenerateCode(),
-            State = request.State,
-            Status = ParAuthStatus.Initialized
+            ExpiresAt = expiresAt
         };
 
         await _parAuthorizationSessionRepository.StoreAsync(parSession, ct);
@@ -82,27 +86,36 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
         return new PushedAuthorizationResponse
         {
             RequestUri = requestUri,
-            ExpiresIn = 600
+            ExpiresIn = ParLifetimeSeconds
         };
     }
 
-    private static string GenerateRequestUri()
+    private static string BuildRequestUri(string code)
     {
-        var code = GenerateCode();
-
         return $"urn:ietf:params:oauth:request_uri:{code}";
     }
 
-    private static string GenerateCode()
+    private static string GenerateSecureCode()
     {
         Span<byte> bytes = stackalloc byte[32];
         RandomNumberGenerator.Fill(bytes);
 
-        var code = Convert.ToBase64String(bytes)
-                          .TrimEnd('=')
-                          .Replace('+', '-')
-                          .Replace('/', '_');
+        return Base64UrlEncode(bytes);
+    }
 
-        return code;
+    private static string Base64UrlEncode(ReadOnlySpan<byte> bytes)
+    {
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private static string NormalizeScope(string scope)
+    {
+        return string.Join(' ',
+            scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                 .Distinct(StringComparer.Ordinal)
+                 .OrderBy(x => x, StringComparer.Ordinal));
     }
 }

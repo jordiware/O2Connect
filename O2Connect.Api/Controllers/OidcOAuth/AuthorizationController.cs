@@ -39,8 +39,8 @@ public class AuthorizationController : OidcOAuthControllerBase
     public async Task<IActionResult> Authorize([FromQuery(Name = "request_uri")] string requestUri)
     {
         var result = await _parAuthorizationService.HandleAsync(requestUri,
-                                                                     HttpContext,
-                                                                     HttpContext.RequestAborted);
+                                                                HttpContext,
+                                                                HttpContext.RequestAborted);
 
         if (result is null
             || string.IsNullOrWhiteSpace(result.Action)
