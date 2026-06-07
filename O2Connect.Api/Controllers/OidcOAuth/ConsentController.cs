@@ -96,7 +96,7 @@ public class ConsentController : OidcOAuthControllerBase
         });
     }
 
-    [HttpPost("/consent")]
+    [HttpPost]
     public async Task<IActionResult> PostParConsent([FromQuery(Name = "session")] string sessionId,
                                                     [FromBody] ConsentDecisionRequest request)
     {
