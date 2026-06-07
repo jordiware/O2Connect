@@ -1,13 +1,21 @@
 ﻿using O2Connect.Api.Crypto;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
+using O2Connect.Dto.Responses;
 using System.Security.Cryptography;
 
 namespace O2Connect.Api.Services;
 
 public interface ILoginService
 {
-    Task<User?> ValidateCredentialsAsync(string username, string password, CancellationToken ct);
+    Task<RedirectResponse> HandleWithSessionAsync(string username,
+                                                  string password,
+                                                  string sessionId,
+                                                  CancellationToken ct);
+    Task<User?> ValidateCredentialsAsync(string username,
+                                         string password,
+                                         CancellationToken ct);
     Task LogoutAsync(string token, CancellationToken ct);
 }
 
@@ -17,19 +25,53 @@ public class LoginService : ILoginService
 
     private readonly IUserRepository _userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly IParAuthorizationSessionRepository _sessionRepository;
     private readonly ISecretHasher _secretHasher;
 
     public LoginService(
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
+        IParAuthorizationSessionRepository sessionRepository,
         ISecretHasher secretHasher)
     {
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
+        _sessionRepository = sessionRepository;
         _secretHasher = secretHasher;
     }
 
-    public async Task<User?> ValidateCredentialsAsync(string username, string password, CancellationToken ct)
+    public async Task<RedirectResponse> HandleWithSessionAsync(string username,
+                                                               string password,
+                                                               string sessionId,
+                                                               CancellationToken ct)
+    {
+        var user = await ValidateCredentialsAsync(username, password, ct);
+        var session = await _sessionRepository.GetAsync(sessionId, ct);
+
+        if (user is null)
+            throw OAuthException.FromAccessDenied();
+
+        if (session is null || session.Status != ParAuthStatus.AwaitingLogin)
+            throw OAuthException.FromInvalidRequest();
+
+        session = session with
+        {
+            Status = ParAuthStatus.Authenticated,
+            UserId = user.Id
+        };
+
+        await _sessionRepository.StoreAsync(session, ct);
+
+        return new RedirectResponse
+        {
+            Action = "redirect",
+            RedirectUrl = $"/connect/authorize?request_uri=urn:ietf:params:oauth:request_uri:{session.RequestUriCode}"
+        };
+    }
+
+    public async Task<User?> ValidateCredentialsAsync(string username,
+                                                      string password,
+                                                      CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             return null;

@@ -29,13 +29,23 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> PostLogin([FromBody] LoginRequest request)
+    public async Task<IActionResult> PostLogin([FromQuery(Name = "session")] string? sessionId,
+                                               [FromBody] LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
             return BadRequest(new { message = "Invalid credentials" });
 
         if (string.IsNullOrWhiteSpace(request.ClientId))
             return BadRequest(new { message = "Invalid client" });
+
+        if (!string.IsNullOrWhiteSpace(sessionId))
+        {
+            var response = await _loginService.HandleWithSessionAsync(request.Username.Trim(),
+                                                                      request.Password,
+                                                                      sessionId,
+                                                                      HttpContext.RequestAborted);
+            return Ok(response);
+        }
 
         var user = await _loginService.ValidateCredentialsAsync(request.Username.Trim(),
                                                                 request.Password,
