@@ -20,17 +20,20 @@ public class ParAuthorizationService : IParAuthorizationService
     private readonly IParAuthorizationSessionRepository _parSessionRepository;
     private readonly IClientRepository _clientRepository;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
+    private readonly IUserConsentRepository _userConsentRepository;
 
     public ParAuthorizationService(
         IParEntryRepository parEntryRepository,
         IParAuthorizationSessionRepository parAuthorizationSessionRepository,
         IClientRepository clientRepository,
-        IAuthorizationCodeRepository authorizationCodeRepository)
+        IAuthorizationCodeRepository authorizationCodeRepository,
+        IUserConsentRepository userConsentRepository)
     {
         _parEntryRepository = parEntryRepository;
         _parSessionRepository = parAuthorizationSessionRepository;
         _clientRepository = clientRepository;
         _authorizationCodeRepository = authorizationCodeRepository;
+        _userConsentRepository = userConsentRepository;
     }
 
     public async Task<RedirectResponse> HandleAsync(string requestUri,
@@ -120,7 +123,6 @@ public class ParAuthorizationService : IParAuthorizationService
             ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5)
         }, ct);
 
-        // mark session as consumed
         await UpdateSession(session with { Status = ParAuthStatus.CodeIssued }, ct);
 
         var redirectUrl = BuildCallbackUrl(entry, authCode);
@@ -131,8 +133,6 @@ public class ParAuthorizationService : IParAuthorizationService
             RedirectUrl = redirectUrl
         };
     }
-
-    // =========================
 
     private static string ExtractCode(string requestUri)
     {
@@ -145,11 +145,13 @@ public class ParAuthorizationService : IParAuthorizationService
     }
 
     private static RedirectResponse BuildRedirect(string url)
-        => new()
+    {
+        return new RedirectResponse
         {
             Action = "redirect",
             RedirectUrl = url
         };
+    }
 
     private static string BuildCallbackUrl(ParEntry entry, string code)
     {
@@ -161,7 +163,7 @@ public class ParAuthorizationService : IParAuthorizationService
         if (!string.IsNullOrEmpty(entry.State))
             query["state"] = entry.State;
 
-        uri.Query = query.ToString()!;
+        uri.Query = query.ToString();
 
         return uri.ToString();
     }
@@ -172,18 +174,16 @@ public class ParAuthorizationService : IParAuthorizationService
                     .ToHashSet(StringComparer.Ordinal);
     }
 
-    private async Task<HashSet<string>> GetMissingScopes(
-        string userId,
-        string clientId,
-        HashSet<string> requestedScopes,
-        CancellationToken ct)
+    private async Task<HashSet<string>> GetMissingScopes(string userId,
+                                                         string clientId,
+                                                         HashSet<string> requestedScopes,
+                                                         CancellationToken ct)
     {
-        // TODO: plug real consent store
-        var grantedScopes = new HashSet<string>();
+        var storedConsent = await _userConsentRepository.GetAsync(userId, clientId, ct);
 
-        return requestedScopes
-            .Except(grantedScopes, StringComparer.Ordinal)
-            .ToHashSet();
+        var grantedScopes = storedConsent?.GrantedScopes.ToHashSet() ?? new HashSet<string>();
+
+        return requestedScopes.Except(grantedScopes, StringComparer.Ordinal).ToHashSet();
     }
 
     private async Task UpdateSession(ParAuthorizationSession session, CancellationToken ct)
