@@ -12,10 +12,10 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [Route("account")]
 public class AccountController : ControllerBase
 {
-    private readonly ILoginService _loginService;
+    private readonly IUserSessionService _loginService;
 
     public AccountController(
-        ILoginService loginService)
+        IUserSessionService loginService)
     {
         _loginService = loginService;
     }
@@ -24,7 +24,7 @@ public class AccountController : ControllerBase
     public async Task<IActionResult> PostLogin([FromQuery(Name = "session")] string? sessionId,
                                                [FromBody] LoginRequest request)
     {
-        var result = await _loginService.HandleAsync(sessionId, request, HttpContext.RequestAborted);
+        var result = await _loginService.HandleLoginAsync(sessionId, request, HttpContext.RequestAborted);
 
         return result switch
         {
@@ -43,7 +43,7 @@ public class AccountController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Token))
             return BadRequest(new { message = "Missing refresh token" });
 
-        await _loginService.LogoutAsync(request.Token, HttpContext.RequestAborted);
+        await _loginService.HandleLogoutAsync(request.Token, HttpContext.RequestAborted);
 
         return NoContent();
     }

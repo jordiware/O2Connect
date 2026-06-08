@@ -111,12 +111,11 @@ builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationSer
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthorizeService, AuthorizeService>();
 builder.Services.AddScoped<IConsentService, ConsentService>();
-builder.Services.AddScoped<ILoginService, LoginService>();
+builder.Services.AddScoped<IUserSessionService, UserSessionService>();
 builder.Services.AddScoped<IUserInfoService, UserInfoService>();
 builder.Services.AddScoped<ITokenIntrospectionService, TokenIntrospectionService>();
 builder.Services.AddScoped<IRevocationService, RevocationService>();
 builder.Services.AddScoped<IDiscoveryMetadataService, DiscoveryMetadataService>();
-builder.Services.AddScoped<IEndSessionService, EndSessionService>();
 builder.Services.AddScoped<IPushedAuthorizationService, PushedAuthorizationService>();
 builder.Services.AddScoped<IParAuthorizationService, ParAuthorizationService>();
 

@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Crypto;
+﻿using Microsoft.IdentityModel.Tokens;
+using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.Models;
@@ -6,19 +7,22 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 
 namespace O2Connect.Api.Services;
 
-public interface ILoginService
+public interface IUserSessionService
 {
-    Task<LoginResult> HandleAsync(string? sessionId, LoginRequest request, CancellationToken ct);
-    Task LogoutAsync(string token, CancellationToken ct);
+    Task<LoginResult> HandleLoginAsync(string? sessionId, LoginRequest request, CancellationToken ct);
+    Task HandleLogoutAsync(EndSessionRequest request, CancellationToken ct);
+    Task HandleLogoutAsync(string token, CancellationToken ct);
 }
 
-public class LoginService : ILoginService
+public class UserSessionService : IUserSessionService
 {
-    private static readonly string DummyHash = CreateDummyHash();
+    private static readonly JwtSecurityTokenHandler TokenHandler = new();
 
     private readonly IUserRepository _userRepository;
     private readonly IClientRepository _clientRepository;
@@ -26,14 +30,16 @@ public class LoginService : ILoginService
     private readonly IParAuthorizationSessionRepository _parAuthorizationSessionRepository;
     private readonly ITokenFactory _tokenFactory;
     private readonly ISecretHasher _secretHasher;
+    private readonly TokenValidationParameters _tokenValidationParameters;
 
-    public LoginService(
+    public UserSessionService(
         IUserRepository userRepository,
         IClientRepository clientRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IParAuthorizationSessionRepository parAuthorizationSessionRepository,
         ITokenFactory tokenFactory,
-        ISecretHasher secretHasher)
+        ISecretHasher secretHasher,
+        TokenValidationParameters tokenValidationParameters)
     {
         _userRepository = userRepository;
         _clientRepository = clientRepository;
@@ -41,9 +47,10 @@ public class LoginService : ILoginService
         _parAuthorizationSessionRepository = parAuthorizationSessionRepository;
         _tokenFactory = tokenFactory;
         _secretHasher = secretHasher;
+        _tokenValidationParameters = tokenValidationParameters;
     }
 
-    public async Task<LoginResult> HandleAsync(string? sessionId,
+    public async Task<LoginResult> HandleLoginAsync(string? sessionId,
                                                LoginRequest request,
                                                CancellationToken ct)
     {
@@ -110,9 +117,36 @@ public class LoginService : ILoginService
         return new LoginTokenSuccess(tokenResponse);
     }
 
-    public async Task LogoutAsync(string token, CancellationToken ct)
+    public async Task HandleLogoutAsync(EndSessionRequest request, CancellationToken ct)
     {
-        await _refreshTokenRepository.RevokeAsync(token, ct);
+        await HandleLogoutAsync(request.IdTokenHint, ct);
+    }
+
+    public async Task HandleLogoutAsync(string? token, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return;
+
+        ClaimsPrincipal principal;
+
+        try
+        {
+            principal = TokenHandler.ValidateToken(token,
+                                                   _tokenValidationParameters,
+                                                   out var validatedToken);
+
+            if (validatedToken is not JwtSecurityToken)
+                return;
+        }
+        catch (SecurityTokenException)
+        {
+            return;
+        }
+
+        var sessionId = principal.FindFirst("sid")?.Value;
+
+        if (!string.IsNullOrWhiteSpace(sessionId))
+            await _refreshTokenRepository.RevokeSessionAsync(sessionId, ct);
     }
 
     private async Task<User?> ValidateCredentialsAsync(string username,
@@ -124,7 +158,7 @@ public class LoginService : ILoginService
 
         var storedUser = await _userRepository.GetByUsernameAsync(username.Trim(), ct);
 
-        var hashToVerify = storedUser?.PasswordHash ?? DummyHash;
+        var hashToVerify = storedUser?.PasswordHash ?? CreateDummyHash();
 
         var isValid = _secretHasher.Verify(password, hashToVerify);
 
