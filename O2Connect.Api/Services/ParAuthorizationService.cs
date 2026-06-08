@@ -11,8 +11,6 @@ public interface IParAuthorizationService
     Task<RedirectResponse> HandleAsync(string requestUri,
                                        HttpContext httpContext,
                                        CancellationToken ct);
-    Task<ParAuthorizationSession?> GetParSessionAsync(string sessionId, CancellationToken ct);
-    Task UpdateSessionAsync(ParAuthorizationSession session, CancellationToken ct);
 }
 
 public class ParAuthorizationService : IParAuthorizationService
@@ -104,12 +102,7 @@ public class ParAuthorizationService : IParAuthorizationService
         return await IssueCode(entry, session, ct);
     }
 
-    public async Task<ParAuthorizationSession?> GetParSessionAsync(string sessionId, CancellationToken ct)
-    {
-        return await _parSessionRepository.GetAsync(sessionId, ct);
-    }
-
-    public async Task UpdateSessionAsync(ParAuthorizationSession session, CancellationToken ct)
+    private async Task UpdateSessionAsync(ParAuthorizationSession session, CancellationToken ct)
     {
         await _parSessionRepository.StoreAsync(session, ct);
     }
