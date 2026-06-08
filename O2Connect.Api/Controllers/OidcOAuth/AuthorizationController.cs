@@ -28,10 +28,14 @@ public class AuthorizationController : OidcOAuthControllerBase
         return BuildAuthorizationRedirectResult(result);
     }
 
-    [HttpGet("resume/{sessionId}")]
-    public async Task<IActionResult> Resume(string sessionId)
+    [HttpGet("resume")]
+    public async Task<IActionResult> Resume([FromQuery(Name = "session")] string? sessionId)
     {
+        if (string.IsNullOrWhiteSpace(sessionId))
+            throw OAuthException.FromInvalidRequest();
+
         var result = await _authorizationService.ProcessSessionAsync(sessionId, User, HttpContext.RequestAborted);
+
         return BuildAuthorizationRedirectResult(result);
     }
 

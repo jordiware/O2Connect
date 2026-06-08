@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.DataFactories;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
@@ -21,10 +22,13 @@ public class ConsentController : OidcOAuthControllerBase
         _consentService = consentService;
     }
 
-    [HttpGet("{sessionId}")]
+    [HttpGet]
     [Authorize(Policy = "RequireProfileScope")]
-    public async Task<IActionResult> GetConsent(string sessionId)
+    public async Task<IActionResult> GetConsent([FromQuery(Name = "session")] string? sessionId)
     {
+        if (string.IsNullOrWhiteSpace(sessionId))
+            throw OAuthException.FromInvalidRequest();
+
         var session = await _consentService.GetSessionAsync(sessionId, HttpContext.RequestAborted);
 
         if (session == null || session.ExpiresAt <= DateTimeOffset.UtcNow)
@@ -45,10 +49,13 @@ public class ConsentController : OidcOAuthControllerBase
         return Ok(response);
     }
 
-    [HttpPost("{sessionId}")]
+    [HttpPost]
     [Authorize(Policy = "RequireProfileScope")]
-    public async Task<IActionResult> PostConsent(string sessionId, [FromBody] ConsentDecisionRequest request)
+    public async Task<IActionResult> PostConsent([FromQuery(Name = "session")] string? sessionId, [FromBody] ConsentDecisionRequest request)
     {
+        if (string.IsNullOrWhiteSpace(sessionId))
+            throw OAuthException.FromInvalidRequest();
+
         var session = await _consentService.GetSessionAsync(sessionId, HttpContext.RequestAborted);
 
         if (session == null 
