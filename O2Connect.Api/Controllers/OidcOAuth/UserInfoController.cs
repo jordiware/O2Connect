@@ -7,7 +7,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [ApiController]
 [Route("connect/userinfo")]
 [Authorize(Policy = "RequireProfileScope")]
-public class UserInfoController : ControllerBase
+public class UserInfoController : OidcOAuthControllerBase
 {
     private readonly IUserInfoService _userInfoService;
 

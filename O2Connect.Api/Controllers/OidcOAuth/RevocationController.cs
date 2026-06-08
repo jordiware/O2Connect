@@ -7,7 +7,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("connect/revocation")]
-public class RevocationController : ControllerBase
+public class RevocationController : OidcOAuthControllerBase
 {
     private readonly IRevocationService _revocationService;
 
@@ -18,7 +18,6 @@ public class RevocationController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    [Consumes("application/x-www-form-urlencoded")]
     public async Task<IActionResult> Revoke([FromForm] RevocationRequest request)
     {
         var clientId = ExtractClientId(HttpContext);
