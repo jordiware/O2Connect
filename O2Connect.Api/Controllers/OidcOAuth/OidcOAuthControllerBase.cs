@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using System.Net;
 
@@ -7,7 +8,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 public abstract class OidcOAuthControllerBase : ControllerBase
 {
-    public IActionResult OkJsonResponse(object? response)
+    protected IActionResult OkJsonResponse(object? response)
     {
         Response.Headers.CacheControl = "no-store";
         Response.Headers.Pragma = "no-cache";
@@ -19,7 +20,7 @@ public abstract class OidcOAuthControllerBase : ControllerBase
         };
     }
 
-    public string BuildErrorRedirect(AuthorizationSession session)
+    protected string BuildErrorRedirect(AuthorizationSession session)
     {
         return QueryHelpers.AddQueryString(
             session.Request.RedirectUri,
@@ -28,5 +29,19 @@ public abstract class OidcOAuthControllerBase : ControllerBase
                 ["error"] = "access_denied",
                 ["state"] = session.Request.State
             });
+    }
+
+    protected IActionResult ProcessHandleResult<TResult>(HandleResult<TResult> handleResult)
+        where TResult : struct
+    {
+        return handleResult.Status switch
+        {
+            HandleResultStatus.Success => Ok(handleResult.Result),
+            HandleResultStatus.BadRequest => BadRequest(handleResult.ErrorMessage),
+            HandleResultStatus.Unauthorized => Unauthorized(handleResult.ErrorMessage),
+            HandleResultStatus.Forbidden => Forbid(),
+            HandleResultStatus.NotFound => NotFound(handleResult.ErrorMessage),
+            _ => StatusCode(500)
+        };
     }
 }

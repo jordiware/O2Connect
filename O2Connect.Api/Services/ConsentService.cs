@@ -6,7 +6,6 @@ using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
 using System.Collections.Immutable;
-using System.Net.NetworkInformation;
 
 namespace O2Connect.Api.Services;
 
@@ -26,7 +25,7 @@ public interface IConsentService
                           string clientId,
                           IReadOnlySet<string> approvedScopes,
                           CancellationToken ct);
-    Task<RedirectResponse> HandleParSessionAsync(string sessionId,
+    Task<RedirectResponse> HandleParConsentAsync(string sessionId,
                                                  ConsentDecisionRequest request,
                                                  CancellationToken ct);
 }
@@ -136,7 +135,7 @@ public class ConsentService : IConsentService
         await _userConsentRepository.StoreAsync(updatedConsent, ct);
     }
 
-    public async Task<RedirectResponse> HandleParSessionAsync(string sessionId,
+    public async Task<RedirectResponse> HandleParConsentAsync(string sessionId,
                                                               ConsentDecisionRequest request,
                                                               CancellationToken ct)
     {
