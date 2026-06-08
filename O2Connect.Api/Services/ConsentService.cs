@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Exceptions;
+﻿using O2Connect.Api.DataFactories;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
@@ -172,10 +173,11 @@ public class ConsentService : IConsentService
         session = session with { Status = ParAuthStatus.Consented };
         await _parAuthorizationSessionRepository.StoreAsync(session, ct);
 
+        var requestUri = BuildRequestUri(session.RequestUriCode);
         return new RedirectResponse
         {
             Action = "redirect",
-            RedirectUrl = $"/connect/authorize?request_uri={BuildRequestUri(session.RequestUriCode)}"
+            RedirectUrl = RedirectUrlFactory.Authorize(requestUri)
         };
     }
 

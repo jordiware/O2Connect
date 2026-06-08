@@ -1,4 +1,5 @@
 ﻿using O2Connect.Api.Crypto;
+using O2Connect.Api.DataFactories;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
@@ -21,9 +22,6 @@ public interface IAuthorizeService
 
 public class AuthorizeService : IAuthorizeService
 {
-    public const string LoginUri = "/account/login";
-    public const string AuthorizeResumeUri = "/connect/authorize/resume";
-
     private readonly IClientRepository _clientRepository;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IAuthorizationSessionRepository _authorizationSessionRepository;
@@ -99,8 +97,8 @@ public class AuthorizeService : IAuthorizeService
 
             await _authorizationSessionRepository.StoreAsync(loginSession, ct);
 
-            var returnUrl = Uri.EscapeDataString($"{AuthorizeResumeUri}/{loginSession.Id}");
-            var loginRedirect = $"{LoginUri}?returnUrl={returnUrl}";
+            var returnUrl = RedirectUrlFactory.AuthorizeResume(session: loginSession.Id);
+            var loginRedirect = RedirectUrlFactory.LoginWithReturnUrl(returnUrl: returnUrl);
 
             return new AuthorizationResult
             {
@@ -139,7 +137,7 @@ public class AuthorizeService : IAuthorizeService
             {
                 Success = false,
                 IsRedirect = true,
-                RedirectUri = $"/consent?sessionId={consentSession.Id}",
+                RedirectUri = RedirectUrlFactory.Consent(session: consentSession.Id),
                 ResponseMode = responseMode
             };
         }

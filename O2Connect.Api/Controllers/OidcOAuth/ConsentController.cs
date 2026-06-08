@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.DataFactories;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
@@ -92,7 +93,7 @@ public class ConsentController : OidcOAuthControllerBase
         return Ok(new RedirectResponse
         {
             Action = "resume",
-            RedirectUrl = $"/connect/authorize/resume/{sessionId}"
+            RedirectUrl = RedirectUrlFactory.AuthorizeResume(session: sessionId)
         });
     }
 

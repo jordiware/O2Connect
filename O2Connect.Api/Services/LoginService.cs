@@ -1,4 +1,5 @@
 ﻿using O2Connect.Api.Crypto;
+using O2Connect.Api.DataFactories;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
@@ -65,7 +66,7 @@ public class LoginService : ILoginService
         return new RedirectResponse
         {
             Action = "redirect",
-            RedirectUrl = $"/connect/authorize?request_uri=urn:ietf:params:oauth:request_uri:{session.RequestUriCode}"
+            RedirectUrl = RedirectUrlFactory.Authorize($"urn:ietf:params:oauth:request_uri:{session.RequestUriCode}")
         };
     }
 
