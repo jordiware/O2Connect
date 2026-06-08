@@ -9,11 +9,11 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [Route("connect")]
 public sealed class ConnectController : ControllerBase
 {
-    private readonly IUserSessionService _userSessionService;
+    private readonly IAccountService _userSessionService;
     private readonly IPushedAuthorizationService _pushedAuthorizationService;
 
     public ConnectController(
-        IUserSessionService userSessionService,
+        IAccountService userSessionService,
         IPushedAuthorizationService pushedAuthorizationService)
     {
         _userSessionService = userSessionService;

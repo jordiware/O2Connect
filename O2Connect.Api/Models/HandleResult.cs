@@ -1,6 +1,6 @@
 ﻿namespace O2Connect.Api.Models;
 
-public sealed record HandleResult<TResult> where TResult : struct
+public sealed record HandleResult<TResult>
 {
     public HandleResultStatus Status { get; }
     public TResult? Result { get; }

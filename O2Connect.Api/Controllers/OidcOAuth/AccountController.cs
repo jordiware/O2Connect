@@ -10,12 +10,12 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("account")]
-public class AccountController : ControllerBase
+public class AccountController : OidcOAuthControllerBase
 {
-    private readonly IUserSessionService _loginService;
+    private readonly IAccountService _loginService;
 
     public AccountController(
-        IUserSessionService loginService)
+        IAccountService loginService)
     {
         _loginService = loginService;
     }
@@ -26,15 +26,16 @@ public class AccountController : ControllerBase
     {
         var result = await _loginService.HandleLoginAsync(sessionId, request, HttpContext.RequestAborted);
 
-        return result switch
+        return ProcessHandleResult(result, (successResult) =>
         {
-            LoginBadRequest r => BadRequest(new { message = r.Message }),
-            LoginUnauthorized r => Unauthorized(new { message = r.Message }),
-            LoginForbidden => Forbid(),
-            LoginRedirect r => Ok(r.RedirectResponse),
-            LoginTokenSuccess r => Ok(r.TokenResponse),
-            _ => StatusCode(500)
-        };
+            return successResult switch
+            {
+                LoginRedirect r => Ok(r.RedirectResponse),
+                LoginTokenSuccess r => Ok(r.TokenResponse),
+                _ => StatusCode(500)
+            };
+        });
+
     }
 
     [HttpPost("logout")]

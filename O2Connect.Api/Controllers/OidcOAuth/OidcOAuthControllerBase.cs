@@ -31,16 +31,19 @@ public abstract class OidcOAuthControllerBase : ControllerBase
             });
     }
 
-    protected IActionResult ProcessHandleResult<TResult>(HandleResult<TResult> handleResult)
-        where TResult : struct
+    protected IActionResult ProcessHandleResult<TResult>(HandleResult<TResult> handleResult,
+                                                         Func<TResult, IActionResult> OnSuccess)
     {
+        if (handleResult == null || OnSuccess == null)
+            return StatusCode(500);
+
         return handleResult.Status switch
         {
-            HandleResultStatus.Success => Ok(handleResult.Result),
-            HandleResultStatus.BadRequest => BadRequest(handleResult.ErrorMessage),
-            HandleResultStatus.Unauthorized => Unauthorized(handleResult.ErrorMessage),
+            HandleResultStatus.Success => OnSuccess(handleResult.Result!),
+            HandleResultStatus.BadRequest => BadRequest(new { message = handleResult.ErrorMessage }),
+            HandleResultStatus.Unauthorized => Unauthorized(new { message = handleResult.ErrorMessage }),
             HandleResultStatus.Forbidden => Forbid(),
-            HandleResultStatus.NotFound => NotFound(handleResult.ErrorMessage),
+            HandleResultStatus.NotFound => NotFound(new { message = handleResult.ErrorMessage }),
             _ => StatusCode(500)
         };
     }

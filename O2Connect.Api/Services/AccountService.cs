@@ -13,14 +13,16 @@ using System.Security.Cryptography;
 
 namespace O2Connect.Api.Services;
 
-public interface IUserSessionService
+public interface IAccountService
 {
-    Task<LoginResult> HandleLoginAsync(string? sessionId, LoginRequest request, CancellationToken ct);
+    Task<HandleResult<LoginResult>> HandleLoginAsync(string? sessionId,
+                                                     LoginRequest request,
+                                                     CancellationToken ct);
     Task HandleLogoutAsync(EndSessionRequest request, CancellationToken ct);
     Task HandleLogoutAsync(string token, CancellationToken ct);
 }
 
-public class UserSessionService : IUserSessionService
+public class AccountService : IAccountService
 {
     private static readonly JwtSecurityTokenHandler TokenHandler = new();
 
@@ -32,7 +34,7 @@ public class UserSessionService : IUserSessionService
     private readonly ISecretHasher _secretHasher;
     private readonly TokenValidationParameters _tokenValidationParameters;
 
-    public UserSessionService(
+    public AccountService(
         IUserRepository userRepository,
         IClientRepository clientRepository,
         IRefreshTokenRepository refreshTokenRepository,
@@ -50,34 +52,34 @@ public class UserSessionService : IUserSessionService
         _tokenValidationParameters = tokenValidationParameters;
     }
 
-    public async Task<LoginResult> HandleLoginAsync(string? sessionId,
-                                               LoginRequest request,
-                                               CancellationToken ct)
+    public async Task<HandleResult<LoginResult>> HandleLoginAsync(string? sessionId,
+                                                                  LoginRequest request,
+                                                                  CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-            return new LoginBadRequest("Invalid credentials");
+            return HandleResult<LoginResult>.BadRequest("Invalid credentials");
 
         if (string.IsNullOrWhiteSpace(request.ClientId))
-            return new LoginBadRequest("Invalid client");
+            return HandleResult<LoginResult>.BadRequest("Invalid client");
 
         var user = await ValidateCredentialsAsync(request.Username.Trim(), request.Password, ct);
 
         var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
 
         if (user is null || client is null)
-            return new LoginUnauthorized("Invalid credentials");
+            return HandleResult<LoginResult>.Unauthorized("Invalid credentials");
 
         var allowedScopes = user.Scopes.Intersect(client.AllowedScopes);
 
         if (!allowedScopes.Any())
-            return new LoginForbidden();
+            return HandleResult<LoginResult>.Forbidden();
 
         if (!string.IsNullOrWhiteSpace(sessionId))
         {
             var session = await _parAuthorizationSessionRepository.GetAsync(sessionId, ct);
 
             if (session is null || session.Stage != ParAuthStatus.AwaitingLogin)
-                return new LoginBadRequest("Invalid session");
+                return HandleResult<LoginResult>.BadRequest("Invalid session");
 
             session = session with
             {
@@ -93,28 +95,28 @@ public class UserSessionService : IUserSessionService
                 RedirectUrl = RedirectUrlFactory.Authorize($"urn:ietf:params:oauth:request_uri:{session.RequestUriCode}")
             };
 
-            return new LoginRedirect(redirectResponse);
+            return HandleResult<LoginResult>.Success(new LoginRedirect(redirectResponse));
         }
+
+        var additionalClaims = new Dictionary<string, object>
+        {
+            { "name", user.Username }
+        };
+
+        if (user.Roles is not null && user.Roles.Count > 0)
+            additionalClaims["roles"] = user.Roles.ToArray();
 
         var tokenFactoryRequest = new JwtTokenFactoryRequest
         {
             ClientId = client.ClientId,
             Subject = user.Id,
             Scopes = allowedScopes.ToHashSet(),
-            AdditionalClaims = new Dictionary<string, object>
-            {
-                { "name", user.Username }
-            }
+            AdditionalClaims = additionalClaims
         };
-
-        if (user.Roles is not null && user.Roles.Count > 0)
-        {
-            tokenFactoryRequest.AdditionalClaims["roles"] = user.Roles.ToArray();
-        }
 
         var tokenResponse = await _tokenFactory.GenerateAsync(tokenFactoryRequest, ct);
 
-        return new LoginTokenSuccess(tokenResponse);
+        return HandleResult<LoginResult>.Success(new LoginTokenSuccess(tokenResponse));
     }
 
     public async Task HandleLogoutAsync(EndSessionRequest request, CancellationToken ct)

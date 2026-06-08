@@ -111,7 +111,7 @@ builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationSer
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthorizeService, AuthorizeService>();
 builder.Services.AddScoped<IConsentService, ConsentService>();
-builder.Services.AddScoped<IUserSessionService, UserSessionService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserInfoService, UserInfoService>();
 builder.Services.AddScoped<ITokenIntrospectionService, TokenIntrospectionService>();
 builder.Services.AddScoped<IRevocationService, RevocationService>();
