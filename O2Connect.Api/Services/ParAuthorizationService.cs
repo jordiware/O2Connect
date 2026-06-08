@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Exceptions;
+﻿using O2Connect.Api.Crypto;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
@@ -112,7 +113,7 @@ public class ParAuthorizationService : IParAuthorizationService
         ParAuthorizationSession session,
         CancellationToken ct)
     {
-        var authCode = GenerateSecureCode();
+        var authCode = SecureCodeGenerator.GenerateBase64UrlToken(length: 32);
 
         await _authorizationCodeRepository.StoreAsync(new AuthorizationCode
         {
@@ -188,16 +189,5 @@ public class ParAuthorizationService : IParAuthorizationService
         var grantedScopes = storedConsent?.GrantedScopes.ToHashSet() ?? new HashSet<string>();
 
         return requestedScopes.Except(grantedScopes, StringComparer.Ordinal).ToHashSet();
-    }
-
-    private static string GenerateSecureCode()
-    {
-        Span<byte> bytes = stackalloc byte[32];
-        RandomNumberGenerator.Fill(bytes);
-
-        return Convert.ToBase64String(bytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
     }
 }

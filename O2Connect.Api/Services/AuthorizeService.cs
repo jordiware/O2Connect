@@ -83,7 +83,7 @@ public class AuthorizeService : IAuthorizeService
         {
             session = new AuthorizationSession
             {
-                SessionId = GenerateSecureCode(),
+                SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
                 Request = request,
                 CreatedAt = DateTimeOffset.UtcNow,
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
@@ -272,16 +272,5 @@ public class AuthorizeService : IAuthorizeService
             "query" => AuthorizationResultResponseMode.Query,
             _ => AuthorizationResultResponseMode.Query
         };
-    }
-
-    private static string GenerateSecureCode()
-    {
-        Span<byte> bytes = stackalloc byte[32];
-        RandomNumberGenerator.Fill(bytes);
-
-        return Convert.ToBase64String(bytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
     }
 }

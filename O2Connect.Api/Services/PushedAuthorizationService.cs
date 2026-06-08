@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.DataValidators;
+﻿using O2Connect.Api.Crypto;
+using O2Connect.Api.DataValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
@@ -50,7 +51,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
 
         var normalizedScope = NormalizeScope(request.Scope);
         
-        var code = GenerateSecureCode();
+        var code = SecureCodeGenerator.GenerateBase64UrlToken(length: 32);
         var requestUri = BuildRequestUri(code);
 
         var now = DateTimeOffset.UtcNow;
@@ -74,7 +75,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
 
         var parSession = new ParAuthorizationSession
         {
-            SessionId = GenerateSecureCode(),
+            SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
             RequestUriCode = code,
             Stage = ParAuthStatus.Initialized,
             CreatedAt = now,
@@ -93,22 +94,6 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
     private static string BuildRequestUri(string code)
     {
         return $"urn:ietf:params:oauth:request_uri:{code}";
-    }
-
-    private static string GenerateSecureCode()
-    {
-        Span<byte> bytes = stackalloc byte[32];
-        RandomNumberGenerator.Fill(bytes);
-
-        return Base64UrlEncode(bytes);
-    }
-
-    private static string Base64UrlEncode(ReadOnlySpan<byte> bytes)
-    {
-        return Convert.ToBase64String(bytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
     }
 
     private static string NormalizeScope(string scope)
