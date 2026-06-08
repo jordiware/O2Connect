@@ -4,6 +4,7 @@ using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
+using System.Collections.Immutable;
 using System.Security.Cryptography;
 
 namespace O2Connect.Api.Services;
@@ -12,6 +13,7 @@ public interface ILoginService
 {
     Task<RedirectResponse> HandleWithSessionAsync(string username,
                                                   string password,
+                                                  string clientId,
                                                   string sessionId,
                                                   CancellationToken ct);
     Task<User?> ValidateCredentialsAsync(string username,
@@ -25,29 +27,34 @@ public class LoginService : ILoginService
     private static readonly string DummyHash = CreateDummyHash();
 
     private readonly IUserRepository _userRepository;
+    private readonly IClientRepository _clientRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
-    private readonly IParAuthorizationSessionRepository _sessionRepository;
+    private readonly IParAuthorizationSessionRepository _parAuthorizationSessionRepository;
     private readonly ISecretHasher _secretHasher;
 
     public LoginService(
         IUserRepository userRepository,
+        IClientRepository clientRepository,
         IRefreshTokenRepository refreshTokenRepository,
-        IParAuthorizationSessionRepository sessionRepository,
+        IParAuthorizationSessionRepository parAuthorizationSessionRepository,
         ISecretHasher secretHasher)
     {
         _userRepository = userRepository;
+        _clientRepository = clientRepository;
         _refreshTokenRepository = refreshTokenRepository;
-        _sessionRepository = sessionRepository;
+        _parAuthorizationSessionRepository = parAuthorizationSessionRepository;
         _secretHasher = secretHasher;
     }
 
     public async Task<RedirectResponse> HandleWithSessionAsync(string username,
                                                                string password,
+                                                               string clientId,
                                                                string sessionId,
                                                                CancellationToken ct)
     {
         var user = await ValidateCredentialsAsync(username, password, ct);
-        var session = await _sessionRepository.GetAsync(sessionId, ct);
+        var session = await _parAuthorizationSessionRepository.GetAsync(sessionId, ct);
+        var client = await _clientRepository.GetByIdAsync(clientId, ct);
 
         if (user is null)
             throw OAuthException.FromAccessDenied();
@@ -55,13 +62,20 @@ public class LoginService : ILoginService
         if (session is null || session.Stage != ParAuthStatus.AwaitingLogin)
             throw OAuthException.FromInvalidRequest();
 
+        if (client is null)
+            throw OAuthException.FromInvalidRequest();
+
+        var allowedScopes = user.Scopes.Intersect(client.AllowedScopes);
+        if (!allowedScopes.Any())
+            throw OAuthException.FromAccessDenied();
+
         session = session with
         {
             Stage = ParAuthStatus.Authenticated,
             UserId = user.Id
         };
 
-        await _sessionRepository.StoreAsync(session, ct);
+        await _parAuthorizationSessionRepository.StoreAsync(session, ct);
 
         return new RedirectResponse
         {
@@ -108,7 +122,7 @@ public class LoginService : ILoginService
         var hasher = new Pbkdf2SecretHasher();
 
         var dummySecret = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
-        
+
         if (!hasher.TryHash(dummySecret, out var dummyHash))
             throw new InvalidOperationException("Failed to create dummy hash.");
 

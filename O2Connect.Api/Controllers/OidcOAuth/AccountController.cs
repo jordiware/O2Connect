@@ -42,6 +42,7 @@ public class AccountController : ControllerBase
         {
             var response = await _loginService.HandleWithSessionAsync(request.Username.Trim(),
                                                                       request.Password,
+                                                                      request.ClientId,
                                                                       sessionId,
                                                                       HttpContext.RequestAborted);
             return Ok(response);
