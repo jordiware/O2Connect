@@ -4,7 +4,7 @@ public sealed record DiscoveryEndpoints
 {
     public const string SectionName = "DiscoveryEndpoints";
 
-    public string Documentation { get; init; } = default!;
-    public string PrivacyPolicy { get; init; } = default!;
-    public string TermsOfService { get; init; } = default!;
+    public required string Documentation { get; init; }
+    public required string PrivacyPolicy { get; init; }
+    public required string TermsOfService { get; init; }
 }
