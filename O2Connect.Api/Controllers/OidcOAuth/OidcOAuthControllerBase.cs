@@ -43,7 +43,7 @@ public abstract class OidcOAuthControllerBase : ControllerBase
             HandleResultStatus.BadRequest => BadRequest(handleResult.Error),
             HandleResultStatus.Unauthorized => Unauthorized(handleResult.Error),
             HandleResultStatus.NotFound => NotFound(handleResult.Error),
-            HandleResultStatus.Forbidden => Forbid(),
+            HandleResultStatus.Forbidden => StatusCode((int)HttpStatusCode.Forbidden, handleResult.Error),
             _ => StatusCode(500)
         };
     }

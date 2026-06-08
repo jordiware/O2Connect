@@ -59,14 +59,14 @@ public class AccountService : IAccountService
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
             return HandleResult<LoginResult>.BadRequest(new OAuthErrorResponse
             {
-                Error = "",
+                Error = "invalid_request",
                 ErrorDescription = "Invalid credentials"
             });
 
         if (string.IsNullOrWhiteSpace(request.ClientId))
             return HandleResult<LoginResult>.BadRequest(new OAuthErrorResponse
             {
-                Error = "",
+                Error = "invalid_request",
                 ErrorDescription = "Invalid client"
             });
 
@@ -77,14 +77,18 @@ public class AccountService : IAccountService
         if (user is null || client is null)
             return HandleResult<LoginResult>.Unauthorized(new OAuthErrorResponse
             {
-                Error = "",
+                Error = "invalid_grant",
                 ErrorDescription = "Invalid credentials"
             });
 
         var allowedScopes = user.Scopes.Intersect(client.AllowedScopes);
 
         if (!allowedScopes.Any())
-            return HandleResult<LoginResult>.Forbidden();
+            return HandleResult<LoginResult>.Forbidden(new OAuthErrorResponse
+            {
+                Error = "access_denied",
+                ErrorDescription = "User is not allowed to access this client"
+            });
 
         if (!string.IsNullOrWhiteSpace(sessionId))
         {
@@ -93,7 +97,7 @@ public class AccountService : IAccountService
             if (session is null || session.Stage != ParAuthStatus.AwaitingLogin)
                 return HandleResult<LoginResult>.BadRequest(new OAuthErrorResponse
                 {
-                    Error = "",
+                    Error = "invalid_request",
                     ErrorDescription = "Invalid session"
                 });
 

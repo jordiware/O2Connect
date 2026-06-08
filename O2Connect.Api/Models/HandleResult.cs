@@ -29,8 +29,8 @@ public sealed record HandleResult<TResult>
     public static HandleResult<TResult> NotFound(OAuthErrorResponse error)
         => new(HandleResultStatus.NotFound, error: error);
 
-    public static HandleResult<TResult> Forbidden()
-        => new(HandleResultStatus.Forbidden);
+    public static HandleResult<TResult> Forbidden(OAuthErrorResponse error)
+        => new(HandleResultStatus.Forbidden, error: error);
 }
 
 public enum HandleResultStatus
