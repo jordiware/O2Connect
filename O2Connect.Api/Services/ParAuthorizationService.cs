@@ -62,14 +62,14 @@ public class ParAuthorizationService : IParAuthorizationService
         if (client is null) 
             throw OAuthException.FromInvalidClient();
 
-        if (session.Status is ParAuthStatus.CodeIssued or ParAuthStatus.Aborted)
+        if (session.Stage is ParAuthStatus.CodeIssued or ParAuthStatus.Aborted)
             throw OAuthException.FromInvalidRequest();
 
         var user = httpContext.User;
 
         if (user?.Identity?.IsAuthenticated != true)
         {
-            await UpdateSession(session with { Status = ParAuthStatus.Initialized }, ct);
+            await UpdateSession(session with { Stage = ParAuthStatus.Initialized }, ct);
 
             return BuildRedirect("/login?session=" + session.SessionId);
         }
@@ -81,7 +81,7 @@ public class ParAuthorizationService : IParAuthorizationService
 
         session = session with
         {
-            Status = ParAuthStatus.Authenticated,
+            Stage = ParAuthStatus.Authenticated,
             UserId = userId
         };
 
@@ -93,7 +93,7 @@ public class ParAuthorizationService : IParAuthorizationService
 
         if (missingScopes.Count > 0)
         {
-            session = session with { Status = ParAuthStatus.Consented }; // waiting for consent
+            session = session with { Stage = ParAuthStatus.Consented }; // waiting for consent
 
             await UpdateSession(session, ct);
 
@@ -123,7 +123,7 @@ public class ParAuthorizationService : IParAuthorizationService
             ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5)
         }, ct);
 
-        await UpdateSession(session with { Status = ParAuthStatus.CodeIssued }, ct);
+        await UpdateSession(session with { Stage = ParAuthStatus.CodeIssued }, ct);
 
         var redirectUrl = BuildCallbackUrl(entry, authCode);
 

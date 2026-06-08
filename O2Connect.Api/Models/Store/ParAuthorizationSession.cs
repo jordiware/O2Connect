@@ -3,14 +3,11 @@
 public sealed record ParAuthorizationSession
 {
     public required string SessionId { get; init; }
-    public required string RequestUriCode { get; init; }
-
-    public required ParAuthStatus Status { get; init; }
-
-    public string? UserId { get; init; }
-
+    public required ParAuthStatus Stage { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
     public required DateTimeOffset ExpiresAt { get; init; }
+    public required string RequestUriCode { get; init; }
+    public string? UserId { get; init; }
 }
 
 public enum ParAuthStatus

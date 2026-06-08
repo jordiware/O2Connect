@@ -18,13 +18,13 @@ public interface IConsentService
                             CancellationToken ct);
     Task<ConsentEvaluationResult> EvaluateAsync(string userId,
                                                 string clientId,
-                                                ImmutableHashSet<string> requestedScopes,
+                                                IReadOnlySet<string> requestedScopes,
                                                 CancellationToken ct);
     Task<AuthorizationSession?> GetSessionAsync(string sessionId,
                                                 CancellationToken ct);
     Task SaveConsentAsync(string userId,
                           string clientId,
-                          ImmutableHashSet<string> approvedScopes,
+                          IReadOnlySet<string> approvedScopes,
                           CancellationToken ct);
     Task<RedirectResponse> HandleParSessionAsync(string sessionId,
                                                  ConsentDecisionRequest request,
@@ -52,7 +52,7 @@ public class ConsentService : IConsentService
 
     public async Task<ConsentEvaluationResult> EvaluateAsync(string userId,
                                                              string clientId,
-                                                             ImmutableHashSet<string> requestedScopes,
+                                                             IReadOnlySet<string> requestedScopes,
                                                              CancellationToken ct)
     {
         var existing = await _userConsentRepository.GetAsync(userId, clientId, ct);
@@ -101,7 +101,7 @@ public class ConsentService : IConsentService
 
     public async Task SaveConsentAsync(string userId,
                                        string clientId,
-                                       ImmutableHashSet<string> approvedScopes,
+                                       IReadOnlySet<string> approvedScopes,
                                        CancellationToken ct)
     {
         var existing = await _userConsentRepository.GetAsync(userId, clientId, ct);
@@ -121,7 +121,7 @@ public class ConsentService : IConsentService
             return;
         }
 
-        var grantedScopes = existing.GrantedScopes.Union(approvedScopes);
+        var grantedScopes = existing.GrantedScopes.Union(approvedScopes).ToHashSet();
 
         var updatedConsent = new UserConsent
         {
@@ -145,7 +145,7 @@ public class ConsentService : IConsentService
         if (session is null)
             throw OAuthException.FromInvalidRequest("Invalid session");
 
-        if (session.Status != ParAuthStatus.AwaitingConsent)
+        if (session.Stage != ParAuthStatus.AwaitingConsent)
             throw OAuthException.FromInvalidRequest("Invalid session state for consent");
 
         if (session.UserId is null)
@@ -160,7 +160,7 @@ public class ConsentService : IConsentService
 
         if (!request.Approved)
         {
-            session = session with { Status = ParAuthStatus.Aborted };
+            session = session with { Stage = ParAuthStatus.Aborted };
             await _parAuthorizationSessionRepository.StoreAsync(session, ct);
             return BuildErrorRedirect(entry, "access_denied");
         }
@@ -170,7 +170,7 @@ public class ConsentService : IConsentService
                                requestedScopes.ToImmutableHashSet(),
                                ct);
 
-        session = session with { Status = ParAuthStatus.Consented };
+        session = session with { Stage = ParAuthStatus.Consented };
         await _parAuthorizationSessionRepository.StoreAsync(session, ct);
 
         var requestUri = BuildRequestUri(session.RequestUriCode);

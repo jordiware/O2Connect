@@ -27,7 +27,7 @@ public class InMemoryAuthorizationSessionRepository : IAuthorizationSessionRepos
     {
         ct.ThrowIfCancellationRequested();
 
-        _sessions[session.Id] = session;
+        _sessions[session.SessionId] = session;
 
         return Task.CompletedTask;
     }

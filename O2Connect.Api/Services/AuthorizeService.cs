@@ -6,6 +6,7 @@ using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using System.Collections.Immutable;
 using System.Security.Claims;
+using System.Security.Cryptography;
 
 namespace O2Connect.Api.Services;
 
@@ -56,6 +57,9 @@ public class AuthorizeService : IAuthorizeService
 
             if (validationError != null)
                 return validationError;
+
+            if (requestScopes == null || requestScopes.Count == 0)
+                return Error(responseMode, "invalid_scope", "Scopes are empty", request.State);
         }
 
         var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
@@ -79,11 +83,12 @@ public class AuthorizeService : IAuthorizeService
         {
             session = new AuthorizationSession
             {
+                SessionId = GenerateSecureCode(),
                 Request = request,
                 CreatedAt = DateTimeOffset.UtcNow,
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
                 Stage = AuthorizationStage.Created,
-                RequestedScopes = requestScopes.ToImmutableHashSet()
+                RequestedScopes = requestScopes.ToHashSet()
             };
         }
 
@@ -91,13 +96,13 @@ public class AuthorizeService : IAuthorizeService
         {
             var loginSession = session with
             {
-                Id = _secureTokenGenerator.GenerateSecureToken(),
+                SessionId = _secureTokenGenerator.GenerateSecureToken(),
                 Stage = AuthorizationStage.LoginRequired
             };
 
             await _authorizationSessionRepository.StoreAsync(loginSession, ct);
 
-            var returnUrl = RedirectUrlFactory.AuthorizeResume(session: loginSession.Id);
+            var returnUrl = RedirectUrlFactory.AuthorizeResume(session: loginSession.SessionId);
             var loginRedirect = RedirectUrlFactory.LoginWithReturnUrl(returnUrl: returnUrl);
 
             return new AuthorizationResult
@@ -126,9 +131,9 @@ public class AuthorizeService : IAuthorizeService
         {
             var consentSession = session with
             {
-                Id = _secureTokenGenerator.GenerateSecureToken(),
+                SessionId = _secureTokenGenerator.GenerateSecureToken(),
                 Stage = AuthorizationStage.ConsentRequired,
-                MissingScopes = consent.MissingScopes.ToImmutableHashSet()
+                MissingScopes = consent.MissingScopes?.ToImmutableHashSet()
             };
 
             await _authorizationSessionRepository.StoreAsync(consentSession, ct);
@@ -137,7 +142,7 @@ public class AuthorizeService : IAuthorizeService
             {
                 Success = false,
                 IsRedirect = true,
-                RedirectUri = RedirectUrlFactory.Consent(session: consentSession.Id),
+                RedirectUri = RedirectUrlFactory.Consent(session: consentSession.SessionId),
                 ResponseMode = responseMode
             };
         }
@@ -184,7 +189,7 @@ public class AuthorizeService : IAuthorizeService
             ClientId = session.Request.ClientId,
             UserId = session.UserId!,
             RedirectUri = session.Request.RedirectUri,
-            Scopes = string.Join(' ', session.RequestedScopes),
+            Scopes = string.Join(' ', session.RequestedScopes ?? new HashSet<string>()).Trim(),
             CodeChallenge = session.Request.CodeChallenge!,
             CodeChallengeMethod = session.Request.CodeChallengeMethod!,
             CreatedAt = DateTimeOffset.UtcNow,
@@ -203,9 +208,9 @@ public class AuthorizeService : IAuthorizeService
         };
     }
 
-    private AuthorizationResult? ValidateRequest(AuthorizationRequest request, out ImmutableHashSet<string> requestScopes)
+    private AuthorizationResult? ValidateRequest(AuthorizationRequest request, out IReadOnlySet<string>? requestScopes)
     {
-        requestScopes = [];
+        requestScopes = null;
         
         var responseMode = ExtractResponseMode(request);
 
@@ -267,5 +272,16 @@ public class AuthorizeService : IAuthorizeService
             "query" => AuthorizationResultResponseMode.Query,
             _ => AuthorizationResultResponseMode.Query
         };
+    }
+
+    private static string GenerateSecureCode()
+    {
+        Span<byte> bytes = stackalloc byte[32];
+        RandomNumberGenerator.Fill(bytes);
+
+        return Convert.ToBase64String(bytes)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
     }
 }

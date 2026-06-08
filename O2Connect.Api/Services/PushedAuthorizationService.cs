@@ -76,7 +76,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
         {
             SessionId = GenerateSecureCode(),
             RequestUriCode = code,
-            Status = ParAuthStatus.Initialized,
+            Stage = ParAuthStatus.Initialized,
             CreatedAt = now,
             ExpiresAt = expiresAt
         };

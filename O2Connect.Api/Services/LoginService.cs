@@ -52,12 +52,12 @@ public class LoginService : ILoginService
         if (user is null)
             throw OAuthException.FromAccessDenied();
 
-        if (session is null || session.Status != ParAuthStatus.AwaitingLogin)
+        if (session is null || session.Stage != ParAuthStatus.AwaitingLogin)
             throw OAuthException.FromInvalidRequest();
 
         session = session with
         {
-            Status = ParAuthStatus.Authenticated,
+            Stage = ParAuthStatus.Authenticated,
             UserId = user.Id
         };
 

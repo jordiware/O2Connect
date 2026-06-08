@@ -2,9 +2,9 @@
 
 public sealed record User
 {
-    public string Id { get; init; } = Guid.NewGuid().ToString();
-    public string Username { get; init; } = default!;
-    public string PasswordHash { get; init; } = default!;
-    public ISet<string> Roles { get; init; } = default!;
-    public ISet<string> Scopes { get; init; } = default!;
+    public required string Id { get; init; } = Guid.NewGuid().ToString();
+    public required string Username { get; init; }
+    public required string PasswordHash { get; init; }
+    public required IReadOnlySet<string> Roles { get; init; }
+    public required IReadOnlySet<string> Scopes { get; init; }
 }
