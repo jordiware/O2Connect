@@ -1,5 +1,4 @@
 ﻿using O2Connect.Api.Exceptions;
-using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
@@ -12,6 +11,8 @@ public interface IParAuthorizationService
     Task<RedirectResponse> HandleAsync(string requestUri,
                                        HttpContext httpContext,
                                        CancellationToken ct);
+    Task<ParAuthorizationSession?> GetParSessionAsync(string sessionId, CancellationToken ct);
+    Task UpdateSessionAsync(ParAuthorizationSession session, CancellationToken ct);
 }
 
 public class ParAuthorizationService : IParAuthorizationService
@@ -69,7 +70,7 @@ public class ParAuthorizationService : IParAuthorizationService
 
         if (user?.Identity?.IsAuthenticated != true)
         {
-            await UpdateSession(session with { Stage = ParAuthStatus.Initialized }, ct);
+            await UpdateSessionAsync(session with { Stage = ParAuthStatus.Initialized }, ct);
 
             return BuildRedirect("/login?session=" + session.SessionId);
         }
@@ -85,7 +86,7 @@ public class ParAuthorizationService : IParAuthorizationService
             UserId = userId
         };
 
-        await UpdateSession(session, ct);
+        await UpdateSessionAsync(session, ct);
 
         var requestedScopes = ParseScope(entry.Scope);
 
@@ -95,12 +96,22 @@ public class ParAuthorizationService : IParAuthorizationService
         {
             session = session with { Stage = ParAuthStatus.Consented }; // waiting for consent
 
-            await UpdateSession(session, ct);
+            await UpdateSessionAsync(session, ct);
 
             return BuildRedirect("/consent?session=" + session.SessionId);
         }
 
         return await IssueCode(entry, session, ct);
+    }
+
+    public async Task<ParAuthorizationSession?> GetParSessionAsync(string sessionId, CancellationToken ct)
+    {
+        return await _parSessionRepository.GetAsync(sessionId, ct);
+    }
+
+    public async Task UpdateSessionAsync(ParAuthorizationSession session, CancellationToken ct)
+    {
+        await _parSessionRepository.StoreAsync(session, ct);
     }
 
     private async Task<RedirectResponse> IssueCode(
@@ -123,7 +134,7 @@ public class ParAuthorizationService : IParAuthorizationService
             ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5)
         }, ct);
 
-        await UpdateSession(session with { Stage = ParAuthStatus.CodeIssued }, ct);
+        await UpdateSessionAsync(session with { Stage = ParAuthStatus.CodeIssued }, ct);
 
         var redirectUrl = BuildCallbackUrl(entry, authCode);
 
@@ -184,11 +195,6 @@ public class ParAuthorizationService : IParAuthorizationService
         var grantedScopes = storedConsent?.GrantedScopes.ToHashSet() ?? new HashSet<string>();
 
         return requestedScopes.Except(grantedScopes, StringComparer.Ordinal).ToHashSet();
-    }
-
-    private async Task UpdateSession(ParAuthorizationSession session, CancellationToken ct)
-    {
-        await _parSessionRepository.StoreAsync(session, ct);
     }
 
     private static string GenerateSecureCode()

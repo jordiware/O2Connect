@@ -2,11 +2,14 @@
 using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataFactories.RequestModels;
+using O2Connect.Api.Models.Store;
+using O2Connect.Api.Repositories;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
 using System.Collections.Immutable;
 using System.Security.Claims;
+using static System.Collections.Specialized.BitVector32;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -16,15 +19,18 @@ public class AccountController : ControllerBase
 {
     private readonly ILoginService _loginService;
     private readonly IClientAuthenticationService _clientAuthenticationService;
+    private readonly IParAuthorizationService _parAuthorizationService;
     private readonly ITokenFactory _tokenFactory;
 
     public AccountController(
         ILoginService loginService,
         IClientAuthenticationService clientAuthenticationService,
+        IParAuthorizationService parAuthorizationService,
         ITokenFactory tokenFactory)
     {
         _loginService = loginService;
         _clientAuthenticationService = clientAuthenticationService;
+        _parAuthorizationService = parAuthorizationService;
         _tokenFactory = tokenFactory;
     }
 
@@ -37,16 +43,6 @@ public class AccountController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(request.ClientId))
             return BadRequest(new { message = "Invalid client" });
-
-        if (!string.IsNullOrWhiteSpace(sessionId))
-        {
-            var response = await _loginService.HandleWithSessionAsync(request.Username.Trim(),
-                                                                      request.Password,
-                                                                      request.ClientId,
-                                                                      sessionId,
-                                                                      HttpContext.RequestAborted);
-            return Ok(response);
-        }
 
         var user = await _loginService.ValidateCredentialsAsync(request.Username.Trim(),
                                                                 request.Password,
@@ -62,6 +58,30 @@ public class AccountController : ControllerBase
 
         if (allowedScopes.IsEmpty)
             return Forbid();
+
+        if (!string.IsNullOrWhiteSpace(sessionId))
+        {
+            var session = await _parAuthorizationService.GetParSessionAsync(sessionId,
+                                                                            HttpContext.RequestAborted);
+
+            if (session is null || session.Stage != ParAuthStatus.AwaitingLogin)
+                return BadRequest(new { message = "Invalid session" });
+
+            session = session with
+            {
+                Stage = ParAuthStatus.Authenticated,
+                UserId = user.Id
+            };
+            await _parAuthorizationService.UpdateSessionAsync(session, HttpContext.RequestAborted);
+
+            var response = new RedirectResponse
+            {
+                Action = "redirect",
+                RedirectUrl = RedirectUrlFactory.Authorize($"urn:ietf:params:oauth:request_uri:{session.RequestUriCode}")
+            };
+
+            return Ok(response);
+        }
 
         var tokenFactoryRequest = new JwtTokenFactoryRequest
         {

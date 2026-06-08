@@ -1,21 +1,12 @@
 ﻿using O2Connect.Api.Crypto;
-using O2Connect.Api.DataFactories;
-using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
-using O2Connect.Dto.Responses;
-using System.Collections.Immutable;
 using System.Security.Cryptography;
 
 namespace O2Connect.Api.Services;
 
 public interface ILoginService
 {
-    Task<RedirectResponse> HandleWithSessionAsync(string username,
-                                                  string password,
-                                                  string clientId,
-                                                  string sessionId,
-                                                  CancellationToken ct);
     Task<User?> ValidateCredentialsAsync(string username,
                                          string password,
                                          CancellationToken ct);
@@ -44,44 +35,6 @@ public class LoginService : ILoginService
         _refreshTokenRepository = refreshTokenRepository;
         _parAuthorizationSessionRepository = parAuthorizationSessionRepository;
         _secretHasher = secretHasher;
-    }
-
-    public async Task<RedirectResponse> HandleWithSessionAsync(string username,
-                                                               string password,
-                                                               string clientId,
-                                                               string sessionId,
-                                                               CancellationToken ct)
-    {
-        var user = await ValidateCredentialsAsync(username, password, ct);
-        var session = await _parAuthorizationSessionRepository.GetAsync(sessionId, ct);
-        var client = await _clientRepository.GetByIdAsync(clientId, ct);
-
-        if (user is null)
-            throw OAuthException.FromAccessDenied();
-
-        if (session is null || session.Stage != ParAuthStatus.AwaitingLogin)
-            throw OAuthException.FromInvalidRequest();
-
-        if (client is null)
-            throw OAuthException.FromInvalidRequest();
-
-        var allowedScopes = user.Scopes.Intersect(client.AllowedScopes);
-        if (!allowedScopes.Any())
-            throw OAuthException.FromAccessDenied();
-
-        session = session with
-        {
-            Stage = ParAuthStatus.Authenticated,
-            UserId = user.Id
-        };
-
-        await _parAuthorizationSessionRepository.StoreAsync(session, ct);
-
-        return new RedirectResponse
-        {
-            Action = "redirect",
-            RedirectUrl = RedirectUrlFactory.Authorize($"urn:ietf:params:oauth:request_uri:{session.RequestUriCode}")
-        };
     }
 
     public async Task<User?> ValidateCredentialsAsync(string username,
