@@ -40,10 +40,10 @@ public abstract class OidcOAuthControllerBase : ControllerBase
         return handleResult.Status switch
         {
             HandleResultStatus.Success => OnSuccess(handleResult.Result!),
-            HandleResultStatus.BadRequest => BadRequest(new { message = handleResult.ErrorMessage }),
-            HandleResultStatus.Unauthorized => Unauthorized(new { message = handleResult.ErrorMessage }),
+            HandleResultStatus.BadRequest => BadRequest(handleResult.Error),
+            HandleResultStatus.Unauthorized => Unauthorized(handleResult.Error),
+            HandleResultStatus.NotFound => NotFound(handleResult.Error),
             HandleResultStatus.Forbidden => Forbid(),
-            HandleResultStatus.NotFound => NotFound(new { message = handleResult.ErrorMessage }),
             _ => StatusCode(500)
         };
     }

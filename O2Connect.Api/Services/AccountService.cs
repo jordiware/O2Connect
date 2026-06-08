@@ -57,17 +57,29 @@ public class AccountService : IAccountService
                                                                   CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-            return HandleResult<LoginResult>.BadRequest("Invalid credentials");
+            return HandleResult<LoginResult>.BadRequest(new OAuthErrorResponse
+            {
+                Error = "",
+                ErrorDescription = "Invalid credentials"
+            });
 
         if (string.IsNullOrWhiteSpace(request.ClientId))
-            return HandleResult<LoginResult>.BadRequest("Invalid client");
+            return HandleResult<LoginResult>.BadRequest(new OAuthErrorResponse
+            {
+                Error = "",
+                ErrorDescription = "Invalid client"
+            });
 
         var user = await ValidateCredentialsAsync(request.Username.Trim(), request.Password, ct);
 
         var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
 
         if (user is null || client is null)
-            return HandleResult<LoginResult>.Unauthorized("Invalid credentials");
+            return HandleResult<LoginResult>.Unauthorized(new OAuthErrorResponse
+            {
+                Error = "",
+                ErrorDescription = "Invalid credentials"
+            });
 
         var allowedScopes = user.Scopes.Intersect(client.AllowedScopes);
 
@@ -79,7 +91,11 @@ public class AccountService : IAccountService
             var session = await _parAuthorizationSessionRepository.GetAsync(sessionId, ct);
 
             if (session is null || session.Stage != ParAuthStatus.AwaitingLogin)
-                return HandleResult<LoginResult>.BadRequest("Invalid session");
+                return HandleResult<LoginResult>.BadRequest(new OAuthErrorResponse
+                {
+                    Error = "",
+                    ErrorDescription = "Invalid session"
+                });
 
             session = session with
             {

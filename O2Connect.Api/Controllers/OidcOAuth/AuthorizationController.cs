@@ -24,7 +24,10 @@ public class AuthorizationController : OidcOAuthControllerBase
     [HttpGet]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest request)
     {
-        var result = await _authorizationService.ProcessAuthorizationAsync(request, User, HttpContext.RequestAborted);
+        var result = await _authorizationService.ProcessAuthorizationAsync(request,
+                                                                           User,
+                                                                           HttpContext.RequestAborted);
+
         return BuildAuthorizationRedirectResult(result);
     }
 
@@ -34,7 +37,9 @@ public class AuthorizationController : OidcOAuthControllerBase
         if (string.IsNullOrWhiteSpace(sessionId))
             throw OAuthException.FromInvalidRequest();
 
-        var result = await _authorizationService.ProcessSessionAsync(sessionId, User, HttpContext.RequestAborted);
+        var result = await _authorizationService.ProcessSessionAsync(sessionId,
+                                                                     User,
+                                                                     HttpContext.RequestAborted);
 
         return BuildAuthorizationRedirectResult(result);
     }

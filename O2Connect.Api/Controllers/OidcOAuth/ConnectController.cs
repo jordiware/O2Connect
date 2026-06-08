@@ -33,6 +33,7 @@ public sealed class ConnectController : ControllerBase
         [FromBody] PushedAuthorizationRequest request)
     {
         var result = await _pushedAuthorizationService.HandleAsync(request, HttpContext.RequestAborted);
+
         return Ok(result);
     }
 }
