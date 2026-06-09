@@ -31,16 +31,12 @@ public class AccountController : OidcOAuthControllerBase
 
         var result = await _loginService.HandleLoginAsync(sessionId, request, ct);
 
-        return ProcessHandleResult(result, (successResult) =>
+        return result switch
         {
-            return successResult switch
-            {
-                LoginRedirect r => Ok(r.RedirectResponse),
-                LoginTokenSuccess r => Ok(r.TokenResponse),
-                _ => StatusCode(500)
-            };
-        });
-
+            LoginRedirect r => Ok(r.RedirectResponse),
+            LoginTokenSuccess r => Ok(r.TokenResponse),
+            _ => throw OAuthException.FromServerError()
+        };
     }
 
     [HttpPost("logout")]

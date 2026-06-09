@@ -7,7 +7,7 @@ public sealed class OAuthException : Exception
 
     public static OAuthException FromInvalidGrant(string? description = null, string? errorUri = null) =>
         new OAuthException("invalid_grant", StatusCodes.Status400BadRequest, description, errorUri);
-    
+
     public static OAuthException FromInvalidRequest(string? description = null, string? errorUri = null) =>
         new OAuthException("invalid_request", StatusCodes.Status400BadRequest, description, errorUri);
 

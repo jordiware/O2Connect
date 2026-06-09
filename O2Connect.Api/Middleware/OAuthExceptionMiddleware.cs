@@ -57,7 +57,9 @@ public class OAuthExceptionMiddleware
         var payload = new OAuthErrorResponse
         {
             Error = ex.Error,
-            ErrorDescription = ex.Error == "invalid_client" ? null : ex.Description,
+            ErrorDescription = string.Equals(ex.Error, "invalid_client", StringComparison.Ordinal) 
+                               ? null 
+                               : ex.Description,
             ErrorUri = ex.ErrorUri
         };
 

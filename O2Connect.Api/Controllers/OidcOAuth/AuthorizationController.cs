@@ -43,9 +43,7 @@ public class AuthorizationController : OidcOAuthControllerBase
         if (string.IsNullOrWhiteSpace(sessionId))
             throw OAuthException.FromInvalidRequest();
 
-        var result = await _authorizationService.ProcessSessionAsync(sessionId,
-                                                                     User,
-                                                                     ct);
+        var result = await _authorizationService.ProcessSessionAsync(sessionId, User, ct);
 
         return BuildAuthorizationRedirectResult(result);
     }
@@ -57,9 +55,7 @@ public class AuthorizationController : OidcOAuthControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var result = await _parAuthorizationService.HandleAsync(requestUri,
-                                                                HttpContext,
-                                                                ct);
+        var result = await _parAuthorizationService.HandleAsync(requestUri, HttpContext, ct);
 
         if (result is null
             || string.IsNullOrWhiteSpace(result.Action)
@@ -72,10 +68,8 @@ public class AuthorizationController : OidcOAuthControllerBase
 
     private IActionResult BuildAuthorizationRedirectResult(AuthorizationResult result)
     {
-        if (!Uri.TryCreate(result.RedirectUri, UriKind.Absolute, out _))
+        if (!Uri.TryCreate(result.RedirectUri, UriKind.Absolute, out var baseUri))
             return BadRequest("Invalid redirect URI");
-
-        var baseUri = result.RedirectUri;
 
         var parameters = new Dictionary<string, string?>
         {

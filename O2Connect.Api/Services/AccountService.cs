@@ -2,6 +2,7 @@
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataFactories.RequestModels;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
@@ -15,9 +16,7 @@ namespace O2Connect.Api.Services;
 
 public interface IAccountService
 {
-    Task<HandleResult<LoginResult>> HandleLoginAsync(string? sessionId,
-                                                     LoginRequest request,
-                                                     CancellationToken ct);
+    Task<LoginResult> HandleLoginAsync(string? sessionId, LoginRequest request, CancellationToken ct);
     Task HandleLogoutAsync(EndSessionRequest request, CancellationToken ct);
     Task HandleLogoutAsync(string token, CancellationToken ct);
 }
@@ -52,54 +51,32 @@ public class AccountService : IAccountService
         _tokenValidationParameters = tokenValidationParameters;
     }
 
-    public async Task<HandleResult<LoginResult>> HandleLoginAsync(string? sessionId,
-                                                                  LoginRequest request,
-                                                                  CancellationToken ct)
+    public async Task<LoginResult> HandleLoginAsync(string? sessionId, LoginRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-            return HandleResult<LoginResult>.BadRequest(new OAuthErrorResponse
-            {
-                Error = "invalid_request",
-                ErrorDescription = "Invalid credentials"
-            });
+            throw OAuthException.FromInvalidRequest("Invalid credentials");
 
         if (string.IsNullOrWhiteSpace(request.ClientId))
-            return HandleResult<LoginResult>.BadRequest(new OAuthErrorResponse
-            {
-                Error = "invalid_request",
-                ErrorDescription = "Invalid client"
-            });
+            throw OAuthException.FromInvalidRequest("Invalid client");
 
         var user = await ValidateCredentialsAsync(request.Username.Trim(), request.Password, ct);
 
         var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
 
         if (user is null || client is null)
-            return HandleResult<LoginResult>.Unauthorized(new OAuthErrorResponse
-            {
-                Error = "invalid_grant",
-                ErrorDescription = "Invalid credentials"
-            });
+            throw OAuthException.FromInvalidGrant("Invalid credentials");
 
         var allowedScopes = user.Scopes.Intersect(client.AllowedScopes);
 
         if (!allowedScopes.Any())
-            return HandleResult<LoginResult>.Forbidden(new OAuthErrorResponse
-            {
-                Error = "access_denied",
-                ErrorDescription = "User is not allowed to access this client"
-            });
+            throw OAuthException.FromAccessDenied("User is not allowed to access this client");
 
         if (!string.IsNullOrWhiteSpace(sessionId))
         {
             var session = await _parAuthorizationSessionRepository.GetAsync(sessionId, ct);
 
             if (session is null || session.Stage != ParAuthStatus.AwaitingLogin)
-                return HandleResult<LoginResult>.BadRequest(new OAuthErrorResponse
-                {
-                    Error = "invalid_request",
-                    ErrorDescription = "Invalid session"
-                });
+                throw OAuthException.FromInvalidRequest("Invalid session");
 
             session = session with
             {
@@ -115,7 +92,7 @@ public class AccountService : IAccountService
                 RedirectUrl = RedirectUrlFactory.Authorize($"urn:ietf:params:oauth:request_uri:{session.RequestUriCode}")
             };
 
-            return HandleResult<LoginResult>.Success(new LoginRedirect(redirectResponse));
+            return new LoginRedirect(redirectResponse);
         }
 
         var additionalClaims = new Dictionary<string, object>
@@ -136,7 +113,7 @@ public class AccountService : IAccountService
 
         var tokenResponse = await _tokenFactory.GenerateAsync(tokenFactoryRequest, ct);
 
-        return HandleResult<LoginResult>.Success(new LoginTokenSuccess(tokenResponse));
+        return new LoginTokenSuccess(tokenResponse);
     }
 
     public async Task HandleLogoutAsync(EndSessionRequest request, CancellationToken ct)

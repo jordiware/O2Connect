@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
-using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
-using System.Net;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -15,7 +13,7 @@ public abstract class OidcOAuthControllerBase : ControllerBase
 
         return new JsonResult(response)
         {
-            StatusCode = (int)HttpStatusCode.OK,
+            StatusCode = StatusCodes.Status200OK,
             ContentType = "application/json"
         };
     }
@@ -29,22 +27,5 @@ public abstract class OidcOAuthControllerBase : ControllerBase
                 ["error"] = "access_denied",
                 ["state"] = session.Request.State
             });
-    }
-
-    protected IActionResult ProcessHandleResult<TResult>(HandleResult<TResult> handleResult,
-                                                         Func<TResult, IActionResult>? OnSuccess)
-    {
-        if (handleResult == null)
-            return StatusCode(500);
-
-        return handleResult.Status switch
-        {
-            HandleResultStatus.Success => OnSuccess?.Invoke(handleResult.Result!) ?? Ok(handleResult.Result!),
-            HandleResultStatus.BadRequest => BadRequest(handleResult.Error),
-            HandleResultStatus.Unauthorized => Unauthorized(handleResult.Error),
-            HandleResultStatus.NotFound => NotFound(handleResult.Error),
-            HandleResultStatus.Forbidden => StatusCode((int)HttpStatusCode.Forbidden, handleResult.Error),
-            _ => StatusCode(500)
-        };
     }
 }
