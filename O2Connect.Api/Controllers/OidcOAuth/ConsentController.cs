@@ -26,6 +26,9 @@ public class ConsentController : OidcOAuthControllerBase
     [Authorize(Policy = "RequireProfileScope")]
     public async Task<IActionResult> GetConsent([FromQuery(Name = "session")] string? sessionId)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         if (string.IsNullOrWhiteSpace(sessionId))
             throw OAuthException.FromInvalidRequest();
 
@@ -54,6 +57,9 @@ public class ConsentController : OidcOAuthControllerBase
     public async Task<IActionResult> PostConsent([FromQuery(Name = "session")] string? sessionId,
                                                  [FromBody] ConsentDecisionRequest request)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         if (string.IsNullOrWhiteSpace(sessionId))
             throw OAuthException.FromInvalidRequest();
 
@@ -109,6 +115,9 @@ public class ConsentController : OidcOAuthControllerBase
     public async Task<IActionResult> PostParConsent([FromQuery(Name = "session")] string sessionId,
                                                     [FromBody] ConsentDecisionRequest request)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         var result = await _consentService.HandleParConsentAsync(sessionId,
                                                                  request,
                                                                  HttpContext.RequestAborted);

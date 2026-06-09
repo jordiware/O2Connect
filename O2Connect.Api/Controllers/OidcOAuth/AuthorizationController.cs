@@ -24,6 +24,9 @@ public class AuthorizationController : OidcOAuthControllerBase
     [HttpGet]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest request)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         var result = await _authorizationService.ProcessAuthorizationAsync(request,
                                                                            User,
                                                                            HttpContext.RequestAborted);
@@ -34,6 +37,9 @@ public class AuthorizationController : OidcOAuthControllerBase
     [HttpGet("resume")]
     public async Task<IActionResult> Resume([FromQuery(Name = "session")] string? sessionId)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         if (string.IsNullOrWhiteSpace(sessionId))
             throw OAuthException.FromInvalidRequest();
 
@@ -47,6 +53,9 @@ public class AuthorizationController : OidcOAuthControllerBase
     [HttpGet]
     public async Task<IActionResult> Authorize([FromQuery(Name = "request_uri")] string requestUri)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         var result = await _parAuthorizationService.HandleAsync(requestUri,
                                                                 HttpContext,
                                                                 HttpContext.RequestAborted);

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 
@@ -20,6 +21,9 @@ public class RevocationController : OidcOAuthControllerBase
     [Authorize]
     public async Task<IActionResult> Revoke([FromForm] RevocationRequest request)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         var clientId = ExtractClientId(HttpContext);
 
         await _revocationService.HandleAsync(request, clientId, HttpContext.RequestAborted);

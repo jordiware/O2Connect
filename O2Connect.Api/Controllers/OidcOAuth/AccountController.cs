@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
@@ -24,6 +25,9 @@ public class AccountController : OidcOAuthControllerBase
     public async Task<IActionResult> PostLogin([FromQuery(Name = "session")] string? sessionId,
                                                [FromBody] LoginRequest request)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         var result = await _loginService.HandleLoginAsync(sessionId, request, HttpContext.RequestAborted);
 
         return ProcessHandleResult(result, (successResult) =>
@@ -41,6 +45,9 @@ public class AccountController : OidcOAuthControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         if (string.IsNullOrWhiteSpace(request.Token))
             return BadRequest(new { message = "Missing refresh token" });
 

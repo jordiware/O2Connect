@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Responses;
 using System.Security.Claims;
@@ -22,6 +23,9 @@ public class IntrospectionController : OidcOAuthControllerBase
     [Authorize(AuthenticationSchemes = "Client")]
     public async Task<IActionResult> Introspect([FromForm] string token)
     {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
         if (string.IsNullOrWhiteSpace(token))
             return Ok(IntrospectionResponse.Inactive);
 
