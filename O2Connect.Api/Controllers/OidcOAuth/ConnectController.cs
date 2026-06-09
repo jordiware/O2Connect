@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
+using System.Security.Claims;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -12,13 +14,16 @@ public sealed class ConnectController : ControllerBase
 {
     private readonly IAccountService _userSessionService;
     private readonly IPushedAuthorizationService _pushedAuthorizationService;
+    private readonly ITokenIntrospectionService _tokenIntrospectionService;
 
     public ConnectController(
         IAccountService userSessionService,
-        IPushedAuthorizationService pushedAuthorizationService)
+        IPushedAuthorizationService pushedAuthorizationService,
+        ITokenIntrospectionService tokenIntrospectionService)
     {
         _userSessionService = userSessionService;
         _pushedAuthorizationService = pushedAuthorizationService;
+        _tokenIntrospectionService = tokenIntrospectionService;
     }
 
     [HttpGet("logout")]
@@ -44,4 +49,25 @@ public sealed class ConnectController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpPost("introspect")]
+    [Authorize(AuthenticationSchemes = "Client")]
+    public async Task<IActionResult> Introspect([FromForm] string token, CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        if (string.IsNullOrWhiteSpace(token))
+            return Ok(IntrospectionResponse.Inactive);
+
+        var clientId = User.FindFirstValue("client_id");
+
+        if (string.IsNullOrWhiteSpace(clientId))
+            return Ok(IntrospectionResponse.Inactive);
+
+        var result = await _tokenIntrospectionService.IntrospectAsync(token, clientId, ct);
+
+        return Ok(result);
+    }
+
 }
