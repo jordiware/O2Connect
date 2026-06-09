@@ -32,14 +32,14 @@ public abstract class OidcOAuthControllerBase : ControllerBase
     }
 
     protected IActionResult ProcessHandleResult<TResult>(HandleResult<TResult> handleResult,
-                                                         Func<TResult, IActionResult> OnSuccess)
+                                                         Func<TResult, IActionResult>? OnSuccess)
     {
-        if (handleResult == null || OnSuccess == null)
+        if (handleResult == null)
             return StatusCode(500);
 
         return handleResult.Status switch
         {
-            HandleResultStatus.Success => OnSuccess(handleResult.Result!),
+            HandleResultStatus.Success => OnSuccess?.Invoke(handleResult.Result!) ?? Ok(handleResult.Result!),
             HandleResultStatus.BadRequest => BadRequest(handleResult.Error),
             HandleResultStatus.Unauthorized => Unauthorized(handleResult.Error),
             HandleResultStatus.NotFound => NotFound(handleResult.Error),
