@@ -15,15 +15,18 @@ public sealed class ConnectController : ControllerBase
     private readonly IAccountService _userSessionService;
     private readonly IPushedAuthorizationService _pushedAuthorizationService;
     private readonly ITokenIntrospectionService _tokenIntrospectionService;
+    private readonly IUserInfoService _userInfoService;
 
     public ConnectController(
         IAccountService userSessionService,
         IPushedAuthorizationService pushedAuthorizationService,
-        ITokenIntrospectionService tokenIntrospectionService)
+        ITokenIntrospectionService tokenIntrospectionService,
+        IUserInfoService userInfoService)
     {
         _userSessionService = userSessionService;
         _pushedAuthorizationService = pushedAuthorizationService;
         _tokenIntrospectionService = tokenIntrospectionService;
+        _userInfoService = userInfoService;
     }
 
     [HttpGet("logout")]
@@ -70,4 +73,14 @@ public sealed class ConnectController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("userinfo")]
+    public async Task<IActionResult> UserInfoGet(CancellationToken ct)
+    {
+        var result = await _userInfoService.GetUserInfoAsync(User, ct);
+
+        return Ok(result);
+    }
+
+    [HttpPost("userinfo")]
+    public Task<IActionResult> UserInfoPost(CancellationToken ct) => UserInfoGet(ct);
 }
