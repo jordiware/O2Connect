@@ -60,6 +60,8 @@ public sealed class ConnectController : ControllerBase
     [Authorize(AuthenticationSchemes = "Client")]
     public async Task<IActionResult> Introspect([FromForm] string token, CancellationToken ct)
     {
+        if (!Request.HasFormContentType)
+            throw OAuthException.FromInvalidRequest();
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
@@ -91,6 +93,8 @@ public sealed class ConnectController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Revoke([FromForm] RevocationRequest request, CancellationToken ct)
     {
+        if (!Request.HasFormContentType)
+            throw OAuthException.FromInvalidRequest();
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
