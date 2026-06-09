@@ -8,12 +8,12 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("connect/authorize")]
-public class AuthorizationController : ControllerBase
+public class ConnectAuthorizationController : ControllerBase
 {
     private readonly IAuthorizeService _authorizationService;
     private readonly IParAuthorizationService _parAuthorizationService;
 
-    public AuthorizationController(
+    public ConnectAuthorizationController(
         IAuthorizeService authorizationService,
         IParAuthorizationService parAuthorizationService)
     {

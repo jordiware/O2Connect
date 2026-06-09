@@ -9,13 +9,13 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("connect/token")]
-public class TokenController : ControllerBase
+public class ConnectTokenController : ControllerBase
 {
     private readonly IClientAuthenticationService _clientAuthenticationService;
     private readonly ITokenRequestValidatorResolver _requestValidatorResolver;
     private readonly ITokenService _tokenService;
 
-    public TokenController(
+    public ConnectTokenController(
         IClientAuthenticationService clientAuthenticationService,
         ITokenRequestValidatorResolver requestValidatorResolver,
         ITokenService tokenService)

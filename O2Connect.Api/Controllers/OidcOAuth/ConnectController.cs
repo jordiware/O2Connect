@@ -12,21 +12,24 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [Route("connect")]
 public sealed class ConnectController : ControllerBase
 {
-    private readonly IAccountService _userSessionService;
+    private readonly IAccountService _accountService;
     private readonly IPushedAuthorizationService _pushedAuthorizationService;
     private readonly ITokenIntrospectionService _tokenIntrospectionService;
     private readonly IUserInfoService _userInfoService;
+    private readonly IRevocationService _revocationService;
 
     public ConnectController(
-        IAccountService userSessionService,
+        IAccountService accountService,
         IPushedAuthorizationService pushedAuthorizationService,
         ITokenIntrospectionService tokenIntrospectionService,
-        IUserInfoService userInfoService)
+        IUserInfoService userInfoService,
+        IRevocationService revocationService)
     {
-        _userSessionService = userSessionService;
+        _accountService = accountService;
         _pushedAuthorizationService = pushedAuthorizationService;
         _tokenIntrospectionService = tokenIntrospectionService;
         _userInfoService = userInfoService;
+        _revocationService = revocationService;
     }
 
     [HttpGet("logout")]
@@ -35,7 +38,7 @@ public sealed class ConnectController : ControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        await _userSessionService.HandleLogoutAsync(request, ct);
+        await _accountService.HandleLogoutAsync(request, ct);
 
         return NoContent();
     }
@@ -83,4 +86,38 @@ public sealed class ConnectController : ControllerBase
 
     [HttpPost("userinfo")]
     public Task<IActionResult> UserInfoPost(CancellationToken ct) => UserInfoGet(ct);
+
+    [HttpPost("revocation")]
+    [Authorize]
+    public async Task<IActionResult> Revoke([FromForm] RevocationRequest request, CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        var clientId = ExtractClientId(HttpContext);
+
+        await _revocationService.HandleAsync(request, clientId, ct);
+
+        return Ok();
+    }
+
+    private static string? ExtractClientId(HttpContext context)
+    {
+        var user = context.User;
+
+        if (user.Identity?.IsAuthenticated != true)
+            return null;
+
+        var clientId = user.FindFirst("client_id")?.Value;
+
+        if (!string.IsNullOrWhiteSpace(clientId))
+            return clientId;
+
+        var azp = user.FindFirst("azp")?.Value;
+
+        if (!string.IsNullOrWhiteSpace(azp))
+            return azp;
+
+        return null;
+    }
 }
