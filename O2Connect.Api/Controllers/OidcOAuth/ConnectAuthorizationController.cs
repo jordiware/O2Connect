@@ -34,7 +34,7 @@ public class ConnectAuthorizationController : ControllerBase
     }
 
     [HttpGet("resume")]
-    public async Task<IActionResult> Resume([FromQuery(Name = "session")] string? sessionId,
+    public async Task<IActionResult> Resume([FromQuery(Name = "session")] string sessionId,
                                             CancellationToken ct)
     {
         if (!ModelState.IsValid)
@@ -53,6 +53,9 @@ public class ConnectAuthorizationController : ControllerBase
                                                CancellationToken ct)
     {
         if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        if (string.IsNullOrWhiteSpace(requestUri))
             throw OAuthException.FromInvalidRequest();
 
         var result = await _parAuthorizationService.HandleAsync(requestUri, HttpContext, ct);

@@ -3,7 +3,6 @@ using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
-using System.Security.Cryptography;
 
 namespace O2Connect.Api.Services;
 
@@ -69,7 +68,7 @@ public class ParAuthorizationService : IParAuthorizationService
 
         if (user?.Identity?.IsAuthenticated != true)
         {
-            await UpdateSessionAsync(session with { Stage = ParAuthStatus.Initialized }, ct);
+            await UpdateSessionAsync(session with { Stage = ParAuthStatus.AwaitingLogin }, ct);
 
             return BuildRedirect("/login?session=" + session.SessionId);
         }
@@ -93,9 +92,7 @@ public class ParAuthorizationService : IParAuthorizationService
 
         if (missingScopes.Count > 0)
         {
-            session = session with { Stage = ParAuthStatus.Consented }; // waiting for consent
-
-            await UpdateSessionAsync(session, ct);
+            await UpdateSessionAsync(session with { Stage = ParAuthStatus.AwaitingConsent }, ct);
 
             return BuildRedirect("/consent?session=" + session.SessionId);
         }

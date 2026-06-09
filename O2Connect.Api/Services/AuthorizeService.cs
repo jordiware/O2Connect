@@ -6,7 +6,6 @@ using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using System.Collections.Immutable;
 using System.Security.Claims;
-using System.Security.Cryptography;
 
 namespace O2Connect.Api.Services;
 
@@ -83,7 +82,7 @@ public class AuthorizeService : IAuthorizeService
         {
             session = new AuthorizationSession
             {
-                SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
+                SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32, prefix: "s_"),
                 Request = request,
                 CreatedAt = DateTimeOffset.UtcNow,
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),

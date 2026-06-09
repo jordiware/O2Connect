@@ -75,7 +75,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
 
         var parSession = new ParAuthorizationSession
         {
-            SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
+            SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32, prefix: "p_"),
             RequestUriCode = code,
             Stage = ParAuthStatus.Initialized,
             CreatedAt = now,
