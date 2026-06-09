@@ -6,7 +6,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route(".well-known")]
-public class DiscoveryController : OidcOAuthControllerBase
+public class DiscoveryController : ControllerBase
 {
     private readonly IDiscoveryMetadataService _metadataService;
     private readonly ISigningKeyProvider _signingKeyProvider;

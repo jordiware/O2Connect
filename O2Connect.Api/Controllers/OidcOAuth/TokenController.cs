@@ -9,7 +9,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("connect/token")]
-public class TokenController : OidcOAuthControllerBase
+public class TokenController : ControllerBase
 {
     private readonly IClientAuthenticationService _clientAuthenticationService;
     private readonly ITokenRequestValidatorResolver _requestValidatorResolver;
@@ -54,6 +54,13 @@ public class TokenController : OidcOAuthControllerBase
 
         var response = await _tokenService.HandleAsync(requestContext, ct);
 
-        return OkJsonResponse(response);
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers.Pragma = "no-cache";
+
+        return new JsonResult(response)
+        {
+            StatusCode = StatusCodes.Status200OK,
+            ContentType = "application/json"
+        };
     }
 }

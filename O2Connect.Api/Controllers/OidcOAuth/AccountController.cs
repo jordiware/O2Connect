@@ -11,7 +11,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("account")]
-public class AccountController : OidcOAuthControllerBase
+public class AccountController : ControllerBase
 {
     private readonly IAccountService _loginService;
 

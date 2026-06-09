@@ -8,7 +8,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("connect")]
-public sealed class ConnectController : OidcOAuthControllerBase
+public sealed class ConnectController : ControllerBase
 {
     private readonly IAccountService _userSessionService;
     private readonly IPushedAuthorizationService _pushedAuthorizationService;

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
@@ -12,7 +13,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("consent")]
-public class ConsentController : OidcOAuthControllerBase
+public class ConsentController : ControllerBase
 {
     private readonly IConsentService _consentService;
 
@@ -67,8 +68,8 @@ public class ConsentController : OidcOAuthControllerBase
 
         var session = await _consentService.GetSessionAsync(sessionId, ct);
 
-        if (session == null 
-            || session.Stage != AuthorizationStage.ConsentRequired 
+        if (session == null
+            || session.Stage != AuthorizationStage.ConsentRequired
             || session.ExpiresAt <= DateTimeOffset.UtcNow)
             return BadRequest("Consent session expired");
 
@@ -86,7 +87,7 @@ public class ConsentController : OidcOAuthControllerBase
             });
         }
 
-        if (string.IsNullOrWhiteSpace(request.ApprovedScopes) 
+        if (string.IsNullOrWhiteSpace(request.ApprovedScopes)
             || request.ApprovedScopes.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length == 0)
             return BadRequest("No scopes approved");
 
@@ -95,7 +96,7 @@ public class ConsentController : OidcOAuthControllerBase
             return BadRequest("Invalid scopes in approval");
 
         var sessionReady = await _consentService.SetConsentGrantedSessionAsync(sessionId, ct);
-        
+
         if (!sessionReady)
             return BadRequest("Session already used");
 
@@ -126,5 +127,14 @@ public class ConsentController : OidcOAuthControllerBase
                                                                  ct);
 
         return Ok(result);
+    }
+
+    private static string BuildErrorRedirect(AuthorizationSession session)
+    {
+        return QueryHelpers.AddQueryString(session.Request.RedirectUri, new Dictionary<string, string?>
+        {
+            ["error"] = "access_denied",
+            ["state"] = session.Request.State
+        });
     }
 }

@@ -9,7 +9,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("connect/introspect")]
-public class IntrospectionController : OidcOAuthControllerBase
+public class IntrospectionController : ControllerBase
 {
     private readonly ITokenIntrospectionService _tokenIntrospectionService;
 

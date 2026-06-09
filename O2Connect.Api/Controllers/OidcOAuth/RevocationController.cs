@@ -8,7 +8,7 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
 [Route("connect/revocation")]
-public class RevocationController : OidcOAuthControllerBase
+public class RevocationController : ControllerBase
 {
     private readonly IRevocationService _revocationService;
 
