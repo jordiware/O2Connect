@@ -24,7 +24,8 @@ public class ConsentController : OidcOAuthControllerBase
 
     [HttpGet]
     [Authorize(Policy = "RequireProfileScope")]
-    public async Task<IActionResult> GetConsent([FromQuery(Name = "session")] string? sessionId)
+    public async Task<IActionResult> GetConsent([FromQuery(Name = "session")] string? sessionId,
+                                                CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
@@ -32,7 +33,7 @@ public class ConsentController : OidcOAuthControllerBase
         if (string.IsNullOrWhiteSpace(sessionId))
             throw OAuthException.FromInvalidRequest();
 
-        var session = await _consentService.GetSessionAsync(sessionId, HttpContext.RequestAborted);
+        var session = await _consentService.GetSessionAsync(sessionId, ct);
 
         if (session == null || session.ExpiresAt <= DateTimeOffset.UtcNow)
             return BadRequest("Consent session expired");
@@ -55,7 +56,8 @@ public class ConsentController : OidcOAuthControllerBase
     [HttpPost]
     [Authorize(Policy = "RequireProfileScope")]
     public async Task<IActionResult> PostConsent([FromQuery(Name = "session")] string? sessionId,
-                                                 [FromBody] ConsentDecisionRequest request)
+                                                 [FromBody] ConsentDecisionRequest request,
+                                                 CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
@@ -63,7 +65,7 @@ public class ConsentController : OidcOAuthControllerBase
         if (string.IsNullOrWhiteSpace(sessionId))
             throw OAuthException.FromInvalidRequest();
 
-        var session = await _consentService.GetSessionAsync(sessionId, HttpContext.RequestAborted);
+        var session = await _consentService.GetSessionAsync(sessionId, ct);
 
         if (session == null 
             || session.Stage != AuthorizationStage.ConsentRequired 
@@ -75,7 +77,7 @@ public class ConsentController : OidcOAuthControllerBase
 
         if (!request.Approved)
         {
-            await _consentService.DeleteSessionAsync(sessionId, HttpContext.RequestAborted);
+            await _consentService.DeleteSessionAsync(sessionId, ct);
 
             return Ok(new RedirectResponse
             {
@@ -92,7 +94,7 @@ public class ConsentController : OidcOAuthControllerBase
                                    .All(session.MissingScopes.Contains))
             return BadRequest("Invalid scopes in approval");
 
-        var sessionReady = await _consentService.SetConsentGrantedSessionAsync(sessionId, HttpContext.RequestAborted);
+        var sessionReady = await _consentService.SetConsentGrantedSessionAsync(sessionId, ct);
         
         if (!sessionReady)
             return BadRequest("Session already used");
@@ -102,7 +104,7 @@ public class ConsentController : OidcOAuthControllerBase
         await _consentService.SaveConsentAsync(session.UserId!,
                                                session.Request.ClientId,
                                                scopesToPersist,
-                                               HttpContext.RequestAborted);
+                                               ct);
 
         return Ok(new RedirectResponse
         {
@@ -113,14 +115,15 @@ public class ConsentController : OidcOAuthControllerBase
 
     [HttpPost]
     public async Task<IActionResult> PostParConsent([FromQuery(Name = "session")] string sessionId,
-                                                    [FromBody] ConsentDecisionRequest request)
+                                                    [FromBody] ConsentDecisionRequest request,
+                                                    CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
         var result = await _consentService.HandleParConsentAsync(sessionId,
                                                                  request,
-                                                                 HttpContext.RequestAborted);
+                                                                 ct);
 
         return Ok(result);
     }

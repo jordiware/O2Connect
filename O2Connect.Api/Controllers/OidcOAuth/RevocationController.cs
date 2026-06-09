@@ -19,14 +19,14 @@ public class RevocationController : OidcOAuthControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> Revoke([FromForm] RevocationRequest request)
+    public async Task<IActionResult> Revoke([FromForm] RevocationRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
         var clientId = ExtractClientId(HttpContext);
 
-        await _revocationService.HandleAsync(request, clientId, HttpContext.RequestAborted);
+        await _revocationService.HandleAsync(request, clientId, ct);
 
         return Ok();
     }

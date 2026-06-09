@@ -26,7 +26,8 @@ public class TokenController : OidcOAuthControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Token([FromForm] TokenRequest request)
+    public async Task<IActionResult> Token([FromForm] TokenRequest request,
+                                           CancellationToken ct)
     {
         if (!Request.HasFormContentType)
             throw OAuthException.FromInvalidRequest();
@@ -36,8 +37,9 @@ public class TokenController : OidcOAuthControllerBase
         if (!GrantType.TryParse(request.GrantType, out var grantType))
             throw OAuthException.FromUnsupportedGrantType();
 
-        var clientAuthenticationResult = await _clientAuthenticationService
-            .AuthenticateAsync(Request, request, HttpContext.RequestAborted);
+        var clientAuthenticationResult = await _clientAuthenticationService.AuthenticateAsync(Request,
+                                                                                              request,
+                                                                                              ct);
 
         if (!clientAuthenticationResult.Success)
             throw OAuthException.FromInvalidClient();
@@ -48,10 +50,9 @@ public class TokenController : OidcOAuthControllerBase
         if (!_requestValidatorResolver.TryResolve(grantType, out var requestValidator))
             throw OAuthException.FromUnsupportedGrantType();
 
-        var requestContext = await requestValidator
-            .ValidateAsync(request, client, method, HttpContext.RequestAborted);
+        var requestContext = await requestValidator.ValidateAsync(request, client, method, ct);
 
-        var response = await _tokenService.HandleAsync(requestContext, HttpContext.RequestAborted);
+        var response = await _tokenService.HandleAsync(requestContext, ct);
 
         return OkJsonResponse(response);
     }

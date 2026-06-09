@@ -22,20 +22,20 @@ public class AuthorizationController : OidcOAuthControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest request)
+    public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest request,
+                                               CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var result = await _authorizationService.ProcessAuthorizationAsync(request,
-                                                                           User,
-                                                                           HttpContext.RequestAborted);
+        var result = await _authorizationService.ProcessAuthorizationAsync(request, User, ct);
 
         return BuildAuthorizationRedirectResult(result);
     }
 
     [HttpGet("resume")]
-    public async Task<IActionResult> Resume([FromQuery(Name = "session")] string? sessionId)
+    public async Task<IActionResult> Resume([FromQuery(Name = "session")] string? sessionId,
+                                            CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
@@ -45,20 +45,21 @@ public class AuthorizationController : OidcOAuthControllerBase
 
         var result = await _authorizationService.ProcessSessionAsync(sessionId,
                                                                      User,
-                                                                     HttpContext.RequestAborted);
+                                                                     ct);
 
         return BuildAuthorizationRedirectResult(result);
     }
 
     [HttpGet]
-    public async Task<IActionResult> Authorize([FromQuery(Name = "request_uri")] string requestUri)
+    public async Task<IActionResult> Authorize([FromQuery(Name = "request_uri")] string requestUri,
+                                               CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
         var result = await _parAuthorizationService.HandleAsync(requestUri,
                                                                 HttpContext,
-                                                                HttpContext.RequestAborted);
+                                                                ct);
 
         if (result is null
             || string.IsNullOrWhiteSpace(result.Action)

@@ -22,24 +22,25 @@ public sealed class ConnectController : OidcOAuthControllerBase
     }
 
     [HttpGet("logout")]
-    public async Task<IActionResult> Logout([FromQuery] EndSessionRequest request)
+    public async Task<IActionResult> Logout([FromQuery] EndSessionRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        await _userSessionService.HandleLogoutAsync(request, HttpContext.RequestAborted);
+        await _userSessionService.HandleLogoutAsync(request, ct);
 
         return NoContent();
     }
 
     [HttpPost("par")]
     public async Task<ActionResult<PushedAuthorizationResponse>> Par(
-        [FromBody] PushedAuthorizationRequest request)
+        [FromBody] PushedAuthorizationRequest request,
+        CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var result = await _pushedAuthorizationService.HandleAsync(request, HttpContext.RequestAborted);
+        var result = await _pushedAuthorizationService.HandleAsync(request, ct);
 
         return Ok(result);
     }

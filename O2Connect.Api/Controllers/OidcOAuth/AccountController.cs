@@ -23,12 +23,13 @@ public class AccountController : OidcOAuthControllerBase
 
     [HttpPost("login")]
     public async Task<IActionResult> PostLogin([FromQuery(Name = "session")] string? sessionId,
-                                               [FromBody] LoginRequest request)
+                                               [FromBody] LoginRequest request,
+                                               CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var result = await _loginService.HandleLoginAsync(sessionId, request, HttpContext.RequestAborted);
+        var result = await _loginService.HandleLoginAsync(sessionId, request, ct);
 
         return ProcessHandleResult(result, (successResult) =>
         {
@@ -43,7 +44,7 @@ public class AccountController : OidcOAuthControllerBase
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
@@ -51,7 +52,7 @@ public class AccountController : OidcOAuthControllerBase
         if (string.IsNullOrWhiteSpace(request.Token))
             return BadRequest(new { message = "Missing refresh token" });
 
-        await _loginService.HandleLogoutAsync(request.Token, HttpContext.RequestAborted);
+        await _loginService.HandleLogoutAsync(request.Token, ct);
 
         return NoContent();
     }

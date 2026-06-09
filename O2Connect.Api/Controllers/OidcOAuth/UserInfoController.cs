@@ -18,13 +18,13 @@ public class UserInfoController : OidcOAuthControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> UserInfoGet()
+    public async Task<IActionResult> UserInfoGet(CancellationToken ct)
     {
-        var result = await _userInfoService.GetUserInfoAsync(User, HttpContext.RequestAborted);
+        var result = await _userInfoService.GetUserInfoAsync(User, ct);
 
         return Ok(result);
     }
 
     [HttpPost]
-    public Task<IActionResult> UserInfoPost() => UserInfoGet();
+    public Task<IActionResult> UserInfoPost(CancellationToken ct) => UserInfoGet(ct);
 }

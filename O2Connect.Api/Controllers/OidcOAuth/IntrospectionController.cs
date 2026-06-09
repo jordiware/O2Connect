@@ -21,7 +21,7 @@ public class IntrospectionController : OidcOAuthControllerBase
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = "Client")]
-    public async Task<IActionResult> Introspect([FromForm] string token)
+    public async Task<IActionResult> Introspect([FromForm] string token, CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
@@ -34,9 +34,7 @@ public class IntrospectionController : OidcOAuthControllerBase
         if (string.IsNullOrWhiteSpace(clientId))
             return Ok(IntrospectionResponse.Inactive);
 
-        var result = await _tokenIntrospectionService.IntrospectAsync(token,
-                                                                      clientId,
-                                                                      HttpContext.RequestAborted);
+        var result = await _tokenIntrospectionService.IntrospectAsync(token, clientId, ct);
 
         return Ok(result);
     }
