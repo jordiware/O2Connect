@@ -1,6 +1,4 @@
-﻿using O2Connect.Api.Helpers;
-
-namespace O2Connect.Api.Models.Options;
+﻿namespace O2Connect.Api.Models.Options;
 
 public sealed record JwtOptions
 {
@@ -13,6 +11,26 @@ public sealed record JwtOptions
     public required string Issuer
     {
         get => issuer;
-        init => issuer = IssuerNormalizer.Normalize(value);
+        init => issuer = Normalize(value);
+    }
+
+    private static string Normalize(string issuer)
+    {
+        if (string.IsNullOrWhiteSpace(issuer))
+            throw new InvalidOperationException("Issuer cannot be null or empty.");
+
+        if (!Uri.TryCreate(issuer, UriKind.Absolute, out var uri))
+            throw new InvalidOperationException($"Issuer must be an absolute URI: {issuer}");
+
+        var builder = new UriBuilder(uri)
+        {
+            Path = string.Empty,
+            Query = string.Empty,
+            Fragment = string.Empty
+        };
+
+        var normalized = builder.Uri.ToString().TrimEnd('/');
+
+        return normalized;
     }
 }
