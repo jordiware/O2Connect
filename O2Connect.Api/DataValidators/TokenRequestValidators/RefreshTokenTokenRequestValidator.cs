@@ -7,7 +7,7 @@ using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using System.Collections.Immutable;
 
-namespace O2Connect.Api.Controllers.RequestModelValidators;
+namespace O2Connect.Api.DataValidators.TokenRequestValidators;
 
 public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
 {

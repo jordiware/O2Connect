@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace O2Connect.Api.Controllers.RequestModelValidators;
+namespace O2Connect.Api.DataValidators.TokenRequestValidators;
 
 public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
 {

@@ -3,7 +3,7 @@ using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.Store;
 using O2Connect.Dto.Requests;
 
-namespace O2Connect.Api.Controllers.RequestModelValidators;
+namespace O2Connect.Api.DataValidators.TokenRequestValidators;
 
 public interface ITokenRequestValidator
 {

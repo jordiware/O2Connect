@@ -1,7 +1,7 @@
 ﻿using O2Connect.Api.Models;
 using System.Diagnostics.CodeAnalysis;
 
-namespace O2Connect.Api.Controllers.RequestModelValidators;
+namespace O2Connect.Api.DataValidators.TokenRequestValidators;
 
 public interface ITokenRequestValidatorResolver
 {

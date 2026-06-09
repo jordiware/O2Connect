@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using O2Connect.Api.Controllers.RequestModelValidators;
+using O2Connect.Api.DataValidators.TokenRequestValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Services;

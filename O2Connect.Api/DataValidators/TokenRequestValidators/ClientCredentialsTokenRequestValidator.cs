@@ -5,7 +5,7 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Dto.Requests;
 using System.Collections.Immutable;
 
-namespace O2Connect.Api.Controllers.RequestModelValidators;
+namespace O2Connect.Api.DataValidators.TokenRequestValidators;
 
 public class ClientCredentialsTokenRequestValidator : ITokenRequestValidator
 {
