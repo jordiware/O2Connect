@@ -69,7 +69,7 @@ public class ConsentController : ControllerBase
         var session = await _consentService.GetSessionAsync(sessionId, ct);
 
         if (session == null
-            || session.Stage != AuthorizationStage.ConsentRequired
+            || session.Status != AuthorizationStatus.ConsentRequired
             || session.ExpiresAt <= DateTimeOffset.UtcNow)
             return BadRequest("Consent session expired");
 

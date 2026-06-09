@@ -16,21 +16,21 @@ public interface IParAuthorizationService
 public class ParAuthorizationService : IParAuthorizationService
 {
     private readonly IParEntryRepository _parEntryRepository;
-    private readonly IParAuthorizationSessionRepository _parSessionRepository;
     private readonly IClientRepository _clientRepository;
+    private readonly IAuthorizationSessionRepository _authorizationSessionRepository;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IUserConsentRepository _userConsentRepository;
 
     public ParAuthorizationService(
         IParEntryRepository parEntryRepository,
-        IParAuthorizationSessionRepository parAuthorizationSessionRepository,
         IClientRepository clientRepository,
+        IAuthorizationSessionRepository authorizationSessionRepository,
         IAuthorizationCodeRepository authorizationCodeRepository,
         IUserConsentRepository userConsentRepository)
     {
         _parEntryRepository = parEntryRepository;
-        _parSessionRepository = parAuthorizationSessionRepository;
         _clientRepository = clientRepository;
+        _authorizationSessionRepository = authorizationSessionRepository;
         _authorizationCodeRepository = authorizationCodeRepository;
         _userConsentRepository = userConsentRepository;
     }
@@ -46,7 +46,7 @@ public class ParAuthorizationService : IParAuthorizationService
         if (entry is null)
             throw OAuthException.FromInvalidRequest();
 
-        var session = await _parSessionRepository.GetFromRequestUriCodeAsync(requestUri, ct);
+        var session = await _authorizationSessionRepository.GetFromRequestUriCodeAsync(requestUri, ct);
 
         if (session is null)
             throw OAuthException.FromInvalidRequest();
@@ -61,14 +61,14 @@ public class ParAuthorizationService : IParAuthorizationService
         if (client is null) 
             throw OAuthException.FromInvalidClient();
 
-        if (session.Stage is ParAuthStatus.CodeIssued or ParAuthStatus.Aborted)
+        if (session.Status is AuthorizationStatus.CodeIssued or AuthorizationStatus.Aborted)
             throw OAuthException.FromInvalidRequest();
 
         var user = httpContext.User;
 
         if (user?.Identity?.IsAuthenticated != true)
         {
-            await UpdateSessionAsync(session with { Stage = ParAuthStatus.AwaitingLogin }, ct);
+            await UpdateSessionAsync(session with { Status = AuthorizationStatus.LoginRequired }, ct);
 
             return BuildRedirect("/login?session=" + session.SessionId);
         }
@@ -80,7 +80,7 @@ public class ParAuthorizationService : IParAuthorizationService
 
         session = session with
         {
-            Stage = ParAuthStatus.Authenticated,
+            Status = AuthorizationStatus.Authenticated,
             UserId = userId
         };
 
@@ -92,7 +92,7 @@ public class ParAuthorizationService : IParAuthorizationService
 
         if (missingScopes.Count > 0)
         {
-            await UpdateSessionAsync(session with { Stage = ParAuthStatus.AwaitingConsent }, ct);
+            await UpdateSessionAsync(session with { Status = AuthorizationStatus.ConsentRequired }, ct);
 
             return BuildRedirect("/consent?session=" + session.SessionId);
         }
@@ -100,14 +100,14 @@ public class ParAuthorizationService : IParAuthorizationService
         return await IssueCode(entry, session, ct);
     }
 
-    private async Task UpdateSessionAsync(ParAuthorizationSession session, CancellationToken ct)
+    private async Task UpdateSessionAsync(AuthorizationSession session, CancellationToken ct)
     {
-        await _parSessionRepository.StoreAsync(session, ct);
+        await _authorizationSessionRepository.StoreAsync(session, ct);
     }
 
     private async Task<RedirectResponse> IssueCode(
         ParEntry entry,
-        ParAuthorizationSession session,
+        AuthorizationSession session,
         CancellationToken ct)
     {
         var authCode = SecureCodeGenerator.GenerateBase64UrlToken(length: 32);
@@ -125,7 +125,7 @@ public class ParAuthorizationService : IParAuthorizationService
             ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5)
         }, ct);
 
-        await UpdateSessionAsync(session with { Stage = ParAuthStatus.CodeIssued }, ct);
+        await UpdateSessionAsync(session with { Status = AuthorizationStatus.CodeIssued }, ct);
 
         var redirectUrl = BuildCallbackUrl(entry, authCode);
 

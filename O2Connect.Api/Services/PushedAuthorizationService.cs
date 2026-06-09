@@ -5,7 +5,6 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
-using System.Security.Cryptography;
 
 namespace O2Connect.Api.Services;
 
@@ -21,18 +20,18 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
 
     private readonly IPushedAuthorizationValidator _pushedAuthorizationValidator;
     private readonly IParEntryRepository _parEntryRepository;
-    private readonly IParAuthorizationSessionRepository _parAuthorizationSessionRepository;
+    private readonly IAuthorizationSessionRepository _authorizationSessionRepository;
     private readonly IClientRepository _clientRepository;
 
     public PushedAuthorizationService(
         IPushedAuthorizationValidator pushedAuthorizationValidator,
         IParEntryRepository parEntryRepository,
-        IParAuthorizationSessionRepository parAuthorizationSessionRepository,
+        IAuthorizationSessionRepository authorizationSessionRepository,
         IClientRepository clientRepository)
     {
         _pushedAuthorizationValidator = pushedAuthorizationValidator;
         _parEntryRepository = parEntryRepository;
-        _parAuthorizationSessionRepository = parAuthorizationSessionRepository;
+        _authorizationSessionRepository = authorizationSessionRepository;
         _clientRepository = clientRepository;
     }
 
@@ -73,16 +72,16 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
 
         await _parEntryRepository.StoreAsync(requestUri, entry, ct);
 
-        var parSession = new ParAuthorizationSession
+        var session = new AuthorizationSession
         {
-            SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32, prefix: "p_"),
+            SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
             RequestUriCode = code,
-            Stage = ParAuthStatus.Initialized,
+            Status = AuthorizationStatus.Initialized,
             CreatedAt = now,
             ExpiresAt = expiresAt
         };
 
-        await _parAuthorizationSessionRepository.StoreAsync(parSession, ct);
+        await _authorizationSessionRepository.StoreAsync(session, ct);
 
         return new PushedAuthorizationResponse
         {

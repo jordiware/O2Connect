@@ -38,7 +38,6 @@ builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepos
 builder.Services.AddSingleton<IUserConsentRepository, InMemoryUserConsentRepository>();
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 builder.Services.AddSingleton<IParEntryRepository, InMemoryParEntryRepository>();
-builder.Services.AddSingleton<IParAuthorizationSessionRepository, InMemoryParAuthorizationSessionRepository>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();

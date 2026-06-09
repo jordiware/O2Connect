@@ -28,7 +28,7 @@ public class AccountService : IAccountService
     private readonly IUserRepository _userRepository;
     private readonly IClientRepository _clientRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
-    private readonly IParAuthorizationSessionRepository _parAuthorizationSessionRepository;
+    private readonly IAuthorizationSessionRepository _authorizationSessionRepository;
     private readonly ITokenFactory _tokenFactory;
     private readonly ISecretHasher _secretHasher;
     private readonly TokenValidationParameters _tokenValidationParameters;
@@ -37,7 +37,7 @@ public class AccountService : IAccountService
         IUserRepository userRepository,
         IClientRepository clientRepository,
         IRefreshTokenRepository refreshTokenRepository,
-        IParAuthorizationSessionRepository parAuthorizationSessionRepository,
+        IAuthorizationSessionRepository authorizationSessionRepository,
         ITokenFactory tokenFactory,
         ISecretHasher secretHasher,
         TokenValidationParameters tokenValidationParameters)
@@ -45,7 +45,7 @@ public class AccountService : IAccountService
         _userRepository = userRepository;
         _clientRepository = clientRepository;
         _refreshTokenRepository = refreshTokenRepository;
-        _parAuthorizationSessionRepository = parAuthorizationSessionRepository;
+        _authorizationSessionRepository = authorizationSessionRepository;
         _tokenFactory = tokenFactory;
         _secretHasher = secretHasher;
         _tokenValidationParameters = tokenValidationParameters;
@@ -73,18 +73,18 @@ public class AccountService : IAccountService
 
         if (!string.IsNullOrWhiteSpace(sessionId))
         {
-            var session = await _parAuthorizationSessionRepository.GetAsync(sessionId, ct);
+            var session = await _authorizationSessionRepository.GetAsync(sessionId, ct);
 
-            if (session is null || session.Stage != ParAuthStatus.AwaitingLogin)
+            if (session is null || session.Status != AuthorizationStatus.LoginRequired)
                 throw OAuthException.FromInvalidRequest("Invalid session");
 
             session = session with
             {
-                Stage = ParAuthStatus.Authenticated,
+                Status = AuthorizationStatus.Authenticated,
                 UserId = user.Id
             };
 
-            await _parAuthorizationSessionRepository.StoreAsync(session, ct);
+            await _authorizationSessionRepository.StoreAsync(session, ct);
 
             var redirectResponse = new RedirectResponse
             {

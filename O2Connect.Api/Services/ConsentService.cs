@@ -34,18 +34,15 @@ public class ConsentService : IConsentService
 {
     private readonly IUserConsentRepository _userConsentRepository;
     private readonly IAuthorizationSessionRepository _authorizationSessionRepository;
-    private readonly IParAuthorizationSessionRepository _parAuthorizationSessionRepository;
     private readonly IParEntryRepository _parEntryRepository;
 
     public ConsentService(
         IUserConsentRepository userConsentRepository,
         IAuthorizationSessionRepository authorizationSessionRepository,
-        IParAuthorizationSessionRepository parAuthorizationSessionRepository,
         IParEntryRepository parEntryRepository)
     {
         _userConsentRepository = userConsentRepository;
         _authorizationSessionRepository = authorizationSessionRepository;
-        _parAuthorizationSessionRepository = parAuthorizationSessionRepository;
         _parEntryRepository = parEntryRepository;
     }
 
@@ -81,7 +78,7 @@ public class ConsentService : IConsentService
         if (session == null)
             return false;
 
-        var updatedSession = session with { Stage = AuthorizationStage.ConsentGranted };
+        var updatedSession = session with { Status = AuthorizationStatus.Consented };
 
         await _authorizationSessionRepository.StoreAsync(updatedSession, ct);
 
@@ -139,12 +136,12 @@ public class ConsentService : IConsentService
                                                               ConsentDecisionRequest request,
                                                               CancellationToken ct)
     {
-        var session = await _parAuthorizationSessionRepository.GetAsync(sessionId, ct);
+        var session = await _authorizationSessionRepository.GetAsync(sessionId, ct);
 
         if (session is null)
             throw OAuthException.FromInvalidRequest("Invalid session");
 
-        if (session.Stage != ParAuthStatus.AwaitingConsent)
+        if (session.Status != AuthorizationStatus.ConsentRequired)
             throw OAuthException.FromInvalidRequest("Invalid session state for consent");
 
         if (session.UserId is null)
@@ -159,8 +156,8 @@ public class ConsentService : IConsentService
 
         if (!request.Approved)
         {
-            session = session with { Stage = ParAuthStatus.Aborted };
-            await _parAuthorizationSessionRepository.StoreAsync(session, ct);
+            session = session with { Status = AuthorizationStatus.Aborted };
+            await _authorizationSessionRepository.StoreAsync(session, ct);
             return BuildErrorRedirect(entry, "access_denied");
         }
 
@@ -169,8 +166,8 @@ public class ConsentService : IConsentService
                                requestedScopes.ToImmutableHashSet(),
                                ct);
 
-        session = session with { Stage = ParAuthStatus.Consented };
-        await _parAuthorizationSessionRepository.StoreAsync(session, ct);
+        session = session with { Status = AuthorizationStatus.Consented };
+        await _authorizationSessionRepository.StoreAsync(session, ct);
 
         var requestUri = BuildRequestUri(session.RequestUriCode);
         return new RedirectResponse

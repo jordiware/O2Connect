@@ -82,11 +82,11 @@ public class AuthorizeService : IAuthorizeService
         {
             session = new AuthorizationSession
             {
-                SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32, prefix: "s_"),
+                SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
                 Request = request,
                 CreatedAt = DateTimeOffset.UtcNow,
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
-                Stage = AuthorizationStage.Created,
+                Status = AuthorizationStatus.Initialized,
                 RequestedScopes = requestScopes.ToHashSet()
             };
         }
@@ -96,7 +96,7 @@ public class AuthorizeService : IAuthorizeService
             var loginSession = session with
             {
                 SessionId = _secureTokenGenerator.GenerateSecureToken(),
-                Stage = AuthorizationStage.LoginRequired
+                Status = AuthorizationStatus.LoginRequired
             };
 
             await _authorizationSessionRepository.StoreAsync(loginSession, ct);
@@ -131,7 +131,7 @@ public class AuthorizeService : IAuthorizeService
             var consentSession = session with
             {
                 SessionId = _secureTokenGenerator.GenerateSecureToken(),
-                Stage = AuthorizationStage.ConsentRequired,
+                Status = AuthorizationStatus.ConsentRequired,
                 MissingScopes = consent.MissingScopes?.ToImmutableHashSet()
             };
 
@@ -160,8 +160,8 @@ public class AuthorizeService : IAuthorizeService
 
         var responseMode = ExtractResponseMode(session.Request);
 
-        if (session.Stage != AuthorizationStage.LoggedIn
-            && session.Stage != AuthorizationStage.ConsentGranted)
+        if (session.Status != AuthorizationStatus.Authenticated
+            && session.Status != AuthorizationStatus.Consented)
             return Error(responseMode, "invalid_request", "Invalid session state", session.Request.State, session.Request.RedirectUri);
 
         if (session.ExpiresAt <= DateTimeOffset.UtcNow)
@@ -172,7 +172,7 @@ public class AuthorizeService : IAuthorizeService
         if (session.UserId is null || session.UserId != userId)
             return Error(responseMode, "invalid_request", "Session does not belong to user", session.Request.State, session.Request.RedirectUri);
 
-        if (session.Stage == AuthorizationStage.ConsentGranted)
+        if (session.Status == AuthorizationStatus.Consented)
             return await IssueCodeAsync(session, ct);
 
         return await ProcessAuthorizationAsync(session.Request, user, ct, session);
@@ -185,7 +185,7 @@ public class AuthorizeService : IAuthorizeService
         var authCode = new AuthorizationCode
         {
             Code = code,
-            ClientId = session.Request.ClientId,
+            ClientId = session.ClientId,
             UserId = session.UserId!,
             RedirectUri = session.Request.RedirectUri,
             Scopes = string.Join(' ', session.RequestedScopes ?? new HashSet<string>()).Trim(),
