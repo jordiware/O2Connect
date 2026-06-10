@@ -5,7 +5,6 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
-using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -15,13 +14,16 @@ public class ConnectAuthorizationController : ControllerBase
 {
     private readonly IConnectAuthorizationService _authorizationService;
     private readonly IParAuthorizationService _parAuthorizationService;
+    private readonly IDeviceAuthorizationService _deviceAuthorizationService;
 
     public ConnectAuthorizationController(
         IConnectAuthorizationService authorizationService,
-        IParAuthorizationService parAuthorizationService)
+        IParAuthorizationService parAuthorizationService,
+        IDeviceAuthorizationService deviceAuthorizationService)
     {
         _authorizationService = authorizationService;
         _parAuthorizationService = parAuthorizationService;
+        _deviceAuthorizationService = deviceAuthorizationService;
     }
 
     [HttpGet("authorize")]
@@ -75,6 +77,20 @@ public class ConnectAuthorizationController : ControllerBase
         var result = await _authorizationService.HandleSessionAsync(sessionId, User, ct);
 
         return BuildAuthorizationRedirectResult(result);
+    }
+
+    [HttpPost("device_authorize")]
+    public async Task<IActionResult> DeviceAuthorize([FromForm] DeviceAuthorizationRequest request,
+                                                     CancellationToken ct)
+    {
+        if (!Request.HasFormContentType)
+            throw OAuthException.FromInvalidRequest();
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        var response = await _deviceAuthorizationService.CreateAsync(request.ClientId, request.Scope);
+
+        return Ok(response);
     }
 
     private IActionResult BuildAuthorizationRedirectResult(AuthorizationResult result)

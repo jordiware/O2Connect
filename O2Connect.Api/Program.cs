@@ -118,6 +118,7 @@ builder.Services.AddScoped<IDiscoveryMetadataService, DiscoveryMetadataService>(
 builder.Services.AddScoped<IPushedAuthorizationService, PushedAuthorizationService>();
 builder.Services.AddScoped<IParAuthorizationService, ParAuthorizationService>();
 builder.Services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
+builder.Services.AddScoped<IDeviceAuthorizationService, DeviceAuthorizationService>();
 
 builder.Services.AddAuthorizationBuilder()
                 .AddPolicy("RequireProfileScope", policy =>
