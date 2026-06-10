@@ -153,7 +153,7 @@ public sealed class ConnectController : ControllerBase
             user.FindFirst("sub")?.Value ??
             user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        if (string.IsNullOrEmpty(sub))
+        if (string.IsNullOrWhiteSpace(sub))
             throw OAuthException.FromInvalidToken();
 
         return sub;

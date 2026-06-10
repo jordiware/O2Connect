@@ -1,5 +1,6 @@
 ﻿using O2Connect.Api.Crypto;
 using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
@@ -26,25 +27,25 @@ public class ClientRegistrationService : IClientRegistrationService
     ];
 
     private readonly IClientRepository _clientRepository;
-    private readonly ISecretHasher _secretHasher;
 
     public ClientRegistrationService(
-        IClientRepository clientRepository,
-        ISecretHasher secretHasher)
+        IClientRepository clientRepository)
     {
         _clientRepository = clientRepository;
-        _secretHasher = secretHasher;
     }
 
     public async Task<ClientRegistrationResponse> HandleAsync(ClientRegistrationRequest request,
                                                               string ownerId,
                                                               CancellationToken ct)
     {
-        var authMethod = request.TokenEndpointAuthMethod ?? "client_secret_basic";
-        var clientId = Guid.NewGuid().ToString("N");
-        var clientSecret = authMethod == "none" ? null : SecureCodeGenerator.GenerateBase64UrlToken();
+        var method = request.TokenEndpointAuthMethod ?? "none";
 
-        var client = BuildClient(request, ownerId, clientId, clientSecret);
+        if (!string.Equals(method, "none", StringComparison.Ordinal))
+            throw OAuthException.FromInvalidRequest("invalid_client_metadata");
+
+        var clientId = Guid.NewGuid().ToString("N");
+
+        var client = BuildClient(request, ownerId, clientId);
 
         await _clientRepository.StoreAsync(client, ct);
 
@@ -52,35 +53,32 @@ public class ClientRegistrationService : IClientRegistrationService
         {
             ClientId = clientId,
             ClientName = client.ClientName,
-            ClientSecret = clientSecret,
+            ClientSecret = null,
             ClientIdIssuedAt = client.CreatedAt.ToUnixTimeSeconds(),
             ClientSecretExpiresAt = 0,
-            RedirectUris = client.RedirectUris.ToArray(),
+            RedirectUris = client.RedirectUris.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
             GrantTypes = client.AllowedGrantTypes.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
             ResponseTypes = client.AllowedResponseTypes.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
-            TokenEndpointAuthMethod = authMethod,
-            Scope = string.Join(' ', client.AllowedScopes.OrderBy(x => x, StringComparer.Ordinal))
+            TokenEndpointAuthMethod = method,
+            Scope = string.Join(' ', client.AllowedScopes)
         };
     }
 
-    private Client BuildClient(ClientRegistrationRequest request,
-                               string ownerId,
-                               string clientId,
-                               string? clientSecret)
+    private Client BuildClient(ClientRegistrationRequest request, string ownerId, string clientId)
     {
         var now = DateTimeOffset.UtcNow;
 
-        // 1. Defaults (SPEC + your policy)
+        // Defaults (SPEC + your policy)
         var grantTypes = request.GrantTypes ?? ["authorization_code"];
         var responseTypes = request.ResponseTypes
                             ?? (grantTypes.Contains("authorization_code") ? ["code"] : []);
-        var authMethod = request.TokenEndpointAuthMethod ?? "client_secret_basic";
 
-        // 2. Normalize scope (IMPORTANT: space-delimited → set)
-        var scopes = request.Scope?
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToHashSet(StringComparer.Ordinal)
-            ?? new HashSet<string>();
+        // Secret policy
+        if (grantTypes.Contains("client_credentials"))
+            throw OAuthException.FromInvalidRequest("invalid_client_metadata");
+
+        // Normalize scope (IMPORTANT: space-delimited → set)
+        var scopes = ValueSet.FromDataString(request.Scope, ' ').Values;
 
         if (scopes.Count == 0)
             throw OAuthException.FromInvalidRequest("invalid_client_metadata");
@@ -88,11 +86,8 @@ public class ClientRegistrationService : IClientRegistrationService
         if (scopes.Count > 20)
             throw OAuthException.FromInvalidRequest("invalid_scope");
 
-        foreach (var scope in scopes)
-        {
-            if (!AllowedScopes.Contains(scope))
-                throw OAuthException.FromInvalidRequest("invalid_scope");
-        }
+        if (!scopes.All(AllowedScopes.Contains))
+            throw OAuthException.FromInvalidRequest("invalid_scope");
 
         if (scopes.Contains("openid") && !grantTypes.Contains("authorization_code"))
             throw OAuthException.FromInvalidRequest("invalid_client_metadata");
@@ -100,41 +95,20 @@ public class ClientRegistrationService : IClientRegistrationService
         if (scopes.Contains("openid") && !responseTypes.Contains("code"))
             throw OAuthException.FromInvalidRequest("invalid_client_metadata");
 
-        // 3. Validate / restrict (VERY IMPORTANT)
+        // Validate / restrict
         ValidateGrantTypes(grantTypes);
 
-        if (responseTypes.Length > 0)
-            ValidateResponseTypes(responseTypes);
-        
-        ValidateAuthMethod(authMethod);
-        
-        ValidateGrantResponseConsistency(grantTypes, responseTypes);
+        ValidateResponseTypes(responseTypes);
 
-        // 4. Redirect URIs → set
-        if (request.RedirectUris == null || request.RedirectUris.Length == 0)
-        {
-            if (grantTypes.Contains("authorization_code"))
-                throw OAuthException.FromInvalidRequest("invalid_client_metadata");
-        }
-
-        var redirectUris = request.RedirectUris!.Select(NormalizeUri)
-                                                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Redirect URIs → set
+        var redirectUris = (request.RedirectUris ?? []).Select(NormalizeUri)
+                                                       .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         if (redirectUris.Count == 0 && grantTypes.Contains("authorization_code"))
             throw OAuthException.FromInvalidRequest("invalid_client_metadata");
 
-        // 5. Secret policy
-        var requiresSecret = authMethod != "none";
-
-        if (!requiresSecret && grantTypes.Contains("client_credentials"))
-            throw OAuthException.FromInvalidRequest("invalid_client_metadata");
-
-        // 6. Client name fallback (REQUIRED in your model)
+        // Client name fallback (REQUIRED in your model)
         var clientName = request.ClientName ?? $"client-{Guid.NewGuid():N}";
-
-        var hashedSecret = default(string?);
-        if (!string.IsNullOrWhiteSpace(clientSecret))
-            _secretHasher.TryHash(clientSecret, out hashedSecret);
 
         return new Client
         {
@@ -143,16 +117,14 @@ public class ClientRegistrationService : IClientRegistrationService
             CreatedAt = now,
             OwnerId = ownerId,
 
-            ClientSecret = hashedSecret,
-            RequiresSecret = requiresSecret,
+            ClientSecret = null,
+            RequiresSecret = false,
 
             RedirectUris = redirectUris,
 
-            AllowedGrantTypes = grantTypes.OrderBy(x => x, StringComparer.Ordinal)
-                                          .ToHashSet(StringComparer.Ordinal),
-            AllowedResponseTypes = responseTypes.OrderBy(x => x, StringComparer.Ordinal)
-                                                .ToHashSet(StringComparer.Ordinal),
-            AllowedAuthenticationMethods = new HashSet<string> { authMethod },
+            AllowedGrantTypes = grantTypes.ToHashSet(StringComparer.Ordinal),
+            AllowedResponseTypes = responseTypes.ToHashSet(StringComparer.Ordinal),
+            AllowedAuthenticationMethods = new HashSet<string> { "none" },
 
             AllowedScopes = scopes,
 
@@ -169,56 +141,28 @@ public class ClientRegistrationService : IClientRegistrationService
         if (!Uri.TryCreate(uri, UriKind.Absolute, out var parsed))
             throw OAuthException.FromInvalidRedirectUri("invalid_redirect_uri");
 
-        if (!string.IsNullOrWhiteSpace(parsed.Query) && parsed.Query.Contains("redirect_uri"))
-            throw OAuthException.FromInvalidRedirectUri("invalid_redirect_uri");
-
         if (!string.IsNullOrWhiteSpace(parsed.Fragment))
             throw OAuthException.FromInvalidRedirectUri("invalid_redirect_uri");
 
-        if (parsed.Scheme != Uri.UriSchemeHttps 
+        if (parsed.Scheme != Uri.UriSchemeHttps
             && !(parsed.Host == "localhost" && parsed.Scheme == Uri.UriSchemeHttp))
             throw OAuthException.FromInvalidRedirectUri("invalid_redirect_uri");
 
-        return parsed.ToString();
+        return parsed.GetLeftPart(UriPartial.Path);
     }
 
     private static void ValidateGrantTypes(IEnumerable<string> grantTypes)
     {
-        if (!grantTypes.All(g => GrantType.TryParse(g, out _)))
-            throw OAuthException.FromInvalidRequest("invalid_client_metadata");
+        if (!grantTypes.All(g => string.Equals(g, GrantType.AuthorizationCode.Value, StringComparison.Ordinal)))
+            throw OAuthException.FromInvalidRequest("unsupported_grant_type");
     }
 
     private static void ValidateResponseTypes(IEnumerable<string> responseTypes)
     {
-        foreach (var rt in responseTypes)
-        {
-            if (rt != "code")
-                throw OAuthException.FromInvalidRequest("invalid_client_metadata");
-        }
-    }
-
-    private static void ValidateAuthMethod(string? authMethod)
-    {
-        if (string.IsNullOrWhiteSpace(authMethod))
+        if (!responseTypes.Any())
             throw OAuthException.FromInvalidRequest("invalid_client_metadata");
 
-        if (!ClientAuthenticationMethod.TryParse(authMethod, out _))
-            throw OAuthException.FromInvalidRequest("invalid_client_metadata");
-    }
-
-    private static void ValidateGrantResponseConsistency(IReadOnlyCollection<string> grantTypes,
-                                                         IReadOnlyCollection<string> responseTypes)
-    {
-        if (responseTypes.Count == 0 && !grantTypes.Contains("client_credentials"))
-            throw OAuthException.FromInvalidRequest("invalid_client_metadata");
-
-        if (grantTypes.Contains("client_credentials") && responseTypes.Count > 0)
-            throw OAuthException.FromInvalidRequest("invalid_client_metadata");
-
-        var grants = grantTypes.ToHashSet(StringComparer.Ordinal);
-        var responses = responseTypes.ToHashSet(StringComparer.Ordinal);
-
-        if (grants.Contains("authorization_code") && !responses.Contains("code"))
+        if (!responseTypes.All(rt => string.Equals(rt, "code", StringComparison.Ordinal)))
             throw OAuthException.FromInvalidRequest("invalid_client_metadata");
     }
 }
