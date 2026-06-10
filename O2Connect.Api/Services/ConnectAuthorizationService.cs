@@ -3,7 +3,6 @@ using O2Connect.Api.DataFactories;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
-using O2Connect.Dto.Requests;
 using System.Collections.Immutable;
 using System.Security.Claims;
 
@@ -11,7 +10,7 @@ namespace O2Connect.Api.Services;
 
 public interface IConnectAuthorizationService
 {
-    Task<AuthorizationResult> HandleAuthorizationAsync(AuthorizationRequest request,
+    Task<AuthorizationResult> HandleAuthorizationAsync(AuthorizationRequestData request,
                                                        ClaimsPrincipal user,
                                                        CancellationToken ct,
                                                        AuthorizationSession? previousSession = null);
@@ -42,7 +41,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
         _secureTokenGenerator = secureTokenGenerator;
     }
 
-    public async Task<AuthorizationResult> HandleAuthorizationAsync(AuthorizationRequest request,
+    public async Task<AuthorizationResult> HandleAuthorizationAsync(AuthorizationRequestData request,
                                                                     ClaimsPrincipal user,
                                                                     CancellationToken ct,
                                                                     AuthorizationSession? previousSession = null)
@@ -207,7 +206,8 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
         };
     }
 
-    private AuthorizationResult? ValidateRequest(AuthorizationRequest request, out IReadOnlySet<string>? requestScopes)
+    private AuthorizationResult? ValidateRequest(AuthorizationRequestData request,
+                                                 out IReadOnlySet<string>? requestScopes)
     {
         requestScopes = null;
         
@@ -260,7 +260,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
         };
     }
 
-    private AuthorizationResultResponseMode ExtractResponseMode(AuthorizationRequest request)
+    private AuthorizationResultResponseMode ExtractResponseMode(AuthorizationRequestData request)
     {
         if (string.IsNullOrWhiteSpace(request.ResponseMode))
             return AuthorizationResultResponseMode.Query;

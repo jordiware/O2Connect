@@ -1,6 +1,7 @@
 ﻿using O2Connect.Api.Crypto;
 using O2Connect.Api.DataValidators;
 using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
@@ -78,7 +79,8 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
             RequestUriCode = code,
             Status = AuthorizationStatus.Initialized,
             CreatedAt = now,
-            ExpiresAt = expiresAt
+            ExpiresAt = expiresAt,
+            Request = request.ToData()
         };
 
         await _authorizationSessionRepository.StoreAsync(session, ct);

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
+using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 
@@ -27,8 +28,8 @@ public class ConnectAuthorizationController : ControllerBase
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
-
-        var result = await _authorizationService.HandleAuthorizationAsync(request, User, ct);
+        var requestData = request.ToData();
+        var result = await _authorizationService.HandleAuthorizationAsync(requestData, User, ct);
 
         return BuildAuthorizationRedirectResult(result);
     }

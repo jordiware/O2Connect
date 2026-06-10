@@ -1,6 +1,4 @@
-﻿using O2Connect.Dto.Requests;
-
-namespace O2Connect.Api.Models.Store;
+﻿namespace O2Connect.Api.Models.Store;
 
 public sealed record AuthorizationSession
 {
@@ -12,7 +10,7 @@ public sealed record AuthorizationSession
     public required DateTimeOffset ExpiresAt { get; init; }
 
     // === Request origin ===
-    public AuthorizationRequest? Request { get; init; } // populated after PAR resolution
+    public required AuthorizationRequestData Request { get; init; }
     public string? RequestUriCode { get; init; } // PAR reference
 
     // === Client ===
