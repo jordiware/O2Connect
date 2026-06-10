@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace O2Connect.Api.Models.Store;
+﻿namespace O2Connect.Api.Models.Store;
 
 public sealed record Client
 {

@@ -108,7 +108,7 @@ builder.Services.AddScoped<IClientAuthenticationHandler, PrivateKeyJwtHandler>()
 
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IAuthorizeService, AuthorizeService>();
+builder.Services.AddScoped<IConnectAuthorizationService, ConnectAuthorizationService>();
 builder.Services.AddScoped<IConsentService, ConsentService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IUserInfoService, UserInfoService>();

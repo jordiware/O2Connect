@@ -1,6 +1,7 @@
 ﻿using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
+using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 

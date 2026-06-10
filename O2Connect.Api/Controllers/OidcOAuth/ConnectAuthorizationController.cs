@@ -10,11 +10,11 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [Route("connect/authorize")]
 public class ConnectAuthorizationController : ControllerBase
 {
-    private readonly IAuthorizeService _authorizationService;
+    private readonly IConnectAuthorizationService _authorizationService;
     private readonly IParAuthorizationService _parAuthorizationService;
 
     public ConnectAuthorizationController(
-        IAuthorizeService authorizationService,
+        IConnectAuthorizationService authorizationService,
         IParAuthorizationService parAuthorizationService)
     {
         _authorizationService = authorizationService;
@@ -28,7 +28,7 @@ public class ConnectAuthorizationController : ControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var result = await _authorizationService.ProcessAuthorizationAsync(request, User, ct);
+        var result = await _authorizationService.HandleAuthorizationAsync(request, User, ct);
 
         return BuildAuthorizationRedirectResult(result);
     }
@@ -43,7 +43,7 @@ public class ConnectAuthorizationController : ControllerBase
         if (string.IsNullOrWhiteSpace(sessionId))
             throw OAuthException.FromInvalidRequest();
 
-        var result = await _authorizationService.ProcessSessionAsync(sessionId, User, ct);
+        var result = await _authorizationService.HandleSessionAsync(sessionId, User, ct);
 
         return BuildAuthorizationRedirectResult(result);
     }

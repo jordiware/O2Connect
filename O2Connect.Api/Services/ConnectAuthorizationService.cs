@@ -9,18 +9,18 @@ using System.Security.Claims;
 
 namespace O2Connect.Api.Services;
 
-public interface IAuthorizeService
+public interface IConnectAuthorizationService
 {
-    Task<AuthorizationResult> ProcessAuthorizationAsync(AuthorizationRequest request,
-                                                        ClaimsPrincipal user,
-                                                        CancellationToken ct,
-                                                        AuthorizationSession? previousSession = null);
-    Task<AuthorizationResult> ProcessSessionAsync(string sessionId,
-                                                  ClaimsPrincipal user,
-                                                  CancellationToken ct);
+    Task<AuthorizationResult> HandleAuthorizationAsync(AuthorizationRequest request,
+                                                       ClaimsPrincipal user,
+                                                       CancellationToken ct,
+                                                       AuthorizationSession? previousSession = null);
+    Task<AuthorizationResult> HandleSessionAsync(string sessionId,
+                                                 ClaimsPrincipal user,
+                                                 CancellationToken ct);
 }
 
-public class AuthorizeService : IAuthorizeService
+public class ConnectAuthorizationService : IConnectAuthorizationService
 {
     private readonly IClientRepository _clientRepository;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
@@ -28,7 +28,7 @@ public class AuthorizeService : IAuthorizeService
     private readonly IConsentService _consentService;
     private readonly ISecureTokenGenerator _secureTokenGenerator;
 
-    public AuthorizeService(
+    public ConnectAuthorizationService(
         IClientRepository clientRepository,
         IAuthorizationCodeRepository authorizationCodeRepository,
         IAuthorizationSessionRepository authorizationSessionRepository,
@@ -42,10 +42,10 @@ public class AuthorizeService : IAuthorizeService
         _secureTokenGenerator = secureTokenGenerator;
     }
 
-    public async Task<AuthorizationResult> ProcessAuthorizationAsync(AuthorizationRequest request,
-                                                                     ClaimsPrincipal user,
-                                                                     CancellationToken ct,
-                                                                     AuthorizationSession? previousSession = null)
+    public async Task<AuthorizationResult> HandleAuthorizationAsync(AuthorizationRequest request,
+                                                                    ClaimsPrincipal user,
+                                                                    CancellationToken ct,
+                                                                    AuthorizationSession? previousSession = null)
     {
         var responseMode = ExtractResponseMode(request);
 
@@ -149,9 +149,9 @@ public class AuthorizeService : IAuthorizeService
         return await IssueCodeAsync(session, ct);
     }
 
-    public async Task<AuthorizationResult> ProcessSessionAsync(string sessionId,
-                                                               ClaimsPrincipal user,
-                                                               CancellationToken ct)
+    public async Task<AuthorizationResult> HandleSessionAsync(string sessionId,
+                                                              ClaimsPrincipal user,
+                                                              CancellationToken ct)
     {
         var session = await _authorizationSessionRepository.TryConsumeAsync(sessionId, ct);
 
@@ -175,7 +175,7 @@ public class AuthorizeService : IAuthorizeService
         if (session.Status == AuthorizationStatus.Consented)
             return await IssueCodeAsync(session, ct);
 
-        return await ProcessAuthorizationAsync(session.Request, user, ct, session);
+        return await HandleAuthorizationAsync(session.Request, user, ct, session);
     }
 
     private async Task<AuthorizationResult> IssueCodeAsync(AuthorizationSession session, CancellationToken ct)

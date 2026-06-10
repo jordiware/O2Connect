@@ -4,6 +4,7 @@ using O2Connect.Api.Crypto;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Options;
+using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories.Cache;
 using O2Connect.Dto.Requests;

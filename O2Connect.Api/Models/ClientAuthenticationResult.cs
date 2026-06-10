@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Models.Store;
+﻿using O2Connect.Api.Models.SmartEnums;
+using O2Connect.Api.Models.Store;
 
 namespace O2Connect.Api.Models;
 

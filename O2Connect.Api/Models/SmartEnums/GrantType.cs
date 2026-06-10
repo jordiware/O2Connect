@@ -1,4 +1,4 @@
-﻿namespace O2Connect.Api.Models;
+﻿namespace O2Connect.Api.Models.SmartEnums;
 
 public readonly record struct GrantType : ISmartEnum<GrantType>
 {

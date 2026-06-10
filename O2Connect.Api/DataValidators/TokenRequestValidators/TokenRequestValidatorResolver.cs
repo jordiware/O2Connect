@@ -1,4 +1,4 @@
-﻿using O2Connect.Api.Models;
+﻿using O2Connect.Api.Models.SmartEnums;
 using System.Diagnostics.CodeAnalysis;
 
 namespace O2Connect.Api.DataValidators.TokenRequestValidators;
