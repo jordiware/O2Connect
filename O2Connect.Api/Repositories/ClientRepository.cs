@@ -5,7 +5,8 @@ namespace O2Connect.Api.Repositories;
 
 public interface IClientRepository
 {
-    Task<Client?> GetByIdAsync(string clientId, CancellationToken ct);
+    Task<Client?> GetAsync(string clientId, CancellationToken ct);
+    Task StoreAsync(Client client, CancellationToken ct);
     Task<bool> ValidateClientAsync(string clientId, string? clientSecret, CancellationToken ct);
     Task<bool> ValidateRedirectUriAsync(string clientId, string redirectUri, CancellationToken ct);
 }
@@ -14,13 +15,22 @@ public class InMemoryClientRepository : IClientRepository
 {
     private static readonly ConcurrentDictionary<string, Client> _clients = new();
 
-    public Task<Client?> GetByIdAsync(string clientId, CancellationToken ct)
+    public Task<Client?> GetAsync(string clientId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         _clients.TryGetValue(clientId, out var client);
 
         return Task.FromResult(client);
+    }
+
+    public Task StoreAsync(Client client, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        _clients[client.ClientId] = client;
+        
+        return Task.CompletedTask;
     }
 
     public Task<bool> ValidateClientAsync(string clientId, string? clientSecret, CancellationToken ct)

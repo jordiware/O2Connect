@@ -4,7 +4,7 @@ public sealed record Client
 {
     public required string ClientId { get; init; }
     public required string ClientName { get; init; }
-    public required DateTime CreatedAt { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
     public bool IsActive { get; init; } = true;
     public required string OwnerId { get; init; }
     public string? ClientSecret { get; init; }

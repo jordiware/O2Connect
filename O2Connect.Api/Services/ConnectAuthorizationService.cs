@@ -57,7 +57,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
                 return Error(responseMode, "invalid_scope", "Scopes are empty", request.State);
         }
 
-        var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
+        var client = await _clientRepository.GetAsync(request.ClientId, ct);
 
         if (client == null || !client.IsActive)
             return Error(responseMode, "invalid_client", "Client not found or inactive", request.State);

@@ -56,7 +56,7 @@ public class ParAuthorizationService : IParAuthorizationService
         if (entry.ExpiresAt <= utcNow || session.ExpiresAt <= utcNow)
             throw OAuthException.FromInvalidRequest();
 
-        var client = await _clientRepository.GetByIdAsync(entry.ClientId, ct);
+        var client = await _clientRepository.GetAsync(entry.ClientId, ct);
 
         if (client is null) 
             throw OAuthException.FromInvalidClient();

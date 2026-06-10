@@ -56,7 +56,7 @@ public class ClientAuthenticationService : IClientAuthenticationService
         if (string.IsNullOrWhiteSpace(clientId))
             throw OAuthException.FromInvalidClient();
 
-        var client = await _clientRepository.GetByIdAsync(clientId, ct);
+        var client = await _clientRepository.GetAsync(clientId, ct);
 
         if (client is null)
             throw OAuthException.FromInvalidClient();

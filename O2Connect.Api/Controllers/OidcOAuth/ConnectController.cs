@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models.Store;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
@@ -17,19 +18,22 @@ public sealed class ConnectController : ControllerBase
     private readonly ITokenIntrospectionService _tokenIntrospectionService;
     private readonly IUserInfoService _userInfoService;
     private readonly IRevocationService _revocationService;
+    private readonly IClientRegistrationService _clientRegistrationService;
 
     public ConnectController(
         IAccountService accountService,
         IPushedAuthorizationService pushedAuthorizationService,
         ITokenIntrospectionService tokenIntrospectionService,
         IUserInfoService userInfoService,
-        IRevocationService revocationService)
+        IRevocationService revocationService,
+        IClientRegistrationService clientRegistrationService)
     {
         _accountService = accountService;
         _pushedAuthorizationService = pushedAuthorizationService;
         _tokenIntrospectionService = tokenIntrospectionService;
         _userInfoService = userInfoService;
         _revocationService = revocationService;
+        _clientRegistrationService = clientRegistrationService;
     }
 
     [HttpGet("logout")]
@@ -105,6 +109,21 @@ public sealed class ConnectController : ControllerBase
         return Ok();
     }
 
+    [HttpPost("register")]
+    [Authorize]
+    public async Task<IActionResult> Register([FromBody] ClientRegistrationRequest request,
+                                              CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        var ownerId = ExtractSubjectId(User);
+
+        var response = await _clientRegistrationService.HandleAsync(request, ownerId, ct);
+
+        return Ok(response);
+    }
+
     private static string? ExtractClientId(HttpContext context)
     {
         var user = context.User;
@@ -123,5 +142,20 @@ public sealed class ConnectController : ControllerBase
             return azp;
 
         return null;
+    }
+
+    private static string ExtractSubjectId(ClaimsPrincipal user)
+    {
+        if (!user.Identity?.IsAuthenticated ?? true)
+            throw OAuthException.FromInvalidToken();
+
+        var sub =
+            user.FindFirst("sub")?.Value ??
+            user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(sub))
+            throw OAuthException.FromInvalidToken();
+
+        return sub;
     }
 }

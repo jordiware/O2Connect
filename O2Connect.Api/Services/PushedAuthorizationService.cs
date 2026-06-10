@@ -42,7 +42,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
         if (!string.Equals(request.CodeChallengeMethod, "S256", StringComparison.Ordinal))
             throw OAuthException.FromInvalidRequest();
 
-        var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
+        var client = await _clientRepository.GetAsync(request.ClientId, ct);
 
         if (client is null)
             throw OAuthException.FromInvalidClient();

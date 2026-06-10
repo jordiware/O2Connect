@@ -61,7 +61,7 @@ public class AccountService : IAccountService
 
         var user = await ValidateCredentialsAsync(request.Username.Trim(), request.Password, ct);
 
-        var client = await _clientRepository.GetByIdAsync(request.ClientId, ct);
+        var client = await _clientRepository.GetAsync(request.ClientId, ct);
 
         if (user is null || client is null)
             throw OAuthException.FromInvalidGrant("Invalid credentials");
