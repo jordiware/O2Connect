@@ -1,14 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.DataValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
+using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
-[Route("connect/authorize")]
+[Route("connect")]
 public class ConnectAuthorizationController : ControllerBase
 {
     private readonly IConnectAuthorizationService _authorizationService;
@@ -22,40 +24,45 @@ public class ConnectAuthorizationController : ControllerBase
         _parAuthorizationService = parAuthorizationService;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest request,
+    [HttpGet("authorize")]
+    public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest? request,
+                                               [FromQuery(Name = "request_uri")] string? requestUri,
                                                CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            throw OAuthException.FromInvalidRequest();
-        var requestData = request.ToData();
-        var result = await _authorizationService.HandleAuthorizationAsync(requestData, User, ct);
+        var hasRequest = request != null && request.IsPopulated();
+        var hasRequestUri = !string.IsNullOrWhiteSpace(requestUri);
 
-        return BuildAuthorizationRedirectResult(result);
+        if (!hasRequest && !hasRequestUri)
+            throw OAuthException.FromInvalidRequest();
+
+        if (hasRequest && hasRequestUri)
+            throw OAuthException.FromInvalidRequest();
+
+        if (hasRequest)
+        {
+            var requestData = request!.ToData();
+            var result = await _authorizationService.HandleAuthorizationAsync(requestData, User, ct);
+
+            return BuildAuthorizationRedirectResult(result);
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(requestUri))
+                throw OAuthException.FromInvalidRequest();
+
+            var result = await _parAuthorizationService.HandleAsync(requestUri, HttpContext, ct);
+
+            if (result is null
+                || string.IsNullOrWhiteSpace(result.Action)
+                || !string.Equals("redirect", result.Action, StringComparison.Ordinal)
+                || string.IsNullOrWhiteSpace(result.RedirectUrl))
+                throw OAuthException.FromServerError();
+
+            return Redirect(result.RedirectUrl);
+        }
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Authorize([FromQuery(Name = "request_uri")] string requestUri,
-                                               CancellationToken ct)
-    {
-        if (!ModelState.IsValid)
-            throw OAuthException.FromInvalidRequest();
-
-        if (string.IsNullOrWhiteSpace(requestUri))
-            throw OAuthException.FromInvalidRequest();
-
-        var result = await _parAuthorizationService.HandleAsync(requestUri, HttpContext, ct);
-
-        if (result is null
-            || string.IsNullOrWhiteSpace(result.Action)
-            || !string.Equals("redirect", result.Action, StringComparison.Ordinal)
-            || string.IsNullOrWhiteSpace(result.RedirectUrl))
-            throw OAuthException.FromServerError();
-
-        return Redirect(result.RedirectUrl);
-    }
-
-    [HttpGet("resume")]
+    [HttpGet("authorize/resume")]
     public async Task<IActionResult> Resume([FromQuery(Name = "session")] string sessionId,
                                             CancellationToken ct)
     {
