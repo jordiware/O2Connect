@@ -25,20 +25,17 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IAuthorizationSessionRepository _authorizationSessionRepository;
     private readonly IConsentService _consentService;
-    private readonly ISecureTokenGenerator _secureTokenGenerator;
 
     public ConnectAuthorizationService(
         IClientRepository clientRepository,
         IAuthorizationCodeRepository authorizationCodeRepository,
         IAuthorizationSessionRepository authorizationSessionRepository,
-        IConsentService consentService,
-        ISecureTokenGenerator secureTokenGenerator)
+        IConsentService consentService)
     {
         _clientRepository = clientRepository;
         _authorizationCodeRepository = authorizationCodeRepository;
         _authorizationSessionRepository = authorizationSessionRepository;
         _consentService = consentService;
-        _secureTokenGenerator = secureTokenGenerator;
     }
 
     public async Task<AuthorizationResult> HandleAuthorizationAsync(AuthorizationRequestData request,
@@ -82,10 +79,12 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
             session = new AuthorizationSession
             {
                 SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
-                Request = request,
+                Status = AuthorizationStatus.Initialized,
                 CreatedAt = DateTimeOffset.UtcNow,
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
-                Status = AuthorizationStatus.Initialized,
+                Request = request,
+                ClientId = client.ClientId,
+                ClientDisplayName = client.ClientName,
                 RequestedScopes = requestScopes.ToHashSet()
             };
         }
@@ -94,7 +93,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
         {
             var loginSession = session with
             {
-                SessionId = _secureTokenGenerator.GenerateSecureToken(),
+                SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
                 Status = AuthorizationStatus.LoginRequired
             };
 
@@ -129,7 +128,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
         {
             var consentSession = session with
             {
-                SessionId = _secureTokenGenerator.GenerateSecureToken(),
+                SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
                 Status = AuthorizationStatus.ConsentRequired,
                 MissingScopes = consent.MissingScopes?.ToImmutableHashSet()
             };
@@ -179,7 +178,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
 
     private async Task<AuthorizationResult> IssueCodeAsync(AuthorizationSession session, CancellationToken ct)
     {
-        var code = _secureTokenGenerator.GenerateSecureToken();
+        var code = SecureCodeGenerator.GenerateBase64UrlToken(length: 32);
 
         var authCode = new AuthorizationCode
         {

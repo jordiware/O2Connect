@@ -76,11 +76,13 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
         var session = new AuthorizationSession
         {
             SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
-            RequestUriCode = code,
             Status = AuthorizationStatus.Initialized,
             CreatedAt = now,
             ExpiresAt = expiresAt,
-            Request = request.ToData()
+            Request = request.ToData(),
+            RequestUriCode = code,
+            ClientId = client.ClientId,
+            ClientDisplayName = client.ClientName
         };
 
         await _authorizationSessionRepository.StoreAsync(session, ct);

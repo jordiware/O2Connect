@@ -147,7 +147,7 @@ public class ConsentService : IConsentService
         if (session.UserId is null)
             throw OAuthException.FromAccessDenied("User not authenticated");
 
-        var entry = await _parEntryRepository.GetAsync(session.RequestUriCode, ct);
+        var entry = await _parEntryRepository.GetAsync(session.RequestUriCode!, ct);
 
         if (entry is null)
             throw OAuthException.FromInvalidRequest("PAR entry missing");
@@ -169,7 +169,7 @@ public class ConsentService : IConsentService
         session = session with { Status = AuthorizationStatus.Consented };
         await _authorizationSessionRepository.StoreAsync(session, ct);
 
-        var requestUri = BuildRequestUri(session.RequestUriCode);
+        var requestUri = BuildRequestUri(session.RequestUriCode!);
         return new RedirectResponse
         {
             Action = "redirect",

@@ -34,21 +34,6 @@ public class ConnectAuthorizationController : ControllerBase
         return BuildAuthorizationRedirectResult(result);
     }
 
-    [HttpGet("resume")]
-    public async Task<IActionResult> Resume([FromQuery(Name = "session")] string sessionId,
-                                            CancellationToken ct)
-    {
-        if (!ModelState.IsValid)
-            throw OAuthException.FromInvalidRequest();
-
-        if (string.IsNullOrWhiteSpace(sessionId))
-            throw OAuthException.FromInvalidRequest();
-
-        var result = await _authorizationService.HandleSessionAsync(sessionId, User, ct);
-
-        return BuildAuthorizationRedirectResult(result);
-    }
-
     [HttpGet]
     public async Task<IActionResult> Authorize([FromQuery(Name = "request_uri")] string requestUri,
                                                CancellationToken ct)
@@ -68,6 +53,21 @@ public class ConnectAuthorizationController : ControllerBase
             throw OAuthException.FromServerError();
 
         return Redirect(result.RedirectUrl);
+    }
+
+    [HttpGet("resume")]
+    public async Task<IActionResult> Resume([FromQuery(Name = "session")] string sessionId,
+                                            CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        if (string.IsNullOrWhiteSpace(sessionId))
+            throw OAuthException.FromInvalidRequest();
+
+        var result = await _authorizationService.HandleSessionAsync(sessionId, User, ct);
+
+        return BuildAuthorizationRedirectResult(result);
     }
 
     private IActionResult BuildAuthorizationRedirectResult(AuthorizationResult result)
