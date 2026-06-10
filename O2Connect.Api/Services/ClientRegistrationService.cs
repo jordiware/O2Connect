@@ -73,10 +73,6 @@ public class ClientRegistrationService : IClientRegistrationService
         var responseTypes = request.ResponseTypes
                             ?? (grantTypes.Contains("authorization_code") ? ["code"] : []);
 
-        // Secret policy
-        if (grantTypes.Contains("client_credentials"))
-            throw OAuthException.FromInvalidRequest("invalid_client_metadata");
-
         // Normalize scope (IMPORTANT: space-delimited → set)
         var scopes = ValueSet.FromDataString(request.Scope, ' ').Values;
 
