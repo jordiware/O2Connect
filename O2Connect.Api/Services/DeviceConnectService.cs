@@ -1,4 +1,11 @@
-﻿using O2Connect.Api.Crypto;
+﻿using Microsoft.Extensions.Options;
+using O2Connect.Api.Crypto;
+using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models;
+using O2Connect.Api.Models.Options;
+using O2Connect.Api.Models.SmartEnums;
+using O2Connect.Api.Models.Store;
+using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
 using System.Security.Cryptography;
 
@@ -6,35 +13,74 @@ namespace O2Connect.Api.Services;
 
 public interface IDeviceConnectService
 {
-    Task<DeviceAuthorizationResponse> CreateAsync(string clientId, string scope);
+    Task<DeviceAuthorizationResponse> CreateAsync(string clientId,
+                                                  string scope,
+                                                  CancellationToken ct);
 }
 
 public sealed class DeviceConnectService : IDeviceConnectService
 {
+    private readonly IDeviceAuthorizationRepository _deviceAuthorizationRepository;
+    private readonly IClientRepository _clientRepository;
     private readonly ISecretHasher _secretHasher;
+    private readonly JwtOptions _jwtOptions;
 
     public DeviceConnectService(
-        ISecretHasher secretHasher)
+        IDeviceAuthorizationRepository deviceAuthorizationRepository,
+        IClientRepository clientRepository,
+        ISecretHasher secretHasher,
+        IOptions<JwtOptions> options)
     {
+        _deviceAuthorizationRepository = deviceAuthorizationRepository;
+        _clientRepository = clientRepository;
         _secretHasher = secretHasher;
+        _jwtOptions = options.Value;
     }
 
-    public async Task<DeviceAuthorizationResponse> CreateAsync(string clientId, string scope)
+    public async Task<DeviceAuthorizationResponse> CreateAsync(string clientId,
+                                                               string scope,
+                                                               CancellationToken ct)
     {
+        var client = await _clientRepository.GetAsync(clientId, ct);
+
+        if (client == null)
+            throw OAuthException.FromInvalidClient();
+
+        if (!client.AllowedGrantTypes.Contains(GrantType.DeviceCode.Value))
+            throw OAuthException.FromUnauthorizedClient();
+
+        var requestedScopes = ValueSet.FromDataString(scope, ' ');
+        if (!requestedScopes.IsSubsetOf(client.AllowedScopes))
+            throw OAuthException.FromInvalidScope();
+
         var deviceCode = SecureCodeGenerator.GenerateBase64UrlToken(64);
         var userCode = GenerateUserCode();
 
+        var now = DateTimeOffset.UtcNow;
         var expiresIn = 600; // 10 minutes
         var interval = 5;
 
-        // TODO: store hashed codes in DB
+        var authorization = new DeviceAuthorization
+        {
+            DeviceCodeHash = _secretHasher.FastHash(deviceCode),
+            UserCodeHash = _secretHasher.FastHash(userCode),
+            ClientId = clientId,
+            Scope = scope,
+            CreatedAtUtc = now,
+            ExpiresAtUtc = now.AddSeconds(expiresIn),
+            PollCount = 0
+        };
+
+        await _deviceAuthorizationRepository.StoreAsync(authorization, ct);
+
+        var verificationUri = $"{_jwtOptions.Issuer}/connect/device";
 
         return new DeviceAuthorizationResponse
         {
             DeviceCode = deviceCode,
             UserCode = userCode,
-            VerificationUri = "https://your-auth-server/connect/device",
-            VerificationUriComplete = $"https://your-auth-server/connect/device?user_code={userCode}",
+            VerificationUri = verificationUri,
+            VerificationUriComplete = $"{verificationUri}?user_code={userCode}",
             ExpiresIn = expiresIn,
             Interval = interval
         };

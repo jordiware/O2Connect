@@ -7,12 +7,14 @@ public readonly record struct GrantType : ISmartEnum<GrantType>
     public static readonly GrantType AuthorizationCode = new("authorization_code");
     public static readonly GrantType ClientCredentials = new("client_credentials");
     public static readonly GrantType RefreshToken = new("refresh_token");
+    public static readonly GrantType DeviceCode = new("urn:ietf:params:oauth:grant-type:device_code");
 
     public static IReadOnlyCollection<GrantType> Supported { get; } =
     [
         AuthorizationCode,
         ClientCredentials,
-        RefreshToken
+        RefreshToken,
+        DeviceCode
     ];
 
     private GrantType(string value)
@@ -32,6 +34,7 @@ public readonly record struct GrantType : ISmartEnum<GrantType>
             "authorization_code" => AuthorizationCode,
             "client_credentials" => ClientCredentials,
             "refresh_token" => RefreshToken,
+            "urn:ietf:params:oauth:grant-type:device_code" => DeviceCode,
             _ => default
         };
 

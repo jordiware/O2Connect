@@ -6,6 +6,7 @@ namespace O2Connect.Api.Repositories;
 public interface IDeviceAuthorizationRepository
 {
     Task<DeviceAuthorization?> GetAsync(string code, CancellationToken ct);
+    Task<DeviceAuthorization?> GetByUserCodeAsync(string code, CancellationToken ct);
     Task StoreAsync(DeviceAuthorization authorization, CancellationToken ct);
 }
 
@@ -18,7 +19,16 @@ public class InMemoryDeviceAuthorizationRepository : IDeviceAuthorizationReposit
         ct.ThrowIfCancellationRequested();
 
         _authorizations.TryGetValue(code, out var result);
-        
+
+        return Task.FromResult(result);
+    }
+
+    public Task<DeviceAuthorization?> GetByUserCodeAsync(string code, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var result = _authorizations.Values.SingleOrDefault(da => string.Equals(da.UserCodeHash, code, StringComparison.Ordinal));
+
         return Task.FromResult(result);
     }
 

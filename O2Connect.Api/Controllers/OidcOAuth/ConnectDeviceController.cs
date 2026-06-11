@@ -27,13 +27,14 @@ public class ConnectDeviceController : ControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var response = await _deviceAuthorizationService.CreateAsync(request.ClientId, request.Scope);
+        var response = await _deviceAuthorizationService.CreateAsync(request.ClientId, request.Scope, ct);
 
         return Ok(response);
     }
 
     [HttpPost("device")]
-    public async Task<IActionResult> Device(CancellationToken ct)
+    public async Task<IActionResult> Device([FromQuery(Name = "user_code")] string userCode,
+                                            CancellationToken ct)
     {
         return NoContent();
     }

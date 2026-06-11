@@ -8,14 +8,14 @@ public sealed record DeviceAuthorization
     public required string ClientId { get; init; }
     public required string Scope { get; init; }
 
-    public required DateTime CreatedAtUtc { get; init; }
-    public required DateTime ExpiresAtUtc { get; init; }
+    public required DateTimeOffset CreatedAtUtc { get; init; }
+    public required DateTimeOffset ExpiresAtUtc { get; init; }
 
-    public DateTime? AuthorizedAtUtc { get; init; }
+    public DateTimeOffset? AuthorizedAtUtc { get; init; }
     public string? UserId { get; init; }
 
     public required int PollCount { get; init; }
-    public DateTime? LastPollAtUtc { get; init; }
+    public DateTimeOffset? LastPollAtUtc { get; init; }
 
     public bool IsAuthorized => AuthorizedAtUtc != null;
 }

@@ -1,10 +1,12 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace O2Connect.Api.Crypto;
 
 public interface ISecretHasher
 {
+    string FastHash(string value);
     bool TryHash(string secret, [NotNullWhen(true)] out string? hashedSecret);
     bool NeedsRehash(string hashedSecret);
     bool Verify(string secret, string hashedSecret);
@@ -26,6 +28,14 @@ public class Pbkdf2SecretHasher : ISecretHasher
     private const int MaxSaltSize = 32;   // 256-bit
     private const int MaxKeySize = 64;    // 512-bit
     private const int MaxIterations = 1_000_000;
+
+    public string FastHash(string value)
+    {
+        using var sha = SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(value);
+        var hash = sha.ComputeHash(bytes);
+        return Convert.ToBase64String(hash);
+    }
 
     public bool TryHash(string secret, [NotNullWhen(true)] out string? hashedSecret)
     {
