@@ -38,6 +38,7 @@ builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepos
 builder.Services.AddSingleton<IUserConsentRepository, InMemoryUserConsentRepository>();
 builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
 builder.Services.AddSingleton<IParEntryRepository, InMemoryParEntryRepository>();
+builder.Services.AddSingleton<IDeviceAuthorizationRepository, InMemoryDeviceAuthorizationRepository>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
@@ -118,7 +119,7 @@ builder.Services.AddScoped<IDiscoveryMetadataService, DiscoveryMetadataService>(
 builder.Services.AddScoped<IPushedAuthorizationService, PushedAuthorizationService>();
 builder.Services.AddScoped<IParAuthorizationService, ParAuthorizationService>();
 builder.Services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
-builder.Services.AddScoped<IDeviceAuthorizationService, DeviceAuthorizationService>();
+builder.Services.AddScoped<IDeviceConnectService, DeviceConnectService>();
 
 builder.Services.AddAuthorizationBuilder()
                 .AddPolicy("RequireProfileScope", policy =>

@@ -10,17 +10,17 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 public class ConnectDeviceController : ControllerBase
 {
-    private readonly IDeviceAuthorizationService _deviceAuthorizationService;
+    private readonly IDeviceConnectService _deviceAuthorizationService;
 
     public ConnectDeviceController(
-        DeviceAuthorizationService deviceAuthorizationService)
+        DeviceConnectService deviceAuthorizationService)
     {
         _deviceAuthorizationService = deviceAuthorizationService;
     }
 
     [HttpPost("device_authorize")]
     public async Task<IActionResult> DeviceAuthorize([FromForm] DeviceAuthorizationRequest request,
-                                                 CancellationToken ct)
+                                                     CancellationToken ct)
     {
         if (!Request.HasFormContentType)
             throw OAuthException.FromInvalidRequest();
@@ -30,5 +30,17 @@ public class ConnectDeviceController : ControllerBase
         var response = await _deviceAuthorizationService.CreateAsync(request.ClientId, request.Scope);
 
         return Ok(response);
+    }
+
+    [HttpPost("device")]
+    public async Task<IActionResult> Device(CancellationToken ct)
+    {
+        return NoContent();
+    }
+
+    [HttpPost("device_status")]
+    public async Task<IActionResult> DeviceStatus(CancellationToken ct)
+    {
+        return NoContent();
     }
 }
