@@ -4,7 +4,7 @@ using O2Connect.Dto.Requests;
 
 namespace O2Connect.Api.Models.Context;
 
-public sealed class TokenRequestContext
+public sealed record TokenRequestContext
 {
     public required TokenRequest TokenRequest { get; init; }
     public required Client Client { get; init; }
@@ -14,4 +14,6 @@ public sealed class TokenRequestContext
 
     public AuthorizationCode? AuthorizationCode { get; init; } = null;
     public RefreshToken? RefreshToken { get; init; } = null;
+    public string? UserId { get; init; }
+    public DeviceAuthorization? DeviceAuthorization { get; init; }
 }

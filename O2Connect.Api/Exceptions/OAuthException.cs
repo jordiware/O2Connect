@@ -5,6 +5,9 @@ public sealed class OAuthException : Exception
     public static OAuthException FromAccessDenied(string? description = null, string? errorUri = null) =>
         new OAuthException("access_denied", StatusCodes.Status403Forbidden, description, errorUri);
 
+    public static OAuthException FromAuthorizationPending(string? description = null, string? errorUri = null) =>
+        new OAuthException("authorization_pending", StatusCodes.Status400BadRequest, description, errorUri);
+
     public static OAuthException FromInvalidGrant(string? description = null, string? errorUri = null) =>
         new OAuthException("invalid_grant", StatusCodes.Status400BadRequest, description, errorUri);
 
@@ -19,7 +22,10 @@ public sealed class OAuthException : Exception
 
     public static OAuthException FromServerError(string? description = null, string? errorUri = null) =>
         new OAuthException("server_error", StatusCodes.Status500InternalServerError, description, errorUri);
-    
+
+    public static OAuthException FromSlowDown(string? description = null, string? errorUri = null) =>
+        new OAuthException("slow_down", StatusCodes.Status400BadRequest, description, errorUri);
+
     public static OAuthException FromTemporarilyUnavailable(string? description = null, string? errorUri = null) =>
         new OAuthException("temporarily_unavailable", StatusCodes.Status503ServiceUnavailable, description, errorUri);
     

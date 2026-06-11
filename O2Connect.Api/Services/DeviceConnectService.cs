@@ -68,7 +68,9 @@ public sealed class DeviceConnectService : IDeviceConnectService
             Scope = scope,
             CreatedAtUtc = now,
             ExpiresAtUtc = now.AddSeconds(expiresIn),
-            PollCount = 0
+            PollCount = 0,
+            Interval = interval,
+            IsDenied = false,
         };
 
         await _deviceAuthorizationRepository.StoreAsync(authorization, ct);

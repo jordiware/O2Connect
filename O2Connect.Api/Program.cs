@@ -101,6 +101,7 @@ builder.Services.AddSingleton<ITokenGrantHandlerResolver, TokenGrantHandlerResol
 builder.Services.AddTransient<ITokenRequestValidator, AuthorizationCodeTokenRequestValidator>();
 builder.Services.AddTransient<ITokenRequestValidator, ClientCredentialsTokenRequestValidator>();
 builder.Services.AddTransient<ITokenRequestValidator, RefreshTokenTokenRequestValidator>();
+builder.Services.AddTransient<ITokenRequestValidator, DeviceCodeTokenRequestValidator>();
 builder.Services.AddSingleton<ITokenRequestValidatorResolver, TokenRequestValidatorResolver>();
 
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretBasicHandler>();

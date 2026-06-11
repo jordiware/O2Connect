@@ -57,10 +57,6 @@ public class ConnectTokenController : ControllerBase
         Response.Headers.CacheControl = "no-store";
         Response.Headers.Pragma = "no-cache";
 
-        return new JsonResult(response)
-        {
-            StatusCode = StatusCodes.Status200OK,
-            ContentType = "application/json"
-        };
+        return Ok(response);
     }
 }
