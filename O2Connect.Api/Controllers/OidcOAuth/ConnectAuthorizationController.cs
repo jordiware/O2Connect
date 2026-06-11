@@ -9,24 +9,21 @@ using O2Connect.Dto.Requests;
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
 [ApiController]
-[Route("connect")]
+[Route("connect/authorize")]
 public class ConnectAuthorizationController : ControllerBase
 {
     private readonly IConnectAuthorizationService _authorizationService;
     private readonly IParAuthorizationService _parAuthorizationService;
-    private readonly IDeviceAuthorizationService _deviceAuthorizationService;
 
     public ConnectAuthorizationController(
         IConnectAuthorizationService authorizationService,
-        IParAuthorizationService parAuthorizationService,
-        IDeviceAuthorizationService deviceAuthorizationService)
+        IParAuthorizationService parAuthorizationService)
     {
         _authorizationService = authorizationService;
         _parAuthorizationService = parAuthorizationService;
-        _deviceAuthorizationService = deviceAuthorizationService;
     }
 
-    [HttpGet("authorize")]
+    [HttpGet]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest? request,
                                                [FromQuery(Name = "request_uri")] string? requestUri,
                                                CancellationToken ct)
@@ -64,7 +61,7 @@ public class ConnectAuthorizationController : ControllerBase
         }
     }
 
-    [HttpGet("authorize/resume")]
+    [HttpGet("resume")]
     public async Task<IActionResult> Resume([FromQuery(Name = "session")] string sessionId,
                                             CancellationToken ct)
     {
@@ -77,20 +74,6 @@ public class ConnectAuthorizationController : ControllerBase
         var result = await _authorizationService.HandleSessionAsync(sessionId, User, ct);
 
         return BuildAuthorizationRedirectResult(result);
-    }
-
-    [HttpPost("device_authorize")]
-    public async Task<IActionResult> DeviceAuthorize([FromForm] DeviceAuthorizationRequest request,
-                                                     CancellationToken ct)
-    {
-        if (!Request.HasFormContentType)
-            throw OAuthException.FromInvalidRequest();
-        if (!ModelState.IsValid)
-            throw OAuthException.FromInvalidRequest();
-
-        var response = await _deviceAuthorizationService.CreateAsync(request.ClientId, request.Scope);
-
-        return Ok(response);
     }
 
     private IActionResult BuildAuthorizationRedirectResult(AuthorizationResult result)
