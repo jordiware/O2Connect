@@ -96,6 +96,7 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddTransient<ITokenGrantHandler, AuthorizationCodeGrantHandler>();
 builder.Services.AddTransient<ITokenGrantHandler, ClientCredentialsGrantHandler>();
 builder.Services.AddTransient<ITokenGrantHandler, RefreshTokenGrantHandler>();
+builder.Services.AddTransient<ITokenGrantHandler, DeviceCodeGrantHandler>();
 builder.Services.AddSingleton<ITokenGrantHandlerResolver, TokenGrantHandlerResolver>();
 
 builder.Services.AddTransient<ITokenRequestValidator, AuthorizationCodeTokenRequestValidator>();

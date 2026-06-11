@@ -12,6 +12,7 @@ public sealed record DeviceAuthorization
     public required DateTimeOffset ExpiresAtUtc { get; init; }
 
     public DateTimeOffset? AuthorizedAtUtc { get; init; }
+    public DateTimeOffset? ConsumedAtUtc { get; init; }
     public string? UserId { get; init; }
 
     public required int PollCount { get; init; }
@@ -20,4 +21,5 @@ public sealed record DeviceAuthorization
 
     public required bool IsDenied { get; init; }
     public bool IsAuthorized => AuthorizedAtUtc != null;
+    public bool IsConsumed => ConsumedAtUtc != null;
 }
