@@ -17,6 +17,7 @@ public interface IDeviceConnectService
                                                   string scope,
                                                   CancellationToken ct);
     Task ConsumeUserCodeAsync(string userCode, bool approved, string userId, CancellationToken ct);
+    Task<DeviceStatusResponse> GetStatusAsync(string userCode, CancellationToken ct);
 }
 
 public sealed class DeviceConnectService : IDeviceConnectService
@@ -127,6 +128,34 @@ public sealed class DeviceConnectService : IDeviceConnectService
         }
 
         await _deviceAuthorizationRepository.StoreAsync(deviceAuth, ct);
+    }
+
+    public async Task<DeviceStatusResponse> GetStatusAsync(string userCode, CancellationToken ct)
+    {
+        var userCodeHash = _secretHasher.FastHash(userCode);
+
+        var deviceAuth = await _deviceAuthorizationRepository.GetByUserCodeAsync(userCodeHash, ct);
+
+        var now = DateTimeOffset.UtcNow;
+
+        var status = deviceAuth switch
+        {
+            null => "pending",
+            _ when deviceAuth.ExpiresAtUtc <= now => "expired",
+            _ when deviceAuth.IsDenied => "denied",
+            _ when deviceAuth.IsAuthorized => "approved",
+            _ => "pending"
+        };
+
+        var expiresIn = deviceAuth is null || deviceAuth.ExpiresAtUtc <= now
+                        ? -1
+                        : (int)(deviceAuth.ExpiresAtUtc - now).TotalSeconds;
+
+        return new DeviceStatusResponse
+        {
+            Status = status,
+            ExpiresIn = expiresIn
+        };
     }
 
     private static string GenerateUserCode()

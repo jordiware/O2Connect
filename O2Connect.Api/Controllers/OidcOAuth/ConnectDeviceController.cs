@@ -53,9 +53,21 @@ public class ConnectDeviceController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("device_status")]
-    public async Task<IActionResult> DeviceStatus(CancellationToken ct)
+    [HttpGet("device_status")]
+    public async Task<IActionResult> DeviceStatus([FromQuery(Name = "user_code")] string userCode,
+                                                  CancellationToken ct)
     {
-        return NoContent();
+        if (string.IsNullOrWhiteSpace(userCode))
+            throw OAuthException.FromInvalidRequest();
+
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        var result = await _deviceConnectService.GetStatusAsync(userCode, ct);
+
+        Response.Headers.CacheControl = "no-store, no-cache, max-age=0, must-revalidate";
+        Response.Headers.Pragma = "no-cache";
+
+        return Ok(result);
     }
 }
