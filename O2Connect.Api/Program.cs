@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using O2Connect.Api.Context;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
@@ -23,6 +24,7 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptio
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache(options =>
 {
     options.SizeLimit = 1000;
@@ -92,6 +94,9 @@ builder.Services.AddSingleton(sp =>
         }
     };
 });
+
+builder.Services.AddScoped<IClientContext, HttpClientContext>();
+builder.Services.AddScoped<IUserContext, HttpUserContext>();
 
 builder.Services.AddTransient<ITokenContextHandler, AuthorizationCodeContextHandler>();
 builder.Services.AddTransient<ITokenContextHandler, ClientCredentialsContextHandler>();
