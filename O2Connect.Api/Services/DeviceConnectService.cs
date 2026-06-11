@@ -16,6 +16,7 @@ public interface IDeviceConnectService
     Task<DeviceAuthorizationResponse> CreateAsync(string clientId,
                                                   string scope,
                                                   CancellationToken ct);
+    Task ConsumeUserCodeAsync(string userCode, bool approved, string userId, CancellationToken ct);
 }
 
 public sealed class DeviceConnectService : IDeviceConnectService
@@ -69,8 +70,7 @@ public sealed class DeviceConnectService : IDeviceConnectService
             CreatedAtUtc = now,
             ExpiresAtUtc = now.AddSeconds(expiresIn),
             PollCount = 0,
-            Interval = interval,
-            IsDenied = false,
+            Interval = interval
         };
 
         await _deviceAuthorizationRepository.StoreAsync(authorization, ct);
@@ -86,6 +86,47 @@ public sealed class DeviceConnectService : IDeviceConnectService
             ExpiresIn = expiresIn,
             Interval = interval
         };
+    }
+
+    public async Task ConsumeUserCodeAsync(string userCode, bool approved, string userId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(userCode))
+            throw OAuthException.FromInvalidRequest();
+
+        var userCodeHash = _secretHasher.FastHash(userCode);
+
+        var deviceAuth = await _deviceAuthorizationRepository.GetByUserCodeAsync(userCodeHash, ct);
+        if (deviceAuth is null)
+            throw OAuthException.FromInvalidGrant();
+
+        var now = DateTimeOffset.UtcNow;
+
+        if (deviceAuth.ExpiresAtUtc <= now)
+            throw OAuthException.FromInvalidGrant();
+
+        if (!deviceAuth.IsAuthorized || !deviceAuth.IsDenied)
+            throw OAuthException.FromInvalidGrant();
+
+        if (deviceAuth.IsConsumed)
+            throw OAuthException.FromInvalidGrant();
+
+        if (approved)
+        {
+            deviceAuth = deviceAuth with
+            {
+                UserId = userId,
+                AuthorizedAtUtc = now
+            };
+        }
+        else
+        {
+            deviceAuth = deviceAuth with
+            {
+                DeniedAtUtc = now
+            };
+        }
+
+        await _deviceAuthorizationRepository.StoreAsync(deviceAuth, ct);
     }
 
     private static string GenerateUserCode()

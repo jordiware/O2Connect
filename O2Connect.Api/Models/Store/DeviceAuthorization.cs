@@ -13,13 +13,14 @@ public sealed record DeviceAuthorization
 
     public DateTimeOffset? AuthorizedAtUtc { get; init; }
     public DateTimeOffset? ConsumedAtUtc { get; init; }
+    public DateTimeOffset? DeniedAtUtc { get; init; }
     public string? UserId { get; init; }
 
     public required int PollCount { get; init; }
     public required int Interval { get; init; }
     public DateTimeOffset? LastPollAtUtc { get; init; }
 
-    public required bool IsDenied { get; init; }
     public bool IsAuthorized => AuthorizedAtUtc != null;
     public bool IsConsumed => ConsumedAtUtc != null;
+    public bool IsDenied => DeniedAtUtc != null;
 }

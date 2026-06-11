@@ -2,6 +2,7 @@
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
+using System.Security.Claims;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 
@@ -10,12 +11,12 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 
 public class ConnectDeviceController : ControllerBase
 {
-    private readonly IDeviceConnectService _deviceAuthorizationService;
+    private readonly IDeviceConnectService _deviceConnectService;
 
     public ConnectDeviceController(
         DeviceConnectService deviceAuthorizationService)
     {
-        _deviceAuthorizationService = deviceAuthorizationService;
+        _deviceConnectService = deviceAuthorizationService;
     }
 
     [HttpPost("device_authorize")]
@@ -27,15 +28,28 @@ public class ConnectDeviceController : ControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var response = await _deviceAuthorizationService.CreateAsync(request.ClientId, request.Scope, ct);
+        var response = await _deviceConnectService.CreateAsync(request.ClientId, request.Scope, ct);
 
         return Ok(response);
     }
 
     [HttpPost("device")]
     public async Task<IActionResult> Device([FromQuery(Name = "user_code")] string userCode,
+                                            [FromForm] DeviceDecisionRequest request,
                                             CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(userCode))
+            throw OAuthException.FromInvalidRequest();
+
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        var userId = User.FindFirstValue("sub");
+        if (string.IsNullOrWhiteSpace(userId))
+            throw OAuthException.FromInvalidGrant();
+
+        await _deviceConnectService.ConsumeUserCodeAsync(userCode, request.Approved, userId, ct);
+
         return NoContent();
     }
 
