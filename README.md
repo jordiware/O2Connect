@@ -1,2 +1,5 @@
 # O2Connect
-OIDC/OAuth provider
+
+Work in progress:
+
+- `alpha-0`: OIDC/OAuth 2 compliant and working endpoints
