@@ -4,4 +4,5 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="O2Connect.Api/O2Connect.Api.csproj" />
+  <Project Path="O2Connect.Dto/O2Connect.Dto.csproj" Id="50ecd274-d4b9-4685-b71d-bf33db6b2fab" />
 </Solution>

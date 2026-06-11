@@ -1,0 +1,77 @@
+﻿using Microsoft.Extensions.Options;
+using O2Connect.Api.Crypto;
+using O2Connect.Api.DataFactories.RequestModels;
+using O2Connect.Api.Models.Options;
+using O2Connect.Dto.Responses;
+using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+namespace O2Connect.Api.DataFactories;
+
+public interface ITokenFactory
+{
+    Task<TokenResponse> GenerateAsync(JwtTokenFactoryRequest request, CancellationToken ct);
+}
+
+public class JwtTokenFactory : ITokenFactory
+{
+    private readonly JwtOptions _options;
+    private readonly ISigningKeyProvider _keyProvider;
+
+    public JwtTokenFactory(
+        IOptions<JwtOptions> options,
+        ISigningKeyProvider keyProvider)
+    {
+        _options = options.Value;
+        _keyProvider = keyProvider;
+    }
+
+    public Task<TokenResponse> GenerateAsync(JwtTokenFactoryRequest request, CancellationToken ct)
+    {
+        var now = DateTimeOffset.UtcNow;
+        if (!_keyProvider.TryGetActiveKey(out var key))
+            throw new InvalidOperationException("Active signing key required.");
+
+        var claims = BuildClaims(request, now);
+
+        var jwt = new JwtSecurityToken(
+            issuer: _options.Issuer,
+            audience: request.ClientId,
+            claims: claims,
+            notBefore: now.UtcDateTime,
+            expires: now.AddSeconds(_options.AccessTokenLifetimeSeconds).UtcDateTime,
+            signingCredentials: key.Credentials);
+
+        jwt.Header["kid"] = key.KeyId;
+
+        var token = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+        return Task.FromResult(new TokenResponse
+        {
+            AccessToken = token,
+            TokenType = "Bearer",
+            ExpiresIn = _options.AccessTokenLifetimeSeconds,
+            Scope = string.Join(' ', request.Scopes.Order())
+        });
+    }
+
+    private IEnumerable<Claim> BuildClaims(JwtTokenFactoryRequest request, DateTimeOffset now)
+    {
+        yield return new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString());
+        yield return new Claim(JwtRegisteredClaimNames.Sub, request.Subject);
+        yield return new Claim("client_id", request.ClientId);
+        yield return new Claim("scope", string.Join(" ", request.Scopes));
+        yield return new Claim(JwtRegisteredClaimNames.Iat,
+                               now.ToUnixTimeSeconds().ToString(),
+                               ClaimValueTypes.Integer64);
+
+        if (request.AdditionalClaims != null)
+        {
+            foreach (var kv in request.AdditionalClaims)
+            {
+                yield return new Claim(kv.Key, Convert.ToString(kv.Value, CultureInfo.InvariantCulture)!);
+            }
+        }
+    }
+}
