@@ -5,15 +5,15 @@ using O2Connect.Api.Models.Context;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Dto.Responses;
 
-namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
+namespace O2Connect.Api.DataHandlers.TokenContextHandlers;
 
-public class ClientCredentialsGrantHandler : ITokenGrantHandler
+public class ClientCredentialsContextHandler : ITokenContextHandler
 {
     private readonly ITokenFactory _tokenFactory;
 
     public GrantType GrantType => GrantType.ClientCredentials;
 
-    public ClientCredentialsGrantHandler(
+    public ClientCredentialsContextHandler(
         ITokenFactory tokenFactory)
     {
         _tokenFactory = tokenFactory;

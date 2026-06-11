@@ -8,9 +8,9 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
 
-namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
+namespace O2Connect.Api.DataHandlers.TokenContextHandlers;
 
-public class RefreshTokenGrantHandler : ITokenGrantHandler
+public class RefreshTokenContextHandler : ITokenContextHandler
 {
     private readonly ITokenFactory _tokenFactory;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
@@ -18,7 +18,7 @@ public class RefreshTokenGrantHandler : ITokenGrantHandler
 
     public GrantType GrantType => GrantType.RefreshToken;
 
-    public RefreshTokenGrantHandler(
+    public RefreshTokenContextHandler(
         ITokenFactory tokenFactory,
         IRefreshTokenRepository refreshTokenRepository,
         ISecureTokenGenerator secureTokenGenerator)

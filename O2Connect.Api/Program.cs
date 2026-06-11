@@ -4,7 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
-using O2Connect.Api.DataHandlers.TokenGrantHandlers;
+using O2Connect.Api.DataHandlers.TokenContextHandlers;
 using O2Connect.Api.DataValidators;
 using O2Connect.Api.DataValidators.TokenRequestValidators;
 using O2Connect.Api.Middleware;
@@ -93,11 +93,11 @@ builder.Services.AddSingleton(sp =>
     };
 });
 
-builder.Services.AddTransient<ITokenGrantHandler, AuthorizationCodeGrantHandler>();
-builder.Services.AddTransient<ITokenGrantHandler, ClientCredentialsGrantHandler>();
-builder.Services.AddTransient<ITokenGrantHandler, RefreshTokenGrantHandler>();
-builder.Services.AddTransient<ITokenGrantHandler, DeviceCodeGrantHandler>();
-builder.Services.AddSingleton<ITokenGrantHandlerResolver, TokenGrantHandlerResolver>();
+builder.Services.AddTransient<ITokenContextHandler, AuthorizationCodeContextHandler>();
+builder.Services.AddTransient<ITokenContextHandler, ClientCredentialsContextHandler>();
+builder.Services.AddTransient<ITokenContextHandler, RefreshTokenContextHandler>();
+builder.Services.AddTransient<ITokenContextHandler, DeviceCodeContextHandler>();
+builder.Services.AddSingleton<ITokenContextHandlerResolver, TokenContextHandlerResolver>();
 
 builder.Services.AddTransient<ITokenRequestValidator, AuthorizationCodeTokenRequestValidator>();
 builder.Services.AddTransient<ITokenRequestValidator, ClientCredentialsTokenRequestValidator>();

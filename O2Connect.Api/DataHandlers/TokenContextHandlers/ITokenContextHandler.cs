@@ -2,9 +2,9 @@
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Dto.Responses;
 
-namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
+namespace O2Connect.Api.DataHandlers.TokenContextHandlers;
 
-public interface ITokenGrantHandler
+public interface ITokenContextHandler
 {
     public GrantType GrantType { get; }
     Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct);

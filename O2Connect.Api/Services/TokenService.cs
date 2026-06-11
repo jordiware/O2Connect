@@ -1,4 +1,4 @@
-﻿using O2Connect.Api.DataHandlers.TokenGrantHandlers;
+﻿using O2Connect.Api.DataHandlers.TokenContextHandlers;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Context;
 using O2Connect.Dto.Responses;
@@ -12,10 +12,10 @@ public interface ITokenService
 
 public class TokenService : ITokenService
 {
-    private readonly ITokenGrantHandlerResolver _grantResolver;
+    private readonly ITokenContextHandlerResolver _grantResolver;
 
     public TokenService(
-        ITokenGrantHandlerResolver grantResolver)
+        ITokenContextHandlerResolver grantResolver)
     {
         _grantResolver = grantResolver;
     }

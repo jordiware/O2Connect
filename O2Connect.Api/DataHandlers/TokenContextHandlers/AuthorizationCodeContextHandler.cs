@@ -6,16 +6,16 @@ using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
 
-namespace O2Connect.Api.DataHandlers.TokenGrantHandlers;
+namespace O2Connect.Api.DataHandlers.TokenContextHandlers;
 
-public class AuthorizationCodeGrantHandler : ITokenGrantHandler
+public class AuthorizationCodeContextHandler : ITokenContextHandler
 {
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly ITokenFactory _tokenFactory;
 
     public GrantType GrantType => GrantType.AuthorizationCode;
 
-    public AuthorizationCodeGrantHandler(
+    public AuthorizationCodeContextHandler(
         IAuthorizationCodeRepository authorizationCodeRepository,
         ITokenFactory tokenFactory)
     {
