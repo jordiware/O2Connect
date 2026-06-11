@@ -13,12 +13,12 @@ namespace O2Connect.Api.Controllers.OidcOAuth;
 [Route("account")]
 public class AccountController : ControllerBase
 {
-    private readonly IAccountService _loginService;
+    private readonly IAccountService _accountService;
 
     public AccountController(
         IAccountService loginService)
     {
-        _loginService = loginService;
+        _accountService = loginService;
     }
 
     [HttpPost("login")]
@@ -29,7 +29,7 @@ public class AccountController : ControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var result = await _loginService.HandleLoginAsync(sessionId, request, ct);
+        var result = await _accountService.HandleLoginAsync(sessionId, request, ct);
 
         return result switch
         {
@@ -48,7 +48,7 @@ public class AccountController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Token))
             return BadRequest(new { message = "Missing refresh token" });
 
-        await _loginService.HandleLogoutAsync(request.Token, ct);
+        await _accountService.HandleLogoutAsync(request.Token, ct);
 
         return NoContent();
     }
@@ -68,5 +68,11 @@ public class AccountController : ControllerBase
             Username = User.FindFirstValue("name") ?? string.Empty,
             Roles = User.FindAll("role").Select(r => r.Value).ToArray(),
         });
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> PostRegister(CancellationToken ct)
+    {
+        return Created();
     }
 }
