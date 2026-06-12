@@ -33,6 +33,16 @@ public static class Scopes
     }
 
     /// <summary>
+    /// User own identity and account management scopes.
+    /// </summary>
+    public static class Account
+    {
+        public const string Login = "account.login";
+        public const string Register = "account.register";
+        public const string Delete = "account.delete";
+    }
+
+    /// <summary>
     /// Self-service profile scopes (end-user context).
     /// </summary>
     public static class Profile

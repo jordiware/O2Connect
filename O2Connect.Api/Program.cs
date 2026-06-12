@@ -12,6 +12,7 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Models.Options;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
+using O2Connect.Api.Security;
 using O2Connect.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,27 @@ builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(
 builder.Services.AddMemoryCache(options =>
 {
     options.SizeLimit = 1000;
+});
+
+builder.Services.AddAuthorizationBuilder()
+                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser().Build());
+
+builder.Services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, ScopePolicyProvider>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("CanRegisterUsers", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+
+        policy.RequireAssertion(ctx =>
+        {
+            var user = ctx.User;
+
+            return user.IsClientToken() && user.HasScope(Scopes.Account.Register);
+        });
+    });
 });
 
 builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
@@ -123,44 +145,6 @@ builder.Services.AddScoped<IPushedAuthorizationService, PushedAuthorizationServi
 builder.Services.AddScoped<IParAuthorizationService, ParAuthorizationService>();
 builder.Services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
 builder.Services.AddScoped<IDeviceConnectService, DeviceConnectService>();
-
-builder.Services.AddAuthorizationBuilder()
-                .AddPolicy("RequireProfileScope", policy =>
-                {
-                    policy.RequireAssertion(ctx =>
-                    {
-                        var scopeClaims = ctx.User.FindAll("scope").Concat(ctx.User.FindAll("scp"));
-
-                        return scopeClaims.SelectMany(c => c.Value.Split(' '))
-                                          .Any(s => s.Equals("profile", StringComparison.OrdinalIgnoreCase));
-                    });
-                })
-                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser().Build());
-
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("CanRegisterUsers", policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.RequireAssertion(ctx =>
-        {
-            var scope = ctx.User.FindFirst("scope")?.Value;
-
-            if (scope is null)
-                return false;
-
-            var clientId = ctx.User.FindFirst("client_id")?.Value;
-            var scopes = ValueSet.FromDataString(scope, ' ');
-
-            var hasRequiredScope = scopes.Contains("account.register");
-            var hasClientId = ctx.User.HasClaim(c => c.Type == "client_id") 
-                              && !string.IsNullOrWhiteSpace(clientId);
-            var hasSub = ctx.User.HasClaim(c => c.Type == "sub");
-
-            return hasRequiredScope && hasClientId && !hasSub;
-        });
-    });
-});
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
