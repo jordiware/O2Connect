@@ -2,7 +2,7 @@
 
 public readonly record struct PkceMethod : ISmartEnum<PkceMethod>
 {
-    public string Value { get; }
+    private static readonly PkceMethod None = new(string.Empty);
 
     public static readonly PkceMethod Plain = new("plain");
     public static readonly PkceMethod S256 = new("S256");
@@ -13,10 +13,14 @@ public readonly record struct PkceMethod : ISmartEnum<PkceMethod>
         S256
     ];
 
+    public string Value { get; }
+
     private PkceMethod(string value)
     {
         Value = value;
     }
+
+    public static implicit operator string(PkceMethod method) => method.Value;
 
     public static bool TryParse(string? value, out PkceMethod result)
     {
@@ -29,10 +33,15 @@ public readonly record struct PkceMethod : ISmartEnum<PkceMethod>
         {
             "plain" => Plain,
             "S256" => S256,
-            _ => default
+            _ => None
         };
 
-        return result != default;
+        return result != None;
+    }
+
+    public override string ToString()
+    {
+        return Value;
     }
 
     public override int GetHashCode()
