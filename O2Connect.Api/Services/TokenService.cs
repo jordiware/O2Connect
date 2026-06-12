@@ -1,6 +1,6 @@
 ﻿using O2Connect.Api.DataHandlers.TokenContextHandlers;
 using O2Connect.Api.Exceptions;
-using O2Connect.Api.Models.Context;
+using O2Connect.Api.Models;
 using O2Connect.Dto.Responses;
 
 namespace O2Connect.Api.Services;

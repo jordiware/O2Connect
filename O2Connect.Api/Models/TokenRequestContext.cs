@@ -2,7 +2,7 @@
 using O2Connect.Api.Models.Store;
 using O2Connect.Dto.Requests;
 
-namespace O2Connect.Api.Models.Context;
+namespace O2Connect.Api.Models;
 
 public sealed record TokenRequestContext
 {
