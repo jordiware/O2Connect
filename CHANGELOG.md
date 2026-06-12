@@ -7,9 +7,23 @@ and this project follows a pre-release versioning scheme.
 
 ---
 
-## [Unreleased]
+## [alpha-0.1] - 2026-06-1x
 
 ### Added
+
+#### Account Management
+
+- `POST /account/register`
+- `PATCH /account/me` (user profile update)
+- `POST /account/password` (password change)
+
+#### Changed
+
+- Project status updated: all planned OAuth2/OIDC and account lifecycle endpoints are now fully implemented
+
+#### Security
+
+- All OAuth2/OIDC endpoints are now authorization-secured (role/scope-based access control applied)
 
 - `POST /account/register` endpoint (planned)
 
