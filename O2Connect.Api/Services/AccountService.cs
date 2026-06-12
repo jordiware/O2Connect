@@ -22,7 +22,9 @@ public interface IAccountService
     Task<LoginResult> HandleLoginAsync(string? sessionId, LoginRequest request, CancellationToken ct);
     Task HandleLogoutAsync(EndSessionRequest request, CancellationToken ct);
     Task HandleLogoutAsync(string token, CancellationToken ct);
+    Task<RegisterUserResponse> PatchMeAsync(string userId, UpdateUserRequest request, CancellationToken ct);
     Task<RegisterUserResponse> HandleRegisterAsync(RegisterUserRequest request, CancellationToken ct);
+    Task ChangePasswordAsync(string userId, ChangePasswordRequest request, CancellationToken ct);
 }
 
 public class AccountService : IAccountService
@@ -161,6 +163,41 @@ public class AccountService : IAccountService
             await _refreshTokenRepository.RevokeSessionAsync(sessionId, ct);
     }
 
+    public async Task<RegisterUserResponse> PatchMeAsync(string userId,
+                                                         UpdateUserRequest request,
+                                                         CancellationToken ct)
+    {
+        var user = await _userRepository.GetAsync(userId, ct);
+
+        if (user is null)
+            throw OAuthException.FromInvalidGrant();
+
+        if (!string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            var displayName = request.DisplayName.Trim();
+
+            ValidateDisplayName(displayName);
+
+            user = user with { DisplayName = request.DisplayName };
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.PictureUri))
+        {
+            var pictureUri = request.PictureUri.Trim();
+
+            ValidateUri(pictureUri);
+
+            user = user with { PictureUri = request.PictureUri };
+        }
+
+        await _userRepository.StoreAsync(user, ct);
+
+        return new RegisterUserResponse
+        {
+            UserId = user.Id
+        };
+    }
+
     public async Task<RegisterUserResponse> HandleRegisterAsync(RegisterUserRequest request,
                                                                 CancellationToken ct)
     {
@@ -191,7 +228,9 @@ public class AccountService : IAccountService
             Roles = roles,
             Scopes = scopes,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            DisplayName = request.DisplayName,
+            PictureUri = request.PictureUri
         };
 
         await _userRepository.StoreAsync(user, ct);
@@ -202,9 +241,31 @@ public class AccountService : IAccountService
         };
     }
 
+    public async Task ChangePasswordAsync(string userId, ChangePasswordRequest request, CancellationToken ct)
+    {
+        ValidatePassword(request.NewPassword);
+
+        var user = await _userRepository.GetAsync(userId, ct);
+
+        if (user is null)
+            throw OAuthException.FromInvalidGrant();
+
+        if (!_secretHasher.Verify(request.CurrentPassword, user.PasswordHash))
+            throw OAuthException.FromInvalidGrant();
+
+        if (!_secretHasher.TryHash(request.NewPassword, out var passwordHash))
+            throw OAuthException.FromServerError();
+
+        user = user with { PasswordHash = passwordHash };
+
+        await _userRepository.StoreAsync(user, ct);
+
+        await _refreshTokenRepository.RevokeSubjectAsync(userId, ct);
+    }
+
     private async Task<User?> ValidateCredentialsAsync(string username,
-                                                      string password,
-                                                      CancellationToken ct)
+                                                       string password,
+                                                       CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             return null;
@@ -275,6 +336,35 @@ public class AccountService : IAccountService
 
         if (!hasLower || !hasUpper || !hasDigit)
             throw OAuthException.FromInvalidRequest();
+    }
+
+    private static void ValidateDisplayName(string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+            throw OAuthException.FromInvalidRequest();
+        if (displayName.Length > 32)
+            throw OAuthException.FromInvalidRequest();
+        
+        foreach (var c in displayName)
+        {
+            if (char.IsControl(c))
+                throw OAuthException.FromInvalidRequest();
+        }
+    }
+
+    private static void ValidateUri(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw OAuthException.FromInvalidRequest();
+
+        if (value.Length > 2048)
+            throw OAuthException.FromInvalidRequest("picture_uri too long.");
+
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri))
+            throw OAuthException.FromInvalidRequest("picture_uri must be a valid absolute URI.");
+
+        if (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)
+            throw OAuthException.FromInvalidRequest("picture_uri must use http or https.");
     }
 
     private static string NormalizeUsername(string username)

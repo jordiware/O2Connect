@@ -24,9 +24,9 @@ public class AccountController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<IActionResult> PostLogin([FromQuery(Name = "session")] string? sessionId,
-                                               [FromBody] LoginRequest request,
-                                               CancellationToken ct)
+    public async Task<IActionResult> Login([FromQuery(Name = "session")] string? sessionId,
+                                           [FromBody] LoginRequest request,
+                                           CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
@@ -59,7 +59,7 @@ public class AccountController : ControllerBase
     [HttpGet("me")]
     [RequireUserToken]
     [RequireScope(Scopes.Users.Read)]
-    public IActionResult Me()
+    public IActionResult GetMe()
     {
         Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
         Response.Headers.Pragma = "no-cache";
@@ -74,14 +74,43 @@ public class AccountController : ControllerBase
         });
     }
 
+    [HttpPatch("me")]
+    [RequireUserToken]
+    [RequireScope(Scopes.Users.Write)]
+    public async Task<IActionResult> PatchMe([FromBody] UpdateUserRequest request,
+                                             CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        var userId = User.FindFirstValue("sub")!;
+
+        var result = await _accountService.PatchMeAsync(userId, request, ct);
+
+        return Ok(result);
+    }
+
     [HttpPost("register")]
     [RequireClientToken]
     [RequireScope(Scopes.Account.Register)]
-    public async Task<IActionResult> PostRegister([FromBody] RegisterUserRequest request,
-                                                  CancellationToken ct)
+    public async Task<IActionResult> Register([FromBody] RegisterUserRequest request,
+                                              CancellationToken ct)
     {
         var result = await _accountService.HandleRegisterAsync(request, ct);
 
         return Ok(result);
+    }
+
+    [HttpPost("password")]
+    [RequireUserToken]
+    [RequireScope(Scopes.Users.Write)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request,
+                                                    CancellationToken ct)
+    {
+        var userId = User.FindFirstValue("sub")!;
+
+        await _accountService.ChangePasswordAsync(userId, request, ct);
+
+        return NoContent();
     }
 }
