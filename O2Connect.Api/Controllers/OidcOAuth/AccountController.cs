@@ -71,6 +71,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("register")]
+    [Authorize(Policy = "CanRegisterUsers")]
     public async Task<IActionResult> PostRegister([FromBody] RegisterUserRequest request,
                                                   CancellationToken ct)
     {

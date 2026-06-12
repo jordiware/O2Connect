@@ -13,6 +13,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace O2Connect.Api.Services;
 
@@ -27,6 +28,15 @@ public interface IAccountService
 public class AccountService : IAccountService
 {
     private static readonly JwtSecurityTokenHandler TokenHandler = new();
+    private static readonly Regex UsernameVerifierRegex = new("^(?=.{3,32}$)(?!.*[._-]{2})[a-zA-Z0-9]+([._-]?[a-zA-Z0-9]+)*$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+    private static readonly HashSet<string> ReservedUsernames =
+    [
+        "admin",
+        "root",
+        "system",
+        "me",
+        "null"
+    ];
 
     private readonly IUserRepository _userRepository;
     private readonly IClientRepository _clientRepository;
@@ -154,7 +164,13 @@ public class AccountService : IAccountService
     public async Task<RegisterUserResponse> HandleRegisterAsync(RegisterUserRequest request,
                                                                 CancellationToken ct)
     {
+        ValidateUsername(request.Username);
+        ValidatePassword(request.Password);
+
         var normalizedUsername = NormalizeUsername(request.Username);
+
+        if (ReservedUsernames.Contains(normalizedUsername))
+            throw OAuthException.FromInvalidRequest();
 
         if (await _userRepository.ContainsUserAsync(normalizedUsername, ct))
             throw OAuthException.FromInvalidRequest();
@@ -225,6 +241,41 @@ public class AccountService : IAccountService
         return dummyHash;
     }
 
+    private static void ValidateUsername(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            throw OAuthException.FromInvalidRequest();
+
+        if (username.Length < 3 || username.Length > 32)
+            throw OAuthException.FromInvalidRequest();
+
+        if (!UsernameVerifierRegex.IsMatch(username))
+            throw OAuthException.FromInvalidRequest();
+    }
+
+    private static void ValidatePassword(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+            throw OAuthException.FromInvalidRequest();
+
+        if (password.Length < 8 || password.Length > 128)
+            throw OAuthException.FromInvalidRequest();
+
+        bool hasLower = false;
+        bool hasUpper = false;
+        bool hasDigit = false;
+
+        foreach (var c in password)
+        {
+            if (char.IsLower(c)) hasLower = true;
+            else if (char.IsUpper(c)) hasUpper = true;
+            else if (char.IsDigit(c)) hasDigit = true;
+        }
+
+        if (!hasLower || !hasUpper || !hasDigit)
+            throw OAuthException.FromInvalidRequest();
+    }
+
     private static string NormalizeUsername(string username)
     {
         if (string.IsNullOrWhiteSpace(username))
@@ -246,9 +297,8 @@ public class AccountService : IAccountService
             }
         }
 
-        return sb
-            .ToString()
-            .Normalize(NormalizationForm.FormC)
-            .ToUpperInvariant();
+        return sb.ToString()
+                 .Normalize(NormalizationForm.FormKC)
+                 .ToLowerInvariant();
     }
 }

@@ -9,6 +9,7 @@ using O2Connect.Api.DataHandlers.TokenContextHandlers;
 using O2Connect.Api.DataValidators;
 using O2Connect.Api.DataValidators.TokenRequestValidators;
 using O2Connect.Api.Middleware;
+using O2Connect.Api.Models;
 using O2Connect.Api.Models.Options;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
@@ -140,6 +141,31 @@ builder.Services.AddAuthorizationBuilder()
                     });
                 })
                 .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser().Build());
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("CanRegisterUsers", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(ctx =>
+        {
+            var scope = ctx.User.FindFirst("scope")?.Value;
+
+            if (scope is null)
+                return false;
+
+            var clientId = ctx.User.FindFirst("client_id")?.Value;
+            var scopes = ValueSet.FromDataString(scope, ' ');
+
+            var hasRequiredScope = scopes.Contains("account.register");
+            var hasClientId = ctx.User.HasClaim(c => c.Type == "client_id") 
+                              && !string.IsNullOrWhiteSpace(clientId);
+            var hasSub = ctx.User.HasClaim(c => c.Type == "sub");
+
+            return hasRequiredScope && hasClientId && !hasSub;
+        });
+    });
+});
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
