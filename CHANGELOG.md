@@ -25,8 +25,6 @@ and this project follows a pre-release versioning scheme.
 
 - All OAuth2/OIDC endpoints are now authorization-secured (role/scope-based access control applied)
 
-- `POST /account/register` endpoint (planned)
-
 ---
 
 ## [alpha-0] - 2026-06-11
