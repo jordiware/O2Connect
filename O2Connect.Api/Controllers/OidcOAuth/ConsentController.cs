@@ -20,7 +20,7 @@ public class ConsentController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Policy = "RequireProfileScope")]
+    [Authorize]
     public async Task<IActionResult> GetConsent([FromQuery(Name = "session")] string sessionId,
                                                 CancellationToken ct)
     {
@@ -33,7 +33,7 @@ public class ConsentController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Policy = "RequireProfileScope")]
+    [Authorize]
     public async Task<IActionResult> PostConsent([FromQuery(Name = "session")] string sessionId,
                                                  [FromBody] ConsentDecisionRequest request,
                                                  CancellationToken ct)

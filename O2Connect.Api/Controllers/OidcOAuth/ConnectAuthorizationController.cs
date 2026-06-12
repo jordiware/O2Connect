@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.DataValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
@@ -24,6 +25,7 @@ public class ConnectAuthorizationController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Authorize([FromQuery] AuthorizationRequest? request,
                                                [FromQuery(Name = "request_uri")] string? requestUri,
                                                CancellationToken ct)
@@ -62,6 +64,7 @@ public class ConnectAuthorizationController : ControllerBase
     }
 
     [HttpGet("resume")]
+    [Authorize]
     public async Task<IActionResult> Resume([FromQuery(Name = "session")] string sessionId,
                                             CancellationToken ct)
     {
@@ -76,7 +79,7 @@ public class ConnectAuthorizationController : ControllerBase
         return BuildAuthorizationRedirectResult(result);
     }
 
-    private IActionResult BuildAuthorizationRedirectResult(AuthorizationResult result)
+    private IActionResult BuildAuthorizationRedirectResult(Models.AuthorizationResult result)
     {
         if (!Uri.TryCreate(result.RedirectUri, UriKind.Absolute, out var baseUri))
             return BadRequest("Invalid redirect URI");

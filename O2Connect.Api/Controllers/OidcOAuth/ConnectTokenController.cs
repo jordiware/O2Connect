@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.DataValidators.TokenRequestValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.SmartEnums;
@@ -26,6 +27,7 @@ public class ConnectTokenController : ControllerBase
     }
 
     [HttpPost]
+    [AllowAnonymous]
     public async Task<IActionResult> Token([FromForm] TokenRequest request,
                                            CancellationToken ct)
     {

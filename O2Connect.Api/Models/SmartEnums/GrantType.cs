@@ -2,14 +2,14 @@
 
 public readonly record struct GrantType : ISmartEnum<GrantType>
 {
-    public string Value { get; }
+    private static readonly GrantType None = new(string.Empty);
 
     public static readonly GrantType AuthorizationCode = new("authorization_code");
     public static readonly GrantType ClientCredentials = new("client_credentials");
     public static readonly GrantType RefreshToken = new("refresh_token");
     public static readonly GrantType DeviceCode = new("urn:ietf:params:oauth:grant-type:device_code");
 
-    public static IReadOnlyCollection<GrantType> Supported { get; } =
+    public static IReadOnlyList<GrantType> Supported { get; } =
     [
         AuthorizationCode,
         ClientCredentials,
@@ -17,10 +17,14 @@ public readonly record struct GrantType : ISmartEnum<GrantType>
         DeviceCode
     ];
 
+    public string Value { get; }
+
     private GrantType(string value)
     {
         Value = value;
     }
+
+    public static implicit operator string(GrantType type) => type.Value;
 
     public static bool TryParse(string? value, out GrantType result)
     {
@@ -35,10 +39,15 @@ public readonly record struct GrantType : ISmartEnum<GrantType>
             "client_credentials" => ClientCredentials,
             "refresh_token" => RefreshToken,
             "urn:ietf:params:oauth:grant-type:device_code" => DeviceCode,
-            _ => default
+            _ => None
         };
 
-        return result != default;
+        return result != None;
+    }
+
+    public override string ToString()
+    {
+        return Value;
     }
 
     public override int GetHashCode()

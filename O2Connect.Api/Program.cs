@@ -11,6 +11,7 @@ using O2Connect.Api.Middleware;
 using O2Connect.Api.Models.Options;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
+using O2Connect.Api.Security;
 using O2Connect.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +27,24 @@ builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(
 builder.Services.AddMemoryCache(options =>
 {
     options.SizeLimit = 1000;
+});
+
+builder.Services.AddAuthorizationBuilder()
+                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser().Build());
+
+builder.Services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, ScopePolicyProvider>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(RequireClientTokenAttribute.PolicyName, policy =>
+    {
+        policy.RequireAssertion(ctx => ctx.User.IsClientToken());
+    });
+    options.AddPolicy(RequireUserTokenAttribute.PolicyName, policy =>
+    {
+        policy.RequireAssertion(ctx => ctx.User.IsUserToken());
+    });
 });
 
 builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
@@ -122,19 +141,6 @@ builder.Services.AddScoped<IPushedAuthorizationService, PushedAuthorizationServi
 builder.Services.AddScoped<IParAuthorizationService, ParAuthorizationService>();
 builder.Services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
 builder.Services.AddScoped<IDeviceConnectService, DeviceConnectService>();
-
-builder.Services.AddAuthorizationBuilder()
-                .AddPolicy("RequireProfileScope", policy =>
-                {
-                    policy.RequireAssertion(ctx =>
-                    {
-                        var scopeClaims = ctx.User.FindAll("scope").Concat(ctx.User.FindAll("scp"));
-
-                        return scopeClaims.SelectMany(c => c.Value.Split(' '))
-                                          .Any(s => s.Equals("profile", StringComparison.OrdinalIgnoreCase));
-                    });
-                })
-                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser().Build());
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

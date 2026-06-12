@@ -5,28 +5,48 @@ namespace O2Connect.Api.Repositories;
 
 public interface IUserRepository
 {
+    Task<bool> ContainsUserAsync(string normalizedUsername, CancellationToken ct);
+    Task<User?> GetAsync(string userId, CancellationToken ct);
     Task<User?> GetByUsernameAsync(string username, CancellationToken ct);
-    Task UpdateAsync(User user, CancellationToken ct);
+    Task StoreAsync(User user, CancellationToken ct);
 }
 
 public class InMemoryUserRepository : IUserRepository
 {
     private readonly ConcurrentDictionary<string, User> _users = new();
 
-    public Task<User?> GetByUsernameAsync(string username, CancellationToken ct)
+    public Task<bool> ContainsUserAsync(string normalizedUsername, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        _users.TryGetValue(username, out var value);
+        bool hasValue = _users.Values.Any(u => string.Equals(u.NormalizedUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(hasValue);
+    }
+
+    public Task<User?> GetAsync(string userId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        _users.TryGetValue(userId, out var value);
 
         return Task.FromResult(value);
     }
 
-    public Task UpdateAsync(User user, CancellationToken ct)
+    public Task<User?> GetByUsernameAsync(string username, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        _users[user.Username] = user;
+        var value = _users.Values.SingleOrDefault(u => string.Equals(u.Username, username, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(value);
+    }
+
+    public Task StoreAsync(User user, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        _users[user.Id] = user;
 
         return Task.CompletedTask;
     }
