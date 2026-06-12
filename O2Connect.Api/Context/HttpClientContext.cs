@@ -21,7 +21,7 @@ public class HttpClientContext : IClientContext
     }
 
     public Client? Client =>
-        _httpContextAccessor.HttpContext?.Items["client"] as Client;
+        _httpContextAccessor.HttpContext?.Items[ClientItemKey] as Client;
 
     public Client GetRequiredClient() =>
         Client ?? throw OAuthException.FromInvalidClient();

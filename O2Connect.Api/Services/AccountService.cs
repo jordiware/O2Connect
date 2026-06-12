@@ -19,6 +19,7 @@ public interface IAccountService
     Task<LoginResult> HandleLoginAsync(string? sessionId, LoginRequest request, CancellationToken ct);
     Task HandleLogoutAsync(EndSessionRequest request, CancellationToken ct);
     Task HandleLogoutAsync(string token, CancellationToken ct);
+    Task<RegisterUserResponse> HandleRegisterAsync(RegisterUserRequest request, CancellationToken ct);
 }
 
 public class AccountService : IAccountService
@@ -148,6 +149,40 @@ public class AccountService : IAccountService
             await _refreshTokenRepository.RevokeSessionAsync(sessionId, ct);
     }
 
+    public async Task<RegisterUserResponse> HandleRegisterAsync(RegisterUserRequest request,
+                                                                CancellationToken ct)
+    {
+        var normalizedUsername = NormalizeUsername(request.Username);
+
+        if ((await _userRepository.GetByUsernameAsync(normalizedUsername, ct)) != null)
+            throw OAuthException.FromInvalidRequest();
+
+        var roles = ValueSet.FromDataString(request.Roles, ' ').Values;
+        var scopes = ValueSet.FromDataString(request.Scopes, ' ').Values;
+
+        if (!_secretHasher.TryHash(request.Password, out var passwordHash))
+            throw OAuthException.FromServerError();
+
+        var user = new User
+        {
+            Id = Guid.NewGuid().ToString(),
+            Username = request.Username,
+            NormalizedUsername = normalizedUsername,
+            PasswordHash = passwordHash,
+            Roles = roles,
+            Scopes = scopes,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _userRepository.StoreAsync(user, ct);
+
+        return new RegisterUserResponse
+        {
+            UserId = user.Id
+        };
+    }
+
     private async Task<User?> ValidateCredentialsAsync(string username,
                                                       string password,
                                                       CancellationToken ct)
@@ -169,7 +204,7 @@ public class AccountService : IAccountService
             if (_secretHasher.TryHash(password, out var newHash))
             {
                 storedUser = storedUser with { PasswordHash = newHash };
-                await _userRepository.UpdateAsync(storedUser, ct);
+                await _userRepository.StoreAsync(storedUser, ct);
             }
         }
 

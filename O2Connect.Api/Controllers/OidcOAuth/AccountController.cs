@@ -71,8 +71,11 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> PostRegister(CancellationToken ct)
+    public async Task<IActionResult> PostRegister([FromBody] RegisterUserRequest request,
+                                                  CancellationToken ct)
     {
-        return Created();
+        var result = await _accountService.HandleRegisterAsync(request, ct);
+
+        return Ok(result);
     }
 }
