@@ -8,7 +8,7 @@ public readonly record struct ClientAuthenticationMethod : ISmartEnum<ClientAuth
     public static readonly ClientAuthenticationMethod ClientSecretPost = new("client_secret_post");
     public static readonly ClientAuthenticationMethod PrivateKeyJwt = new("private_key_jwt");
 
-    public static IReadOnlyCollection<ClientAuthenticationMethod> Supported { get; } =
+    public static IReadOnlyList<ClientAuthenticationMethod> Supported { get; } =
     [
         ClientSecretBasic,
         ClientSecretPost,

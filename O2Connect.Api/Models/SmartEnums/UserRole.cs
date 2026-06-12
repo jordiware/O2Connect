@@ -13,7 +13,7 @@ public readonly record struct UserRole : ISmartEnum<UserRole>
     public static readonly UserRole Manager = new("manager");
     public static readonly UserRole Operator = new("operator");
 
-    public static IReadOnlyCollection<UserRole> Supported { get; } =
+    public static IReadOnlyList<UserRole> Supported { get; } =
     [
         Admin,
         User,
@@ -36,7 +36,7 @@ public readonly record struct UserRole : ISmartEnum<UserRole>
 
     public static bool TryParse(string? value, out UserRole result)
     {
-        result = default;
+        result = None;
 
         if (string.IsNullOrWhiteSpace(value))
             return false;

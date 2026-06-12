@@ -7,7 +7,7 @@ public readonly record struct PkceMethod : ISmartEnum<PkceMethod>
     public static readonly PkceMethod Plain = new("plain");
     public static readonly PkceMethod S256 = new("S256");
 
-    public static IReadOnlyCollection<PkceMethod> Supported { get; } =
+    public static IReadOnlyList<PkceMethod> Supported { get; } =
     [
         Plain,
         S256
