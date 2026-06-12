@@ -7,7 +7,7 @@ and this project follows a pre-release versioning scheme.
 
 ---
 
-## [alpha-0.1] - 2026-06-1x
+## [alpha-0.1] - 2026-06-12
 
 ### Added
 
