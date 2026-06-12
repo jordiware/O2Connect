@@ -10,6 +10,9 @@ public sealed record RegisterUserRequest
     [JsonPropertyName("password")]
     public required string Password { get; init; }
 
+    [JsonPropertyName("email")]
+    public required string Email { get; init; }
+
     [JsonPropertyName("roles")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Roles { get; init; }

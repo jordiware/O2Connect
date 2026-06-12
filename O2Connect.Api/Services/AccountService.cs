@@ -186,6 +186,7 @@ public class AccountService : IAccountService
             Id = Guid.NewGuid().ToString(),
             Username = request.Username,
             NormalizedUsername = normalizedUsername,
+            Email = request.Email,
             PasswordHash = passwordHash,
             Roles = roles,
             Scopes = scopes,
