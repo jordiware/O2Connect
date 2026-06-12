@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models;
+using O2Connect.Api.Security;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
@@ -36,6 +37,7 @@ public sealed class ConnectController : ControllerBase
     }
 
     [HttpGet("logout")]
+    [RequireUserToken]
     public async Task<IActionResult> Logout([FromQuery] EndSessionRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid)
@@ -47,6 +49,8 @@ public sealed class ConnectController : ControllerBase
     }
 
     [HttpPost("par")]
+    [RequireScope(Scopes.Clients.Write)]
+    [RequireClientToken]
     public async Task<ActionResult<PushedAuthorizationResponse>> Par(
         [FromBody] PushedAuthorizationRequest request,
         CancellationToken ct)
@@ -60,7 +64,8 @@ public sealed class ConnectController : ControllerBase
     }
 
     [HttpPost("introspect")]
-    [Authorize(AuthenticationSchemes = "Client")]
+    [RequireClientToken]
+    [RequireScope(Scopes.Tokens.Introspect)]
     public async Task<IActionResult> Introspect([FromForm] string token, CancellationToken ct)
     {
         if (!Request.HasFormContentType)
@@ -82,6 +87,8 @@ public sealed class ConnectController : ControllerBase
     }
 
     [HttpGet("userinfo")]
+    [RequireUserToken]
+    [RequireScope(RequireScopeMode.Any, Scopes.Oidc.Profile, Scopes.Oidc.Email, Scopes.Oidc.Address)]
     public async Task<IActionResult> UserInfoGet(CancellationToken ct)
     {
         var result = await _userInfoService.GetUserInfoAsync(User, ct);
@@ -93,7 +100,7 @@ public sealed class ConnectController : ControllerBase
     public Task<IActionResult> UserInfoPost(CancellationToken ct) => UserInfoGet(ct);
 
     [HttpPost("revocation")]
-    [Authorize]
+    [RequireScope(Scopes.Tokens.Revoke)]
     public async Task<IActionResult> Revoke([FromForm] RevocationRequest request, CancellationToken ct)
     {
         if (!Request.HasFormContentType)
@@ -109,7 +116,8 @@ public sealed class ConnectController : ControllerBase
     }
 
     [HttpPost("register")]
-    [Authorize]
+    [RequireScope(Scopes.Clients.Write)]
+    [RequireClientToken]
     public async Task<IActionResult> Register([FromBody] ClientRegistrationRequest request,
                                               CancellationToken ct)
     {

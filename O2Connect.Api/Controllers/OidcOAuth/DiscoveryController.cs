@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.Services;
 
@@ -20,6 +21,7 @@ public class DiscoveryController : ControllerBase
     }
 
     [HttpGet("oauth-authorization-server")]
+    [AllowAnonymous]
     public IActionResult OAuthAuthorizationServer()
     {
         var metadata = _metadataService.GetOAuthAuthorizationServer();
@@ -27,6 +29,7 @@ public class DiscoveryController : ControllerBase
     }
 
     [HttpGet("openid-configuration")]
+    [AllowAnonymous]
     public IActionResult OpenIdConfiguration()
     {
         var metadata = _metadataService.GetOpenIdConfiguration();
@@ -34,6 +37,7 @@ public class DiscoveryController : ControllerBase
     }
 
     [HttpGet("jwks.json")]
+    [AllowAnonymous]
     public IActionResult Jwks()
     {
         var jwks = _signingKeyProvider.GetValidSigningKeys()

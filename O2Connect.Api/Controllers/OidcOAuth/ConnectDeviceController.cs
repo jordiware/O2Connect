@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models;
+using O2Connect.Api.Security;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using System.Security.Claims;
@@ -20,6 +22,8 @@ public class ConnectDeviceController : ControllerBase
     }
 
     [HttpPost("device_authorize")]
+    [RequireClientToken]
+    [RequireScope(Scopes.Clients.Read)]
     public async Task<IActionResult> DeviceAuthorize([FromForm] DeviceAuthorizationRequest request,
                                                      CancellationToken ct)
     {
@@ -34,6 +38,7 @@ public class ConnectDeviceController : ControllerBase
     }
 
     [HttpPost("device")]
+    [RequireClientToken]
     public async Task<IActionResult> Device([FromQuery(Name = "user_code")] string userCode,
                                             [FromForm] DeviceDecisionRequest request,
                                             CancellationToken ct)
@@ -54,6 +59,8 @@ public class ConnectDeviceController : ControllerBase
     }
 
     [HttpGet("device_status")]
+    [RequireClientToken]
+    [RequireScope(Scopes.Clients.Read)]
     public async Task<IActionResult> DeviceStatus([FromQuery(Name = "user_code")] string userCode,
                                                   CancellationToken ct)
     {

@@ -38,16 +38,13 @@ builder.Services.AddSingleton<IAuthorizationPolicyProvider, ScopePolicyProvider>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("CanRegisterUsers", policy =>
+    options.AddPolicy("client_token", policy =>
     {
-        policy.RequireAuthenticatedUser();
-
-        policy.RequireAssertion(ctx =>
-        {
-            var user = ctx.User;
-
-            return user.IsClientToken() && user.HasScope(Scopes.Account.Register);
-        });
+        policy.RequireAssertion(ctx => ctx.User.IsClientToken());
+    });
+    options.AddPolicy("user_token", policy =>
+    {
+        policy.RequireAssertion(ctx => ctx.User.IsUserToken());
     });
 });
 

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
+using O2Connect.Api.Security;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
@@ -22,6 +23,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<IActionResult> PostLogin([FromQuery(Name = "session")] string? sessionId,
                                                [FromBody] LoginRequest request,
                                                CancellationToken ct)
@@ -40,6 +42,7 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("logout")]
+    [RequireUserToken]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request, CancellationToken ct)
     {
         if (!ModelState.IsValid)
@@ -54,7 +57,8 @@ public class AccountController : ControllerBase
     }
 
     [HttpGet("me")]
-    [Authorize(Policy = "RequireProfileScope")]
+    [RequireUserToken]
+    [RequireScope(Scopes.Users.Read)]
     public IActionResult Me()
     {
         Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
@@ -71,7 +75,8 @@ public class AccountController : ControllerBase
     }
 
     [HttpPost("register")]
-    [Authorize(Policy = "CanRegisterUsers")]
+    [RequireClientToken]
+    [RequireScope(Scopes.Account.Register)]
     public async Task<IActionResult> PostRegister([FromBody] RegisterUserRequest request,
                                                   CancellationToken ct)
     {
