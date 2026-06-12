@@ -4,8 +4,10 @@ namespace O2Connect.Api.Security;
 
 public sealed class RequireUserTokenAttribute : AuthorizeAttribute
 {
+    public const string PolicyName = "user_token";
+
     public RequireUserTokenAttribute()
     {
-        Policy = "user_token";
+        Policy = PolicyName;
     }
 }

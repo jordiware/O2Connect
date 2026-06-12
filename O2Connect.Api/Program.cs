@@ -37,11 +37,11 @@ builder.Services.AddSingleton<IAuthorizationPolicyProvider, ScopePolicyProvider>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("client_token", policy =>
+    options.AddPolicy(RequireClientTokenAttribute.PolicyName, policy =>
     {
         policy.RequireAssertion(ctx => ctx.User.IsClientToken());
     });
-    options.AddPolicy("user_token", policy =>
+    options.AddPolicy(RequireUserTokenAttribute.PolicyName, policy =>
     {
         policy.RequireAssertion(ctx => ctx.User.IsUserToken());
     });
