@@ -5,6 +5,7 @@ namespace O2Connect.Api.Repositories;
 
 public interface IUserRepository
 {
+    Task<bool> ContainsUserAsync(string normalizedUsername, CancellationToken ct);
     Task<User?> GetAsync(string userId, CancellationToken ct);
     Task<User?> GetByUsernameAsync(string username, CancellationToken ct);
     Task StoreAsync(User user, CancellationToken ct);
@@ -13,6 +14,15 @@ public interface IUserRepository
 public class InMemoryUserRepository : IUserRepository
 {
     private readonly ConcurrentDictionary<string, User> _users = new();
+
+    public Task<bool> ContainsUserAsync(string normalizedUsername, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        bool hasValue = _users.Values.Any(u => string.Equals(u.NormalizedUsername, normalizedUsername, StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(hasValue);
+    }
 
     public Task<User?> GetAsync(string userId, CancellationToken ct)
     {

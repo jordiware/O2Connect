@@ -8,9 +8,11 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace O2Connect.Api.Services;
 
@@ -154,7 +156,7 @@ public class AccountService : IAccountService
     {
         var normalizedUsername = NormalizeUsername(request.Username);
 
-        if ((await _userRepository.GetByUsernameAsync(normalizedUsername, ct)) != null)
+        if (await _userRepository.ContainsUserAsync(normalizedUsername, ct))
             throw OAuthException.FromInvalidRequest();
 
         var roles = ValueSet.FromDataString(request.Roles, ' ').Values;
@@ -221,5 +223,32 @@ public class AccountService : IAccountService
             throw new InvalidOperationException("Failed to create dummy hash.");
 
         return dummyHash;
+    }
+
+    private static string NormalizeUsername(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            throw OAuthException.FromInvalidRequest();
+
+        var trimmed = username.Trim();
+
+        var normalized = trimmed.Normalize(NormalizationForm.FormD);
+
+        var sb = new StringBuilder(normalized.Length);
+
+        foreach (var c in normalized)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(c);
+
+            if (category != UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(c);
+            }
+        }
+
+        return sb
+            .ToString()
+            .Normalize(NormalizationForm.FormC)
+            .ToUpperInvariant();
     }
 }
