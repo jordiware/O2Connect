@@ -65,6 +65,7 @@ public static class Scopes
     /// </summary>
     public static class Clients
     {
+        public const string Query = "clients.query";
         public const string Read = "clients.read";
         public const string Write = "clients.write";
         public const string Delete = "clients.delete";
