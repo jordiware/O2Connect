@@ -32,8 +32,9 @@ public class ClientsService : IClientsService
             return new ClientListResponse
             {
                 Items = [],
-                Total = 0,
+                TotalItems = 0,
                 Page = request.Page,
+                TotalPages = 0,
                 PageSize = request.PageSize
             };
         }
@@ -62,14 +63,16 @@ public class ClientsService : IClientsService
         {
             Id = client.Id,
             Name = client.Name,
+            ImageUrl = client.ImageUrl,
             Status = client.Status.ToString().ToLowerInvariant(),
         }).ToList();
 
         var response = new ClientListResponse
         {
             Items = summaries,
-            Total = totalClients,
+            TotalItems = totalClients,
             Page = request.Page,
+            TotalPages = pages,
             PageSize = request.PageSize
         };
 

@@ -7,7 +7,7 @@ public sealed record Client
     public required string NormalizedName { get; init; }
     public required EntityStatus Status { get; init; }
     public required string OwnerId { get; init; }
-    public string? PircureUrl { get; init; }
+    public string? ImageUrl { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset? LastModifiedAt { get; init; }
     public DateTimeOffset? RevokedAt { get; init; }

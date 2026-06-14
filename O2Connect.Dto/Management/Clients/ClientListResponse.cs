@@ -7,12 +7,15 @@ public sealed record ClientListResponse
     [JsonPropertyName("items")]
     public required IReadOnlyList<ClientSummaryDto> Items { get; init; }
 
+    [JsonPropertyName("total_items")]
+    public required int TotalItems { get; init; }
+
     [JsonPropertyName("page")]
     public required int Page { get; init; }
 
+    [JsonPropertyName("total_pages")]
+    public required int TotalPages { get; init; }
+
     [JsonPropertyName("page_size")]
     public required int PageSize { get; init; }
-
-    [JsonPropertyName("total")]
-    public required int Total { get; init; }
 }
