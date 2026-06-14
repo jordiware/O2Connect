@@ -5,6 +5,8 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
+using System.Globalization;
+using System.Text;
 
 namespace O2Connect.Api.Services;
 
@@ -51,7 +53,7 @@ public class ClientRegistrationService : IClientRegistrationService
         return new ClientRegistrationResponse
         {
             ClientId = clientId,
-            ClientName = client.ClientName,
+            ClientName = client.Name,
             ClientSecret = null,
             ClientIdIssuedAt = client.CreatedAt.ToUnixTimeSeconds(),
             ClientSecretExpiresAt = 0,
@@ -107,10 +109,12 @@ public class ClientRegistrationService : IClientRegistrationService
 
         return new Client
         {
-            ClientId = clientId,
-            ClientName = clientName,
-            CreatedAt = now,
+            Id = clientId,
+            Name = clientName,
+            NormalizedName = NormalizeName(clientName),
+            Status = EntityStatus.Active,
             OwnerId = ownerId,
+            CreatedAt = now,
 
             ClientSecret = null,
             RequiresSecret = false,
@@ -159,5 +163,31 @@ public class ClientRegistrationService : IClientRegistrationService
 
         if (!responseTypes.All(rt => string.Equals(rt, "code", StringComparison.Ordinal)))
             throw OAuthException.FromInvalidRequest("invalid_client_metadata");
+    }
+
+    private static string NormalizeName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw OAuthException.FromInvalidRequest();
+
+        var trimmed = name.Trim();
+
+        var normalized = trimmed.Normalize(NormalizationForm.FormKD);
+
+        var sb = new StringBuilder(normalized.Length);
+
+        foreach (var c in normalized)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(c);
+
+            if (category != UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(c);
+            }
+        }
+
+        return sb.ToString()
+                 .Normalize(NormalizationForm.FormKC)
+                 .ToLowerInvariant();
     }
 }

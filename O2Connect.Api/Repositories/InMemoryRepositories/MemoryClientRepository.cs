@@ -22,9 +22,11 @@ public class MemoryClientRepository : IClientRepository
 
         var clients = listQuery.SortBy switch
         {
-            _ => orderAscending 
-                 ? _clients.OrderBy(c => c.Value.CreatedAt) 
-                 : _clients.OrderByDescending(c => c.Value.CreatedAt)
+            _ => orderAscending
+                 ? _clients.OrderBy(c => c.Value.NormalizedName,
+                                         StringComparer.InvariantCultureIgnoreCase)
+                 : _clients.OrderByDescending(c => c.Value.NormalizedName,
+                                                   StringComparer.InvariantCultureIgnoreCase)
         };
 
         var page = clients.Skip((listQuery.Page - 1) * listQuery.PageSize)
@@ -48,8 +50,8 @@ public class MemoryClientRepository : IClientRepository
     {
         ct.ThrowIfCancellationRequested();
 
-        _clients[client.ClientId] = client;
-        
+        _clients[client.Id] = client;
+
         return Task.CompletedTask;
     }
 

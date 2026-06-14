@@ -10,6 +10,6 @@ public sealed record ClientSummaryDto
     [JsonPropertyName("name")]
     public required string Name { get; init; }
 
-    [JsonPropertyName("enabled")]
-    public required bool Enabled { get; init; }
+    [JsonPropertyName("status")]
+    public required string Status { get; init; }
 }

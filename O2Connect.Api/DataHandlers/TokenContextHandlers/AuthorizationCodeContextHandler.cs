@@ -30,7 +30,7 @@ public class AuthorizationCodeContextHandler : ITokenContextHandler
         var storedCode = await _authorizationCodeRepository.RedeemAsync(authCode.Code, ct)
             ?? throw OAuthException.FromInvalidGrant();
 
-        if (storedCode.ClientId != context.Client.ClientId)
+        if (storedCode.ClientId != context.Client.Id)
             throw OAuthException.FromInvalidGrant();
 
         if (storedCode.ExpiresAt <= DateTime.UtcNow)
@@ -51,7 +51,7 @@ public class AuthorizationCodeContextHandler : ITokenContextHandler
 
         return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
-            ClientId = context.Client.ClientId,
+            ClientId = context.Client.Id,
             Scopes = context.Scopes,
             Subject = storedCode.SubjectId!
         }, ct);

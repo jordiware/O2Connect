@@ -56,7 +56,7 @@ public class RefreshTokenContextHandler : ITokenContextHandler
         if (storedToken.Revoked)
             throw OAuthException.FromInvalidGrant();
 
-        if (storedToken.ClientId != context.Client.ClientId)
+        if (storedToken.ClientId != context.Client.Id)
             throw OAuthException.FromInvalidGrant();
 
         var originalScopes = storedToken.Scopes;
@@ -83,7 +83,7 @@ public class RefreshTokenContextHandler : ITokenContextHandler
 
         return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
-            ClientId = context.Client.ClientId,
+            ClientId = context.Client.Id,
             Subject = storedToken.Subject,
             Scopes = context.Scopes,
             RefreshToken = newRefreshToken.Token

@@ -40,7 +40,7 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
         if (token == null)
             throw OAuthException.FromInvalidGrant();
 
-        if (token.ClientId != client.ClientId)
+        if (token.ClientId != client.Id)
             throw OAuthException.FromInvalidGrant();
 
         if (token.Revoked)

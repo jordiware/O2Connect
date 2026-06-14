@@ -32,7 +32,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
             && method == ClientAuthenticationMethod.ClientSecretPost)
             throw OAuthException.FromInvalidRequest("Missing 'client_id'.");
 
-        if (!string.IsNullOrWhiteSpace(request.ClientId) && request.ClientId != client.ClientId)
+        if (!string.IsNullOrWhiteSpace(request.ClientId) && request.ClientId != client.Id)
             throw OAuthException.FromInvalidGrant();
 
         if (string.IsNullOrWhiteSpace(request.Code))
@@ -58,7 +58,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
         if (code.ExpiresAt < DateTimeOffset.UtcNow)
             throw OAuthException.FromInvalidGrant();
 
-        if (code.ClientId != client.ClientId)
+        if (code.ClientId != client.Id)
             throw OAuthException.FromInvalidGrant();
 
         if (!string.Equals(code.RedirectUri, request.RedirectUri, StringComparison.Ordinal))

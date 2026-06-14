@@ -60,7 +60,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
         var entry = new ParEntry
         {
             RequestUriCode = code,
-            ClientId = client.ClientId,
+            ClientId = client.Id,
             RedirectUri = request.RedirectUri,
             Scope = normalizedScope,
             ResponseType = request.ResponseType,
@@ -81,8 +81,8 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
             ExpiresAt = expiresAt,
             Request = request.ToData(),
             RequestUriCode = code,
-            ClientId = client.ClientId,
-            ClientDisplayName = client.ClientName
+            ClientId = client.Id,
+            ClientDisplayName = client.Name
         };
 
         await _authorizationSessionRepository.StoreAsync(session, ct);

@@ -44,7 +44,7 @@ public class DeviceCodeContextHandler : ITokenContextHandler
 
         var response = await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
-            ClientId = context.Client.ClientId,
+            ClientId = context.Client.Id,
             Scopes = context.Scopes,
             Subject = context.UserId,
             AdditionalClaims = new Dictionary<string, object>

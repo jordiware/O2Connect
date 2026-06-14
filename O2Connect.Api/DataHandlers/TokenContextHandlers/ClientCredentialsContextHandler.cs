@@ -35,9 +35,9 @@ public class ClientCredentialsContextHandler : ITokenContextHandler
 
         return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
-            ClientId = context.Client.ClientId,
+            ClientId = context.Client.Id,
             Scopes = context.Scopes,
-            Subject = context.Client.ClientId
+            Subject = context.Client.Id
         }, ct);
     }
 }

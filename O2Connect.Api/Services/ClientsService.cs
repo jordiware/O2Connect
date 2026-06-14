@@ -60,9 +60,9 @@ public class ClientsService : IClientsService
 
         var summaries = clients.Select(client => new ClientSummaryDto
         {
-            Id = client.ClientId,
-            Name = client.ClientName,
-            Enabled = client.IsActive,
+            Id = client.Id,
+            Name = client.Name,
+            Status = client.Status.ToString().ToLowerInvariant(),
         }).ToList();
 
         var response = new ClientListResponse

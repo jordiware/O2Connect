@@ -120,7 +120,7 @@ public class AccountService : IAccountService
 
         var tokenFactoryRequest = new JwtTokenFactoryRequest
         {
-            ClientId = client.ClientId,
+            ClientId = client.Id,
             Subject = user.Id,
             Scopes = allowedScopes.ToHashSet(),
             AdditionalClaims = additionalClaims

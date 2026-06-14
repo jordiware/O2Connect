@@ -88,7 +88,7 @@ public class ParAuthorizationService : IParAuthorizationService
 
         var requestedScopes = ParseScope(entry.Scope);
 
-        var missingScopes = await GetMissingScopes(userId, client.ClientId, requestedScopes, ct);
+        var missingScopes = await GetMissingScopes(userId, client.Id, requestedScopes, ct);
 
         if (missingScopes.Count > 0)
         {

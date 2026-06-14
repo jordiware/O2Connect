@@ -2,11 +2,15 @@
 
 public sealed record Client
 {
-    public required string ClientId { get; init; }
-    public required string ClientName { get; init; }
-    public required DateTimeOffset CreatedAt { get; init; }
-    public bool IsActive { get; init; } = true;
+    public required string Id { get; init; }
+    public required string Name { get; init; }
+    public required string NormalizedName { get; init; }
+    public required EntityStatus Status { get; init; }
     public required string OwnerId { get; init; }
+    public string? PircureUrl { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset? LastModifiedAt { get; init; }
+    public DateTimeOffset? RevokedAt { get; init; }
     public string? ClientSecret { get; init; }
     public string? JsonWebKeysUri { get; init; }
     public bool RequiresSecret { get; init; }

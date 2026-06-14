@@ -59,7 +59,7 @@ public class ClientSecretBasicHandler : IClientAuthenticationHandler
     {
         var (clientId, secret) = ExtractCredentials(request, tokenRequest);
 
-        if (clientId != client.ClientId)
+        if (clientId != client.Id)
             return Task.FromResult(ClientAuthenticationResult.Fail());
 
         if (string.IsNullOrEmpty(secret))

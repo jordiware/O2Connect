@@ -59,7 +59,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
 
         var client = await _clientRepository.GetAsync(request.ClientId, ct);
 
-        if (client == null || !client.IsActive)
+        if (client == null || client.Status != EntityStatus.Active)
             return Error(responseMode, "invalid_client", "Client not found or inactive", request.State);
 
         if (!requestScopes.IsSubsetOf(client.AllowedScopes))
@@ -83,8 +83,8 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
                 CreatedAt = DateTimeOffset.UtcNow,
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
                 Request = request,
-                ClientId = client.ClientId,
-                ClientDisplayName = client.ClientName,
+                ClientId = client.Id,
+                ClientDisplayName = client.Name,
                 RequestedScopes = requestScopes.ToHashSet()
             };
         }
@@ -122,7 +122,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
             UserId = userId,
         };
 
-        var consent = await _consentService.EvaluateAsync(userId, client.ClientId, requestScopes, ct);
+        var consent = await _consentService.EvaluateAsync(userId, client.Id, requestScopes, ct);
 
         if (consent.RequiresConsent)
         {

@@ -37,7 +37,7 @@ public class DeviceCodeTokenRequestValidator : ITokenRequestValidator
         if (deviceAuth is null)
             throw OAuthException.FromInvalidGrant();
 
-        if (!string.Equals(deviceAuth.ClientId, client.ClientId, StringComparison.Ordinal))
+        if (!string.Equals(deviceAuth.ClientId, client.Id, StringComparison.Ordinal))
             throw OAuthException.FromInvalidGrant();
 
         var now = DateTimeOffset.UtcNow;
