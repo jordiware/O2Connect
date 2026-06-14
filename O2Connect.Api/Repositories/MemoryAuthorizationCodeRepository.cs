@@ -3,16 +3,7 @@ using System.Collections.Concurrent;
 
 namespace O2Connect.Api.Repositories;
 
-public interface IAuthorizationCodeRepository
-{
-    Task StoreAsync(AuthorizationCode code, CancellationToken ct);
-    Task<AuthorizationCode?> GetAsync(string code, CancellationToken ct);
-    Task<AuthorizationCode?> RedeemAsync(string code, CancellationToken ct);
-    Task<bool> TryConsumeAsync(string code, CancellationToken ct);
-    Task RemoveAsync(string code, CancellationToken ct);
-}
-
-public class InMemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
+public class MemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
 {
     private readonly ConcurrentDictionary<string, AuthorizationCode> _codes = new();
 

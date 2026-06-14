@@ -3,15 +3,7 @@ using System.Collections.Concurrent;
 
 namespace O2Connect.Api.Repositories;
 
-public interface IUserRepository
-{
-    Task<bool> ContainsUserAsync(string normalizedUsername, CancellationToken ct);
-    Task<User?> GetAsync(string userId, CancellationToken ct);
-    Task<User?> GetByUsernameAsync(string username, CancellationToken ct);
-    Task StoreAsync(User user, CancellationToken ct);
-}
-
-public class InMemoryUserRepository : IUserRepository
+public class MemoryUserRepository : IUserRepository
 {
     private readonly ConcurrentDictionary<string, User> _users = new();
 

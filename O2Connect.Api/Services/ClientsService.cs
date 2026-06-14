@@ -1,5 +1,6 @@
 ﻿using O2Connect.Api.Exceptions;
 using O2Connect.Api.Repositories;
+using O2Connect.Api.Repositories.Filters;
 using O2Connect.Dto.Management.Clients;
 
 namespace O2Connect.Api.Services;

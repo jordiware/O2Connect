@@ -3,14 +3,7 @@ using System.Collections.Concurrent;
 
 namespace O2Connect.Api.Repositories;
 
-public interface IUserConsentRepository
-{
-    Task<UserConsent?> GetAsync(string userId, string clientId, CancellationToken ct);
-    Task<bool> StoreAsync(UserConsent consent, CancellationToken ct);
-    Task<bool> DeleteAsync(string userId, string clientId, CancellationToken ct);
-}
-
-public class InMemoryUserConsentRepository : IUserConsentRepository
+public class MemoryUserConsentRepository : IUserConsentRepository
 {
     private readonly ConcurrentDictionary<UserClientKey, UserConsent> _consents = new();
 

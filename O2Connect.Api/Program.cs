@@ -50,14 +50,14 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
 builder.Services.AddSingleton<ITokenReplayCache, MemoryTokenReplayCache>();
 
-builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
-builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
-builder.Services.AddSingleton<IAuthorizationSessionRepository, InMemoryAuthorizationSessionRepository>();
-builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
-builder.Services.AddSingleton<IUserConsentRepository, InMemoryUserConsentRepository>();
-builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
-builder.Services.AddSingleton<IParEntryRepository, InMemoryParEntryRepository>();
-builder.Services.AddSingleton<IDeviceAuthorizationRepository, InMemoryDeviceAuthorizationRepository>();
+builder.Services.AddSingleton<IClientRepository, MemoryClientRepository>();
+builder.Services.AddSingleton<IAuthorizationCodeRepository, MemoryAuthorizationCodeRepository>();
+builder.Services.AddSingleton<IAuthorizationSessionRepository, MemoryAuthorizationSessionRepository>();
+builder.Services.AddSingleton<IRefreshTokenRepository, MemoryRefreshTokenRepository>();
+builder.Services.AddSingleton<IUserConsentRepository, MemoryUserConsentRepository>();
+builder.Services.AddSingleton<IUserRepository, MemoryUserRepository>();
+builder.Services.AddSingleton<IParEntryRepository, MemoryParEntryRepository>();
+builder.Services.AddSingleton<IDeviceAuthorizationRepository, MemoryDeviceAuthorizationRepository>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();

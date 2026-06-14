@@ -3,13 +3,7 @@ using System.Collections.Concurrent;
 
 namespace O2Connect.Api.Repositories;
 
-public interface IParEntryRepository
-{
-    Task<ParEntry?> GetAsync(string code, CancellationToken ct);
-    Task StoreAsync(string code, ParEntry parEntry, CancellationToken ct);
-}
-
-public class InMemoryParEntryRepository : IParEntryRepository
+public class MemoryParEntryRepository : IParEntryRepository
 {
     private static readonly ConcurrentDictionary<string, ParEntry> _entries = new();
 
