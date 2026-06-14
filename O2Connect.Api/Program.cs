@@ -67,6 +67,8 @@ builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
 builder.Services.AddSingleton<ISecretHasher, Pbkdf2SecretHasher>();
 builder.Services.AddSingleton<IPushedAuthorizationValidator, PushedAuthorizationValidator>();
 
+builder.Services.AddSingleton<IClientsQueryValidator, ClientsQueryValidator>();
+
 builder.Services.AddSingleton(sp =>
 {
     var keys = sp.GetRequiredService<ISigningKeyProvider>();
@@ -141,6 +143,8 @@ builder.Services.AddScoped<IPushedAuthorizationService, PushedAuthorizationServi
 builder.Services.AddScoped<IParAuthorizationService, ParAuthorizationService>();
 builder.Services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
 builder.Services.AddScoped<IDeviceConnectService, DeviceConnectService>();
+
+builder.Services.AddScoped<IClientsService, ClientsService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
