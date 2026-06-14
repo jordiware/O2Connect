@@ -2,7 +2,7 @@
 using O2Connect.Api.Repositories.Filters;
 using System.Collections.Concurrent;
 
-namespace O2Connect.Api.Repositories;
+namespace O2Connect.Api.Repositories.InMemoryRepositories;
 
 public class MemoryClientRepository : IClientRepository
 {

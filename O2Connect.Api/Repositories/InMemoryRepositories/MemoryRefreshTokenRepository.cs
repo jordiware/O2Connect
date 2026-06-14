@@ -1,7 +1,7 @@
 ﻿using O2Connect.Api.Models.Store;
 using System.Collections.Concurrent;
 
-namespace O2Connect.Api.Repositories;
+namespace O2Connect.Api.Repositories.InMemoryRepositories;
 
 public class MemoryRefreshTokenRepository : IRefreshTokenRepository
 {
