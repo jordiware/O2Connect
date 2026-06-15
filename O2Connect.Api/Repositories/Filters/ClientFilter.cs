@@ -20,6 +20,20 @@ public sealed record ClientFilter
     public IReadOnlySet<string>? AuthenticationMethods { get; init; }
     public IReadOnlySet<string>? ResponseTypes { get; init; }
 
+    public bool IsEmpty =>
+        Name is null &&
+        Status is null &&
+        MinCreatedAt is null &&
+        MaxCreatedAt is null &&
+        MinLastModifiedAt is null &&
+        MaxLastModifiedAt is null &&
+        MinRevokedAt is null &&
+        MaxRevokedAt is null &&
+        GrantTypes is null &&
+        Scopes is null &&
+        AuthenticationMethods is null &&
+        ResponseTypes is null;
+
     public Expression<Func<Client, bool>> ToExpression()
     {
         return client =>
