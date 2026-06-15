@@ -16,7 +16,7 @@ public class MemoryClientRepository : IClientRepository
     public Task<int> CountAsync(ClientFilter filter, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        return Task.FromResult(_clients.Values.Count(filter.Filter));
+        return Task.FromResult(_clients.Values.Count(filter.ToExpression().Compile()));
     }
 
     public Task<IReadOnlyList<Client>> QueryAsync(ClientQuery listQuery, CancellationToken ct)
@@ -25,14 +25,14 @@ public class MemoryClientRepository : IClientRepository
     }
 
     public Task<IReadOnlyList<Client>> QueryAsync(ClientQuery listQuery,
-                                                 ClientFilter filter,
-                                                 CancellationToken ct)
+                                                  ClientFilter filter,
+                                                  CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         var orderAscending = listQuery.Order.Equals("asc", StringComparison.OrdinalIgnoreCase);
 
-        var filtered = _clients.Values.Where(filter.Filter);
+        var filtered = _clients.Values.Where(filter.ToExpression().Compile());
 
         var clients = listQuery.SortBy switch
         {

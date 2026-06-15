@@ -1,4 +1,5 @@
 ﻿using O2Connect.Api.Models.Store;
+using System.Linq.Expressions;
 
 namespace O2Connect.Api.Repositories.Filters;
 
@@ -8,63 +9,40 @@ public sealed record ClientFilter
 
     public string? Name { get; init; }
     public IReadOnlySet<EntityStatus>? Status { get; init; }
-    public DateOnly? MinCreatedAt { get; init; }
-    public DateOnly? MaxCreatedAt { get; init; }
-    public DateOnly? MinLastModifiedAt { get; init; }
-    public DateOnly? MaxLastModifiedAt { get; init; }
-    public DateOnly? MinRevokedAt { get; init; }
-    public DateOnly? MaxRevokedAt { get; init; }
+    public DateTimeOffset? MinCreatedAt { get; init; }
+    public DateTimeOffset? MaxCreatedAt { get; init; }
+    public DateTimeOffset? MinLastModifiedAt { get; init; }
+    public DateTimeOffset? MaxLastModifiedAt { get; init; }
+    public DateTimeOffset? MinRevokedAt { get; init; }
+    public DateTimeOffset? MaxRevokedAt { get; init; }
     public IReadOnlySet<string>? GrantTypes { get; init; }
     public IReadOnlySet<string>? Scopes { get; init; }
     public IReadOnlySet<string>? AuthenticationMethods { get; init; }
     public IReadOnlySet<string>? ResponseTypes { get; init; }
 
-    public bool Filter(Client client)
+    public Expression<Func<Client, bool>> ToExpression()
     {
-        if (!string.IsNullOrWhiteSpace(Name) 
-            && !client.NormalizedName.Contains(Name, StringComparison.InvariantCultureIgnoreCase))
-            return false;
-
-        if (Status != null && !Status.Contains(client.Status))
-            return false;
-
-        if (MinCreatedAt.HasValue
-            && client.CreatedAt < MinCreatedAt.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc))
-            return false;
-
-        if (MaxCreatedAt.HasValue
-            && client.CreatedAt > MaxCreatedAt.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc))
-            return false;
-
-        if (MinLastModifiedAt.HasValue
-            && client.CreatedAt < MinLastModifiedAt.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc))
-            return false;
-
-        if (MaxLastModifiedAt.HasValue
-            && client.CreatedAt > MaxLastModifiedAt.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc))
-            return false;
-
-        if (MinRevokedAt.HasValue
-            && client.CreatedAt < MinRevokedAt.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc))
-            return false;
-
-        if (MinRevokedAt.HasValue
-            && client.CreatedAt > MinRevokedAt.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc))
-            return false;
-
-        if (GrantTypes != null && !GrantTypes.IsSubsetOf(client.AllowedGrantTypes))
-            return false;
-
-        if (Scopes != null && !Scopes.IsSubsetOf(client.AllowedScopes))
-            return false;
-
-        if (AuthenticationMethods != null 
-            && !AuthenticationMethods.IsSubsetOf(client.AllowedAuthenticationMethods))
-            return false;
-
-        if (ResponseTypes != null && !ResponseTypes.IsSubsetOf(client.AllowedResponseTypes))
-            return false;
-
-        return true;
+        return client =>
+            (string.IsNullOrEmpty(Name) || 
+                client.NormalizedName.Contains(Name)) &&
+            (Status == null || Status.Contains(client.Status)) &&
+            (MinCreatedAt == null || client.CreatedAt >= MinCreatedAt) &&
+            (MaxCreatedAt == null || client.CreatedAt <= MaxCreatedAt) &&
+            (MinLastModifiedAt == null || 
+                (client.LastModifiedAt != null && client.LastModifiedAt >= MinLastModifiedAt)) &&
+            (MaxLastModifiedAt == null || 
+                (client.LastModifiedAt != null && client.LastModifiedAt <= MaxLastModifiedAt)) &&
+            (MinRevokedAt == null || 
+                (client.RevokedAt != null && client.RevokedAt >= MinRevokedAt)) &&
+            (MaxRevokedAt == null || 
+                (client.RevokedAt != null && client.RevokedAt <= MaxRevokedAt)) &&
+            (GrantTypes == null || 
+                GrantTypes.All(gt => client.AllowedGrantTypes.Contains(gt))) &&
+            (Scopes == null || 
+                Scopes.All(s => client.AllowedScopes.Contains(s))) &&
+            (AuthenticationMethods == null || 
+                AuthenticationMethods.All(am => client.AllowedAuthenticationMethods.Contains(am))) &&
+            (ResponseTypes == null || 
+                ResponseTypes.All(rt => client.AllowedResponseTypes.Contains(rt)));
     }
 }
