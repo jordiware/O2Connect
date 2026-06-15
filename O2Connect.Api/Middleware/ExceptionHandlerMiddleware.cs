@@ -43,6 +43,7 @@ public class ExceptionHandlerMiddleware
                 Instance = context.Request.Path
             };
 
+            problem.Extensions["code"] = ex.ErrorCode;
             problem.Extensions["traceId"] = context.TraceIdentifier;
 
             context.Response.StatusCode = ex.StatusCode;

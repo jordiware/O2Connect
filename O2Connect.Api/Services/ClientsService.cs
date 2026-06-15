@@ -67,7 +67,7 @@ public class ClientsService : IClientsService
         if (pagination.Page > pages)
         {
             _logger.LogWarning("Requested page {Page} is out of range. Total pages: {Pages}", pagination.Page, pages);
-            throw ApiException.BadRequest($"Page must be between 1 and {pages}");
+            throw ApiException.BadRequest("invalid_requested_page", $"Page must be between 1 and {pages}");
         }
 
         var skip = (pagination.Page - 1) * pagination.PageSize;
@@ -99,7 +99,7 @@ public class ClientsService : IClientsService
         if (!Enum.TryParse<EntityStatus>(status, true, out var newStatus))
         {
             _logger.LogWarning("Invalid status value: {Status}", status);
-            throw ApiException.BadRequest($"Invalid status value: {status}");
+            throw ApiException.BadRequest("invalid_requested_status", $"Invalid status value: {status}");
         }
 
         var client = await _repository.GetAsync(clientId, ct);
@@ -107,8 +107,11 @@ public class ClientsService : IClientsService
         if (client is null)
         {
             _logger.LogInformation("Client with ID {ClientId} not found.", clientId);
-            throw ApiException.NotFound($"Client {clientId} not found.");
+            throw ApiException.NotFound("client_not_found", $"Client {clientId} not found.");
         }
+
+        if (client.Status == newStatus)
+            return;
 
         client = client with { Status = newStatus };
 

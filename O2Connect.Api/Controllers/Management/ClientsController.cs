@@ -36,7 +36,7 @@ public class ClientsController : ControllerBase
         if (!_queryValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
-            throw ApiException.BadRequest(errorMessage);
+            throw ApiException.BadRequest("invalid_request_params", errorMessage);
         }
         
         var pagination = paginationRequest.ToPagination();
@@ -54,7 +54,7 @@ public class ClientsController : ControllerBase
         if (!_queryValidator.ValidateSearchRequest(searchRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid search parameters: {ErrorMessage}", errorMessage);
-            throw ApiException.BadRequest(errorMessage);
+            throw ApiException.BadRequest("invalid_request_params", errorMessage);
         }
 
         var pagination = searchRequest.Pagination.ToPagination();
@@ -72,7 +72,7 @@ public class ClientsController : ControllerBase
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");
-            throw ApiException.BadRequest("Client ID is required.");
+            throw ApiException.BadRequest("invalid_request_params", "Client ID is required.");
         }
 
         var response = await _clientsService.GetClientAsync(clientId, ct);
@@ -92,13 +92,13 @@ public class ClientsController : ControllerBase
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");
-            throw ApiException.BadRequest("Client ID is required.");
+            throw ApiException.BadRequest("invalid_request_params", "Client ID is required.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Status))
         {
             _logger.LogWarning("Status is missing in request.");
-            throw ApiException.BadRequest("Status is required.");
+            throw ApiException.BadRequest("invalid_request_params", "Status is required.");
         }
 
         _logger.LogInformation("Updating client {ClientId} status to {Status}",

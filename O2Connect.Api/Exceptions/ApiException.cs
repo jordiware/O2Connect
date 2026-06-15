@@ -2,26 +2,31 @@
 
 public class ApiException : Exception
 {
-    public static ApiException BadRequest(string detail) =>
+    public static ApiException BadRequest(string errorCode, string detail) =>
         new ApiException(StatusCodes.Status400BadRequest,
+                         errorCode,
                          "Bad request",
-                         detail,
-                         "https://api.yourdomain.com/errors/bad-request");
+                         "https://api.yourdomain.com/errors/bad-request",
+                         detail);
 
-    public static ApiException NotFound(string detail) =>
+    public static ApiException NotFound(string errorCode, string detail) =>
         new ApiException(StatusCodes.Status404NotFound,
+                         errorCode,
                          "Resource not found",
-                         detail,
-                         "https://api.yourdomain.com/errors/not-found");
+                         "https://api.yourdomain.com/errors/not-found",
+                         detail);
 
     public int StatusCode { get; }
     public string Title { get; }
     public string Type { get; }
+    public string ErrorCode { get; }
 
-    private ApiException(int statusCode, string title, string detail, string type) : base(detail)
+    private ApiException(int statusCode, string errorCode, string title, string type, string detail) 
+        : base(detail)
     {
         StatusCode = statusCode;
         Title = title;
         Type = type;
+        ErrorCode = errorCode;
     }
 }
