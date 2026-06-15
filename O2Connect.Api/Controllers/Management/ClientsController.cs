@@ -44,4 +44,32 @@ public class ClientsController : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpGet("search")]
+    [RequireScope(Scopes.Clients.Query)]
+    public async Task<IActionResult> SearchClients([FromQuery] ListClientsRequest listRequest,
+                                                   [FromForm] ClientSearchRequest searchRequest,
+                                                   CancellationToken ct)
+    {
+        if (!Request.HasFormContentType)
+            throw OAuthException.FromInvalidRequest();
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        if (!_queryValidator.ValidateListRequest(listRequest, out var errorMessage))
+        {
+            _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
+            throw OAuthException.FromInvalidRequest(errorMessage);
+        }
+
+        if (!_queryValidator.ValidateSearchRequest(searchRequest, out errorMessage))
+        {
+            _logger.LogWarning("Invalid search parameters: {ErrorMessage}", errorMessage);
+            throw OAuthException.FromInvalidRequest(errorMessage);
+        }
+
+        var response = await _clientsController.SearchClientsAsync(listRequest, searchRequest, ct);
+
+        return Ok(response);
+    }
 }

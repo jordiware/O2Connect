@@ -2,6 +2,36 @@
 
 public static class Scopes
 {
+    public static IReadOnlyList<string> All { get; } = new List<string>
+    {
+        Oidc.OpenId,
+        Oidc.Profile,
+        Oidc.Email,
+        Oidc.Address,
+        Oidc.Phone,
+        OAuth.OfflineAccess,
+        Users.Read,
+        Users.Write,
+        Users.Delete,
+        Clients.Read,
+        Clients.Query,
+        Clients.Write,
+        Clients.Delete,
+        Account.Login,
+        Account.Register,
+        Account.Delete,
+        Profile.Read,
+        Profile.Write,
+        Sessions.Read,
+        Sessions.Revoke,
+        Tokens.Read,
+        Tokens.Revoke,
+        Tokens.Introspect,
+        Api.Read,
+        Api.Write,
+        Security.JwksRead
+    };
+
     /// <summary>
     /// OpenID Connect standard identity scopes.
     /// </summary>
