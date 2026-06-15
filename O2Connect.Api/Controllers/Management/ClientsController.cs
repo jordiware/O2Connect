@@ -3,7 +3,6 @@ using O2Connect.Api.DataValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Mappers;
-using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories.Filters;
 using O2Connect.Api.Security;
 using O2Connect.Api.Services;
@@ -35,12 +34,12 @@ public class ClientsController : ControllerBase
                                                  CancellationToken ct)
     {
         if (!ModelState.IsValid)
-            throw OAuthException.FromInvalidRequest();
+            throw ApiException.BadRequest("Invalid model state.");
 
         if (!_queryValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
-            throw OAuthException.FromInvalidRequest(errorMessage);
+            throw ApiException.BadRequest(errorMessage);
         }
         
         var pagination = paginationRequest.ToPagination();
@@ -56,12 +55,12 @@ public class ClientsController : ControllerBase
                                                    CancellationToken ct)
     {
         if (!ModelState.IsValid)
-            throw OAuthException.FromInvalidRequest();
+            throw ApiException.BadRequest("Invalid model state.");
 
         if (!_queryValidator.ValidateSearchRequest(searchRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid search parameters: {ErrorMessage}", errorMessage);
-            throw OAuthException.FromInvalidRequest(errorMessage);
+            throw ApiException.BadRequest(errorMessage);
         }
 
         var pagination = searchRequest.Pagination.ToPagination();
@@ -79,7 +78,7 @@ public class ClientsController : ControllerBase
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");
-            throw OAuthException.FromInvalidRequest("Client ID is required.");
+            throw ApiException.BadRequest("Client ID is required.");
         }
 
         var response = await _clientsService.GetClientAsync(clientId, ct);
@@ -97,18 +96,18 @@ public class ClientsController : ControllerBase
                                                         CancellationToken ct)
     {
         if (!ModelState.IsValid)
-            throw OAuthException.FromInvalidRequest();
+            throw ApiException.BadRequest("Invalid model state.");
 
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");
-            throw OAuthException.FromInvalidRequest("Client ID is required.");
+            throw ApiException.BadRequest("Client ID is required.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Status))
         {
             _logger.LogWarning("Status is missing in request.");
-            throw OAuthException.FromInvalidRequest("Status is required.");
+            throw ApiException.BadRequest("Status is required.");
         }
 
         _logger.LogInformation("Updating client {ClientId} status to {Status}",

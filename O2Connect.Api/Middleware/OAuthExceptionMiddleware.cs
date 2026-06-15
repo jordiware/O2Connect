@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Exceptions;
+﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.Exceptions;
 using O2Connect.Dto.Responses;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -30,6 +31,22 @@ public class OAuthExceptionMiddleware
             _logger.LogWarning("OAuth error: {Error}", ex.Error);
 
             await HandleOAuthExceptionAsync(context, ex);
+        }
+        catch (ApiException ex)
+        {
+            var problem = new ProblemDetails
+            {
+                Type = ex.Type,
+                Title = ex.Title,
+                Status = ex.StatusCode,
+                Detail = ex.Message,
+                Instance = context.Request.Path
+            };
+
+            problem.Extensions["traceId"] = context.TraceIdentifier;
+
+            context.Response.StatusCode = ex.StatusCode;
+            await context.Response.WriteAsJsonAsync(problem);
         }
         catch (Exception ex)
         {
