@@ -22,7 +22,7 @@ public sealed record ClientSearchFilter
     public bool Filter(Client client)
     {
         if (!string.IsNullOrWhiteSpace(Name) 
-            && !client.NormalizedName.Contains(Name, StringComparison.OrdinalIgnoreCase))
+            && !client.NormalizedName.Contains(Name, StringComparison.InvariantCultureIgnoreCase))
             return false;
 
         if (Status != null && !Status.Contains(client.Status))

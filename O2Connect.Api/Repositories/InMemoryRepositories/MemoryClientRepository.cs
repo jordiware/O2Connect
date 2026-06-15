@@ -21,22 +21,30 @@ public class MemoryClientRepository : IClientRepository
 
     public Task<IReadOnlyList<Client>> ListAsync(ClientListQuery listQuery, CancellationToken ct)
     {
+        return ListAsync(listQuery, ClientSearchFilter.Empty, ct);
+    }
+
+    public Task<IReadOnlyList<Client>> ListAsync(ClientListQuery listQuery,
+                                                 ClientSearchFilter filter,
+                                                 CancellationToken ct)
+    {
         ct.ThrowIfCancellationRequested();
 
         var orderAscending = listQuery.Order.Equals("asc", StringComparison.OrdinalIgnoreCase);
 
+        var filtered = _clients.Values.Where(filter.Filter);
+
         var clients = listQuery.SortBy switch
         {
             _ => orderAscending
-                 ? _clients.OrderBy(c => c.Value.NormalizedName,
+                 ? filtered.OrderBy(c => c.NormalizedName,
                                          StringComparer.InvariantCultureIgnoreCase)
-                 : _clients.OrderByDescending(c => c.Value.NormalizedName,
+                 : filtered.OrderByDescending(c => c.NormalizedName,
                                                    StringComparer.InvariantCultureIgnoreCase)
         };
 
         var page = clients.Skip((listQuery.Page - 1) * listQuery.PageSize)
                           .Take(listQuery.PageSize)
-                          .Select(kvp => kvp.Value)
                           .ToList();
 
         return Task.FromResult<IReadOnlyList<Client>>(page);
