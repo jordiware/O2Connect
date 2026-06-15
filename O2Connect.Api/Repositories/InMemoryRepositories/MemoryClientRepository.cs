@@ -19,12 +19,12 @@ public class MemoryClientRepository : IClientRepository
         return Task.FromResult(_clients.Values.Count(filter.ToExpression().Compile()));
     }
 
-    public Task<IReadOnlyList<Client>> QueryAsync(ClientQuery listQuery, CancellationToken ct)
+    public Task<IReadOnlyList<Client>> QueryAsync(ClientPagination listQuery, CancellationToken ct)
     {
         return QueryAsync(listQuery, ClientFilter.Empty, ct);
     }
 
-    public Task<IReadOnlyList<Client>> QueryAsync(ClientQuery listQuery,
+    public Task<IReadOnlyList<Client>> QueryAsync(ClientPagination listQuery,
                                                   ClientFilter filter,
                                                   CancellationToken ct)
     {

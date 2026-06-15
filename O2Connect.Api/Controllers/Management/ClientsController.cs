@@ -41,8 +41,10 @@ public class ClientsController : ControllerBase
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
             throw OAuthException.FromInvalidRequest(errorMessage);
         }
+        
+        var pagination = paginationRequest.ToPagination();
 
-        var response = await _clientsService.QueryClientsAsync(paginationRequest, ClientFilter.Empty, ct);
+        var response = await _clientsService.QueryClientsAsync(pagination, ClientFilter.Empty, ct);
 
         return Ok(response);
     }
@@ -61,10 +63,10 @@ public class ClientsController : ControllerBase
             throw OAuthException.FromInvalidRequest(errorMessage);
         }
 
-        var paginationRequest = searchRequest.Pagination.ToPaginationRequest();
-        var filterRequest = searchRequest.Filters.ToFilter();
+        var pagination = searchRequest.Pagination.ToPagination();
+        var filter = searchRequest.Filters.ToFilter();
 
-        var response = await _clientsService.QueryClientsAsync(paginationRequest, filterRequest, ct);
+        var response = await _clientsService.QueryClientsAsync(pagination, filter, ct);
 
         return Ok(response);
     }

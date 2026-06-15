@@ -6,6 +6,28 @@ namespace O2Connect.Api.Models.Mappers;
 
 public static class ClientServiceModelsMapper
 {
+    public static ClientPagination ToPagination(this ClientsPaginationRequest request)
+    {
+        return new ClientPagination
+        {
+            Page = request.Page,
+            PageSize = request.PageSize,
+            SortBy = request.SortBy ?? "created_at",
+            Order = request.Order ?? "desc"
+        };
+    }
+
+    public static ClientPagination ToPagination(this ClientSearchPaginationRequest request)
+    {
+        return new ClientPagination
+        {
+            Page = request.Page,
+            PageSize = request.PageSize,
+            SortBy = request.SortBy ?? "created_at",
+            Order = request.Order ?? "desc"
+        };
+    }
+
     public static ClientFilter ToFilter(this ClientSearchFilterRequest filterRequest)
     {
         if (filterRequest == null)
@@ -28,17 +50,6 @@ public static class ClientServiceModelsMapper
         };
 
         return filter;
-    }
-
-    public static ClientsPaginationRequest ToPaginationRequest(this ClientSearchPaginationRequest paginationRequest)
-    {
-        return new ClientsPaginationRequest
-        {
-            Page = paginationRequest.Page,
-            PageSize = paginationRequest.PageSize,
-            SortBy = paginationRequest.SortBy,
-            Order = paginationRequest.Order
-        };
     }
 
     public static ClientSummaryDto ToSummary(this Client client)

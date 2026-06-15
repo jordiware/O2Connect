@@ -9,7 +9,9 @@ namespace O2Connect.Api.Services;
 public interface IClientsService
 {
     Task<ClientDetailsResponse?> GetClientAsync(string clientId, CancellationToken ct);
-    Task<ClientListResponse> QueryClientsAsync(ClientsPaginationRequest listRequest, ClientFilter filter, CancellationToken ct);
+    Task<ClientListResponse> QueryClientsAsync(ClientPagination pagination,
+                                               ClientFilter filter,
+                                               CancellationToken ct);
 }
 
 public class ClientsService : IClientsService
@@ -40,7 +42,7 @@ public class ClientsService : IClientsService
         return response;
     }
 
-    public async Task<ClientListResponse> QueryClientsAsync(ClientsPaginationRequest listRequest,
+    public async Task<ClientListResponse> QueryClientsAsync(ClientPagination pagination,
                                                             ClientFilter filter,
                                                             CancellationToken ct)
     {
@@ -52,31 +54,27 @@ public class ClientsService : IClientsService
             {
                 Items = [],
                 TotalItems = 0,
-                Page = listRequest.Page,
+                Page = pagination.Page,
                 TotalPages = 0,
-                PageSize = listRequest.PageSize
+                PageSize = pagination.PageSize
             };
         }
 
-        var pages = (int)Math.Ceiling((double)totalClients / listRequest.PageSize);
+        var pages = (int)Math.Ceiling((double)totalClients / pagination.PageSize);
 
-        if (listRequest.Page > pages)
+        if (pagination.Page > pages)
         {
-            _logger.LogWarning("Requested page {Page} is out of range. Total pages: {Pages}", listRequest.Page, pages);
+            _logger.LogWarning("Requested page {Page} is out of range. Total pages: {Pages}", pagination.Page, pages);
             throw OAuthException.FromInvalidRequest($"Page must be between 1 and {pages}");
         }
 
-        var pageSize = totalClients - ((listRequest.Page - 1) * listRequest.PageSize);
-        pageSize = Math.Min(pageSize, listRequest.PageSize);
+        var skip = (pagination.Page - 1) * pagination.PageSize;
+        var remainingItems = totalClients - skip;
+        var pageSize = Math.Min(pagination.PageSize, remainingItems);
 
-        var listQuery = new ClientQuery(
-            Page: listRequest.Page,
-            PageSize: pageSize,
-            SortBy: listRequest.SortBy ?? "ClientName",
-            Order: listRequest.Order ?? "asc"
-        );
+        pagination = pagination with { PageSize = pageSize };
 
-        var clients = await _repository.QueryAsync(listQuery, filter, ct);
+        var clients = await _repository.QueryAsync(pagination, filter, ct);
 
         var summaries = clients.Select(c => c.ToSummary()).ToList();
 
@@ -84,9 +82,9 @@ public class ClientsService : IClientsService
         {
             Items = summaries,
             TotalItems = totalClients,
-            Page = listRequest.Page,
+            Page = pagination.Page,
             TotalPages = pages,
-            PageSize = listRequest.PageSize
+            PageSize = pagination.PageSize
         };
 
         return response;
