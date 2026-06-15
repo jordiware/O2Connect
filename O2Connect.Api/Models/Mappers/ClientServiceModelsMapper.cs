@@ -6,38 +6,38 @@ namespace O2Connect.Api.Models.Mappers;
 
 public static class ClientServiceModelsMapper
 {
-    public static ClientFilter ToFilter(this ClientSearchRequest searchRequest)
+    public static ClientFilter ToFilter(this ClientSearchFilterRequest filterRequest)
     {
-        if (searchRequest == null)
+        if (filterRequest == null)
             return ClientFilter.Empty;
 
         var filter = new ClientFilter
         {
-            Name = searchRequest.Name,
-            Status = searchRequest.Status?.Select(s => Enum.Parse<EntityStatus>(s, true)).ToHashSet(),
-            MinCreatedAt = searchRequest.MinCreatedAt,
-            MaxCreatedAt = searchRequest.MaxCreatedAt,
-            MinLastModifiedAt = searchRequest.MinLastModifiedAt,
-            MaxLastModifiedAt = searchRequest.MaxLastModifiedAt,
-            MinRevokedAt = searchRequest.MinRevokedAt,
-            MaxRevokedAt = searchRequest.MaxRevokedAt,
-            GrantTypes = searchRequest.GrantTypes?.ToHashSet(StringComparer.Ordinal),
-            Scopes = searchRequest.Scopes?.ToHashSet(StringComparer.Ordinal),
-            AuthenticationMethods = searchRequest.AuthenticationMethods?.ToHashSet(StringComparer.Ordinal),
-            ResponseTypes = searchRequest.ResponseTypes?.ToHashSet(StringComparer.Ordinal)
+            Name = filterRequest.Name,
+            Status = filterRequest.Status?.Select(s => Enum.Parse<EntityStatus>(s, true)).ToHashSet(),
+            MinCreatedAt = filterRequest.MinCreatedAt,
+            MaxCreatedAt = filterRequest.MaxCreatedAt,
+            MinLastModifiedAt = filterRequest.MinLastModifiedAt,
+            MaxLastModifiedAt = filterRequest.MaxLastModifiedAt,
+            MinRevokedAt = filterRequest.MinRevokedAt,
+            MaxRevokedAt = filterRequest.MaxRevokedAt,
+            GrantTypes = filterRequest.GrantTypes?.ToHashSet(StringComparer.Ordinal),
+            Scopes = filterRequest.Scopes?.ToHashSet(StringComparer.Ordinal),
+            AuthenticationMethods = filterRequest.AuthenticationMethods?.ToHashSet(StringComparer.Ordinal),
+            ResponseTypes = filterRequest.ResponseTypes?.ToHashSet(StringComparer.Ordinal)
         };
 
         return filter;
     }
 
-    public static ClientsPaginationRequest ToPaginationRequest(this ClientSearchRequest searchRequest)
+    public static ClientsPaginationRequest ToPaginationRequest(this ClientSearchPaginationRequest paginationRequest)
     {
         return new ClientsPaginationRequest
         {
-            Page = searchRequest.Page,
-            PageSize = searchRequest.PageSize,
-            SortBy = searchRequest.SortBy,
-            Order = searchRequest.Order
+            Page = paginationRequest.Page,
+            PageSize = paginationRequest.PageSize,
+            SortBy = paginationRequest.SortBy,
+            Order = paginationRequest.Order
         };
     }
 

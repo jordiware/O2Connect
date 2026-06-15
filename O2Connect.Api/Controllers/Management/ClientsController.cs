@@ -36,7 +36,7 @@ public class ClientsController : ControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        if (!_queryValidator.ValidateListRequest(paginationRequest, out var errorMessage))
+        if (!_queryValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
             throw OAuthException.FromInvalidRequest(errorMessage);
@@ -55,23 +55,16 @@ public class ClientsController : ControllerBase
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        var paginationRequest = searchRequest.ToPaginationRequest();
-
-        if (!_queryValidator.ValidateListRequest(paginationRequest, out var errorMessage))
-        {
-            _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
-            throw OAuthException.FromInvalidRequest(errorMessage);
-        }
-
-        if (!_queryValidator.ValidateSearchRequest(searchRequest, out errorMessage))
+        if (!_queryValidator.ValidateSearchRequest(searchRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid search parameters: {ErrorMessage}", errorMessage);
             throw OAuthException.FromInvalidRequest(errorMessage);
         }
 
-        var response = await _clientsService.QueryClientsAsync(paginationRequest,
-                                                               searchRequest.ToFilter(),
-                                                               ct);
+        var paginationRequest = searchRequest.Pagination.ToPaginationRequest();
+        var filterRequest = searchRequest.Filters.ToFilter();
+
+        var response = await _clientsService.QueryClientsAsync(paginationRequest, filterRequest, ct);
 
         return Ok(response);
     }

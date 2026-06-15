@@ -1,4 +1,5 @@
 ﻿using O2Connect.Api.Models;
+using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Dto.Management.Clients;
@@ -7,13 +8,13 @@ namespace O2Connect.Api.DataValidators;
 
 public interface IClientsQueryValidator
 {
-    bool ValidateListRequest(ClientsPaginationRequest request, out string errorMessage);
+    bool ValidatePaginationRequest(ClientsPaginationRequest request, out string errorMessage);
     bool ValidateSearchRequest(ClientSearchRequest request, out string errorMessage);
 }
 
 public class ClientsQueryValidator : IClientsQueryValidator
 {
-    public bool ValidateListRequest(ClientsPaginationRequest request, out string errorMessage)
+    public bool ValidatePaginationRequest(ClientsPaginationRequest request, out string errorMessage)
     {
         errorMessage = string.Empty;
 
@@ -41,53 +42,60 @@ public class ClientsQueryValidator : IClientsQueryValidator
     public bool ValidateSearchRequest(ClientSearchRequest request, out string errorMessage)
     {
         errorMessage = string.Empty;
-        if (request.Status != null 
-            && request.Status.Any(s => !Enum.TryParse<EntityStatus>(s, true, out _)))
+
+        if (!ValidatePaginationRequest(request.Pagination.ToPaginationRequest(), out errorMessage))
+        {
+            return false;
+        }
+
+        var filterRequest = request.Filters;
+        if (filterRequest.Status != null 
+            && filterRequest.Status.Any(s => !Enum.TryParse<EntityStatus>(s, true, out _)))
         {
             errorMessage = "Invalid status value provided.";
             return false;
         }
 
-        if (request.MinCreatedAt != null 
-            && request.MaxCreatedAt != null 
-            && request.MinCreatedAt > request.MaxCreatedAt)
+        if (filterRequest.MinCreatedAt != null 
+            && filterRequest.MaxCreatedAt != null 
+            && filterRequest.MinCreatedAt > filterRequest.MaxCreatedAt)
         {
             errorMessage = "MinCreatedAt cannot be greater than MaxCreatedAt.";
             return false;
         }
 
-        if (request.MinLastModifiedAt != null 
-            && request.MaxLastModifiedAt != null 
-            && request.MinLastModifiedAt > request.MaxLastModifiedAt)
+        if (filterRequest.MinLastModifiedAt != null 
+            && filterRequest.MaxLastModifiedAt != null 
+            && filterRequest.MinLastModifiedAt > filterRequest.MaxLastModifiedAt)
         {
             errorMessage = "MinLastModifiedAt cannot be greater than MaxLastModifiedAt.";
             return false;
         }
 
-        if (request.MinRevokedAt != null
-            && request.MaxRevokedAt != null
-            && request.MinRevokedAt > request.MaxRevokedAt)
+        if (filterRequest.MinRevokedAt != null
+            && filterRequest.MaxRevokedAt != null
+            && filterRequest.MinRevokedAt > filterRequest.MaxRevokedAt)
         {
             errorMessage = "MinRevokedAt cannot be greater than MaxRevokedAt.";
             return false;
         }
 
-        if (request.GrantTypes != null 
-            && request.GrantTypes.Any(gt => !GrantType.TryParse(gt, out _)))
+        if (filterRequest.GrantTypes != null 
+            && filterRequest.GrantTypes.Any(gt => !GrantType.TryParse(gt, out _)))
         {
             errorMessage = "GrantTypes cannot invalid values.";
             return false;
         }
 
-        if (request.Scopes != null
-            && request.Scopes.Any(s => !Scopes.All.Contains(s)))
+        if (filterRequest.Scopes != null
+            && filterRequest.Scopes.Any(s => !Scopes.All.Contains(s)))
         {
             errorMessage = "Scopes cannot contain invalid values.";
             return false;
         }
 
-        if (request.AuthenticationMethods != null
-            && request.AuthenticationMethods.Any(am => !ClientAuthenticationMethod.TryParse(am, out _)))
+        if (filterRequest.AuthenticationMethods != null
+            && filterRequest.AuthenticationMethods.Any(am => !ClientAuthenticationMethod.TryParse(am, out _)))
         {
             errorMessage = "AuthenticationMethods cannot contain invalid values.";
             return false;

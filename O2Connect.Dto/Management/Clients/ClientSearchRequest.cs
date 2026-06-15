@@ -4,7 +4,15 @@ namespace O2Connect.Dto.Management.Clients;
 
 public sealed record ClientSearchRequest
 {
-    // Pagination
+    [JsonPropertyName("pagination")]
+    public ClientSearchPaginationRequest Pagination { get; init; } = new();
+
+    [JsonPropertyName("filters")]
+    public ClientSearchFilterRequest Filters { get; init; } = new();
+}
+
+public sealed record ClientSearchPaginationRequest
+{
     [JsonPropertyName("page")]
     public int Page { get; init; } = 1;
 
@@ -18,8 +26,10 @@ public sealed record ClientSearchRequest
     [JsonPropertyName("order")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Order { get; init; }
+}
 
-    // Search filters
+public sealed record ClientSearchFilterRequest
+{
     [JsonPropertyName("name")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Name { get; init; }
