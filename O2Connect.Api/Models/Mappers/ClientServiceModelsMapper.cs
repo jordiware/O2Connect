@@ -30,6 +30,17 @@ public static class ClientServiceModelsMapper
         return filter;
     }
 
+    public static ClientsPaginationRequest ToPaginationRequest(this ClientSearchRequest searchRequest)
+    {
+        return new ClientsPaginationRequest
+        {
+            Page = searchRequest.Page,
+            PageSize = searchRequest.PageSize,
+            SortBy = searchRequest.SortBy,
+            Order = searchRequest.Order
+        };
+    }
+
     public static ClientSummaryDto ToSummary(this Client client)
     {
         if (client == null)

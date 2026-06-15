@@ -7,13 +7,13 @@ namespace O2Connect.Api.DataValidators;
 
 public interface IClientsQueryValidator
 {
-    bool ValidateListRequest(ListClientsRequest request, out string errorMessage);
+    bool ValidateListRequest(ClientsPaginationRequest request, out string errorMessage);
     bool ValidateSearchRequest(ClientSearchRequest request, out string errorMessage);
 }
 
 public class ClientsQueryValidator : IClientsQueryValidator
 {
-    public bool ValidateListRequest(ListClientsRequest request, out string errorMessage)
+    public bool ValidateListRequest(ClientsPaginationRequest request, out string errorMessage)
     {
         errorMessage = string.Empty;
 

@@ -30,35 +30,34 @@ public class ClientsController : ControllerBase
 
     [HttpGet]
     [RequireScope(Scopes.Clients.Query)]
-    public async Task<IActionResult> ListClients([FromQuery] ListClientsRequest request,
+    public async Task<IActionResult> ListClients([FromQuery] ClientsPaginationRequest paginationRequest,
                                                  CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        if (!_queryValidator.ValidateListRequest(request, out var errorMessage))
+        if (!_queryValidator.ValidateListRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
             throw OAuthException.FromInvalidRequest(errorMessage);
         }
 
-        var response = await _clientsService.QueryClientsAsync(request, ClientFilter.Empty, ct);
+        var response = await _clientsService.QueryClientsAsync(paginationRequest, ClientFilter.Empty, ct);
 
         return Ok(response);
     }
 
     [HttpPost("search")]
     [RequireScope(Scopes.Clients.Query)]
-    public async Task<IActionResult> SearchClients([FromQuery] ListClientsRequest listRequest,
-                                                   [FromForm] ClientSearchRequest searchRequest,
+    public async Task<IActionResult> SearchClients([FromBody] ClientSearchRequest searchRequest,
                                                    CancellationToken ct)
     {
-        if (!Request.HasFormContentType)
-            throw OAuthException.FromInvalidRequest();
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();
 
-        if (!_queryValidator.ValidateListRequest(listRequest, out var errorMessage))
+        var paginationRequest = searchRequest.ToPaginationRequest();
+
+        if (!_queryValidator.ValidateListRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
             throw OAuthException.FromInvalidRequest(errorMessage);
@@ -70,7 +69,9 @@ public class ClientsController : ControllerBase
             throw OAuthException.FromInvalidRequest(errorMessage);
         }
 
-        var response = await _clientsService.QueryClientsAsync(listRequest, searchRequest.ToFilter(), ct);
+        var response = await _clientsService.QueryClientsAsync(paginationRequest,
+                                                               searchRequest.ToFilter(),
+                                                               ct);
 
         return Ok(response);
     }

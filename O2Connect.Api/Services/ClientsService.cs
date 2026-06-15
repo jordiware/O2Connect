@@ -9,7 +9,7 @@ namespace O2Connect.Api.Services;
 public interface IClientsService
 {
     Task<ClientDetailsResponse?> GetClientAsync(string clientId, CancellationToken ct);
-    Task<ClientListResponse> QueryClientsAsync(ListClientsRequest listRequest, ClientFilter filter, CancellationToken ct);
+    Task<ClientListResponse> QueryClientsAsync(ClientsPaginationRequest listRequest, ClientFilter filter, CancellationToken ct);
 }
 
 public class ClientsService : IClientsService
@@ -40,7 +40,7 @@ public class ClientsService : IClientsService
         return response;
     }
 
-    public async Task<ClientListResponse> QueryClientsAsync(ListClientsRequest listRequest,
+    public async Task<ClientListResponse> QueryClientsAsync(ClientsPaginationRequest listRequest,
                                                             ClientFilter filter,
                                                             CancellationToken ct)
     {
@@ -66,7 +66,7 @@ public class ClientsService : IClientsService
             throw OAuthException.FromInvalidRequest($"Page must be between 1 and {pages}");
         }
 
-        var pageSize = totalClients - (listRequest.Page * listRequest.PageSize);
+        var pageSize = totalClients - ((listRequest.Page - 1) * listRequest.PageSize);
         pageSize = Math.Min(pageSize, listRequest.PageSize);
 
         var listQuery = new ClientQuery(

@@ -1,42 +1,70 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.Json.Serialization;
 
 namespace O2Connect.Dto.Management.Clients;
 
 public sealed record ClientSearchRequest
 {
-    [FromForm(Name = "name")]
+    // Pagination
+    [JsonPropertyName("page")]
+    public int Page { get; init; } = 1;
+
+    [JsonPropertyName("page_size")]
+    public int PageSize { get; init; } = 20;
+
+    [JsonPropertyName("sort_by")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? SortBy { get; init; }
+
+    [JsonPropertyName("order")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Order { get; init; }
+
+    // Search filters
+    [JsonPropertyName("name")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Name { get; init; }
 
-    [FromForm(Name = "status")]
+    [JsonPropertyName("status")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? Status { get; init; }
 
-    [FromForm(Name = "min_created_at")]
+    [JsonPropertyName("min_created_at")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? MinCreatedAt { get; init; }
 
-    [FromForm(Name = "max_created_at")]
+    [JsonPropertyName("max_created_at")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? MaxCreatedAt { get; init; }
 
-    [FromForm(Name = "min_last_modified_at")]
+    [JsonPropertyName("min_last_modified_at")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? MinLastModifiedAt { get; init; }
 
-    [FromForm(Name = "max_last_modified_at")]
+    [JsonPropertyName("max_last_modified_at")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? MaxLastModifiedAt { get; init; }
 
-    [FromForm(Name = "min_revoked_at")]
+    [JsonPropertyName("min_revoked_at")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? MinRevokedAt { get; init; }
 
-    [FromForm(Name = "max_revoked_at")]
+    [JsonPropertyName("max_revoked_at")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? MaxRevokedAt { get; init; }
 
-    [FromForm(Name = "grant_types")]
+    [JsonPropertyName("grant_types")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? GrantTypes { get; init; }
 
-    [FromForm(Name = "scopes")]
+    [JsonPropertyName("scopes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? Scopes { get; init; }
 
-    [FromForm(Name = "authentication_methods")]
+    [JsonPropertyName("authentication_methods")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? AuthenticationMethods { get; init; }
 
-    [FromForm(Name = "response_types")]
+    [JsonPropertyName("response_types")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? ResponseTypes { get; init; }
 }

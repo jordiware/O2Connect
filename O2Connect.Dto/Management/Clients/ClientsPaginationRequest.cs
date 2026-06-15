@@ -2,7 +2,7 @@
 
 namespace O2Connect.Dto.Management.Clients;
 
-public sealed record ListClientsRequest
+public sealed record ClientsPaginationRequest
 {
     [FromQuery(Name = "page")]
     public int Page { get; init; } = 1;
