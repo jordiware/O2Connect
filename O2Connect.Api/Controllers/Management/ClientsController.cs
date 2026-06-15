@@ -2,6 +2,8 @@
 using O2Connect.Api.DataValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
+using O2Connect.Api.Models.Mappers;
+using O2Connect.Api.Repositories.Filters;
 using O2Connect.Api.Security;
 using O2Connect.Api.Services;
 using O2Connect.Dto.Management.Clients;
@@ -13,16 +15,16 @@ namespace O2Connect.Api.Controllers.Management;
 public class ClientsController : ControllerBase
 {
     private readonly IClientsQueryValidator _queryValidator;
-    private readonly IClientsService _clientsController;
+    private readonly IClientsService _clientsService;
     private readonly ILogger<ClientsController> _logger;
 
     public ClientsController(
         IClientsQueryValidator queryValidator,
-        IClientsService clientsController,
+        IClientsService clientsService,
         ILogger<ClientsController> logger)
     {
         _queryValidator = queryValidator;
-        _clientsController = clientsController;
+        _clientsService = clientsService;
         _logger = logger;
     }
 
@@ -40,7 +42,7 @@ public class ClientsController : ControllerBase
             throw OAuthException.FromInvalidRequest(errorMessage);
         }
 
-        var response = await _clientsController.ListClientsAsync(request, ct);
+        var response = await _clientsService.QueryClientsAsync(request, ClientFilter.Empty, ct);
 
         return Ok(response);
     }
@@ -68,7 +70,7 @@ public class ClientsController : ControllerBase
             throw OAuthException.FromInvalidRequest(errorMessage);
         }
 
-        var response = await _clientsController.SearchClientsAsync(listRequest, searchRequest, ct);
+        var response = await _clientsService.QueryClientsAsync(listRequest, searchRequest.ToFilter(), ct);
 
         return Ok(response);
     }
@@ -78,9 +80,12 @@ public class ClientsController : ControllerBase
     public async Task<IActionResult> GetClient([FromRoute] string clientId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(clientId))
+        {
+            _logger.LogWarning("Client ID is missing in the request.");
             throw OAuthException.FromInvalidRequest("Client ID is required.");
+        }
         
-        var response = await _clientsController.GetClientAsync(clientId, ct);
+        var response = await _clientsService.GetClientAsync(clientId, ct);
         
         if (response == null)
             return NotFound();
