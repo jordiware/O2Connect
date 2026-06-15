@@ -33,9 +33,6 @@ public class ClientsController : ControllerBase
     public async Task<IActionResult> ListClients([FromQuery] ClientsPaginationRequest paginationRequest,
                                                  CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            throw ApiException.BadRequest("Invalid model state.");
-
         if (!_queryValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
@@ -54,9 +51,6 @@ public class ClientsController : ControllerBase
     public async Task<IActionResult> SearchClients([FromBody] ClientSearchRequest searchRequest,
                                                    CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            throw ApiException.BadRequest("Invalid model state.");
-
         if (!_queryValidator.ValidateSearchRequest(searchRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid search parameters: {ErrorMessage}", errorMessage);
@@ -95,9 +89,6 @@ public class ClientsController : ControllerBase
                                                         [FromBody] UpdateClientStatusRequest request,
                                                         CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            throw ApiException.BadRequest("Invalid model state.");
-
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");

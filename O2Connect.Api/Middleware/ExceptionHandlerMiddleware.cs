@@ -6,14 +6,14 @@ using System.Text.Json.Serialization;
 
 namespace O2Connect.Api.Middleware;
 
-public class OAuthExceptionMiddleware
+public class ExceptionHandlerMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly ILogger<OAuthExceptionMiddleware> _logger;
+    private readonly ILogger<ExceptionHandlerMiddleware> _logger;
 
-    public OAuthExceptionMiddleware(
+    public ExceptionHandlerMiddleware(
         RequestDelegate next,
-        ILogger<OAuthExceptionMiddleware> logger)
+        ILogger<ExceptionHandlerMiddleware> logger)
     {
         _next = next;
         _logger = logger;

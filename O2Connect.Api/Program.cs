@@ -161,7 +161,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.UseMiddleware<OAuthExceptionMiddleware>();
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.MapControllers();
 
