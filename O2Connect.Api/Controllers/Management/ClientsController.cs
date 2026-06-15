@@ -3,6 +3,7 @@ using O2Connect.Api.DataValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Mappers;
+using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories.Filters;
 using O2Connect.Api.Security;
 using O2Connect.Api.Services;
@@ -80,12 +81,42 @@ public class ClientsController : ControllerBase
             _logger.LogWarning("Client ID is missing in the request.");
             throw OAuthException.FromInvalidRequest("Client ID is required.");
         }
-        
+
         var response = await _clientsService.GetClientAsync(clientId, ct);
-        
+
         if (response == null)
             return NotFound();
-        
+
         return Ok(response);
+    }
+
+    [HttpPatch("{clientId}/status")]
+    [RequireScope(Scopes.Clients.Write)]
+    public async Task<IActionResult> UpdateClientStatus([FromRoute] string clientId,
+                                                        [FromBody] UpdateClientStatusRequest request,
+                                                        CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+            throw OAuthException.FromInvalidRequest();
+
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            _logger.LogWarning("Client ID is missing in the request.");
+            throw OAuthException.FromInvalidRequest("Client ID is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Status))
+        {
+            _logger.LogWarning("Status is missing in request.");
+            throw OAuthException.FromInvalidRequest("Status is required.");
+        }
+
+        _logger.LogInformation("Updating client {ClientId} status to {Status}",
+                               clientId,
+                               request.Status);
+
+        await _clientsService.UpdateClientStatusAsync(clientId, request.Status, ct);
+
+        return NoContent();
     }
 }
