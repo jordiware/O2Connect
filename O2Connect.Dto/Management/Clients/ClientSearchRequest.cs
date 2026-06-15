@@ -2,7 +2,7 @@
 
 namespace O2Connect.Dto.Management.Clients;
 
-public class ClientSearchRequest
+public sealed record ClientSearchRequest
 {
     [FromForm(Name = "name")]
     public string? Name { get; init; }

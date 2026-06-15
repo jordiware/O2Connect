@@ -45,7 +45,7 @@ public class ClientsController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet("search")]
+    [HttpPost("search")]
     [RequireScope(Scopes.Clients.Query)]
     public async Task<IActionResult> SearchClients([FromQuery] ListClientsRequest listRequest,
                                                    [FromForm] ClientSearchRequest searchRequest,
@@ -70,6 +70,21 @@ public class ClientsController : ControllerBase
 
         var response = await _clientsController.SearchClientsAsync(listRequest, searchRequest, ct);
 
+        return Ok(response);
+    }
+
+    [HttpGet("{clientId}")]
+    [RequireScope(Scopes.Clients.Read)]
+    public async Task<IActionResult> GetClient([FromRoute] string clientId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(clientId))
+            throw OAuthException.FromInvalidRequest("Client ID is required.");
+        
+        var response = await _clientsController.GetClientAsync(clientId, ct);
+        
+        if (response == null)
+            return NotFound();
+        
         return Ok(response);
     }
 }

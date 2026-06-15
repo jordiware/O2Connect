@@ -8,6 +8,7 @@ namespace O2Connect.Api.Services;
 
 public interface IClientsService
 {
+    Task<ClientDetailsResponse?> GetClientAsync(string clientId, CancellationToken ct);
     Task<ClientListResponse> ListClientsAsync(ListClientsRequest request, CancellationToken ct);
     Task<ClientListResponse> SearchClientsAsync(ListClientsRequest listRequest,
                                                 ClientSearchRequest searchRequest,
@@ -25,6 +26,35 @@ public class ClientsService : IClientsService
     {
         _repository = repository;
         _logger = logger;
+    }
+
+    public async Task<ClientDetailsResponse?> GetClientAsync(string clientId, CancellationToken ct)
+    {
+        var client = await _repository.GetAsync(clientId, ct);
+
+        if (client is null)
+        {
+            _logger.LogWarning("Client with ID {ClientId} not found.", clientId);
+            return null;
+        }
+
+        var response = new ClientDetailsResponse
+        {
+            Id = client.Id,
+            Name = client.Name,
+            ImageUrl = client.ImageUrl,
+            Status = client.Status.ToString(),
+            OwnerId = client.OwnerId,
+            CreatedAt = client.CreatedAt,
+            LastModifiedAt = client.LastModifiedAt,
+            RevokedAt = client.RevokedAt,
+            RedirectUris = client.RedirectUris.ToList(),
+            AllowedGrantTypes = client.AllowedGrantTypes.ToList(),
+            AllowedScopes = client.AllowedScopes.ToList(),
+            AllowedAuthenticationMethods = client.AllowedAuthenticationMethods.ToList(),
+            AllowedResponseTypes = client.AllowedResponseTypes.ToList()
+        };
+        return response;
     }
 
     public async Task<ClientListResponse> ListClientsAsync(ListClientsRequest request, CancellationToken ct)
