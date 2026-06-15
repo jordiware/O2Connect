@@ -50,14 +50,14 @@ public class ClientsService : IClientsService
         var pageSize = totalClients - (request.Page * request.PageSize);
         pageSize = Math.Min(pageSize, request.PageSize);
 
-        var listQuery = new ClientListQuery(
+        var listQuery = new ClientQuery(
             Page: request.Page,
             PageSize: pageSize,
             SortBy: request.SortBy ?? "ClientName",
             Order: request.Order ?? "asc"
         );
 
-        var clients = await _repository.ListAsync(listQuery, ct);
+        var clients = await _repository.QueryAsync(listQuery, ct);
 
         var summaries = clients.Select(client => new ClientSummaryDto
         {

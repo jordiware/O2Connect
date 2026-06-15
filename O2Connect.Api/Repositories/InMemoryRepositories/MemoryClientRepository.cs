@@ -10,22 +10,22 @@ public class MemoryClientRepository : IClientRepository
 
     public Task<int> CountAsync(CancellationToken ct)
     {
-        return CountAsync(ClientSearchFilter.Empty, ct);
+        return CountAsync(ClientFilter.Empty, ct);
     }
 
-    public Task<int> CountAsync(ClientSearchFilter filter, CancellationToken ct)
+    public Task<int> CountAsync(ClientFilter filter, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         return Task.FromResult(_clients.Values.Count(filter.Filter));
     }
 
-    public Task<IReadOnlyList<Client>> ListAsync(ClientListQuery listQuery, CancellationToken ct)
+    public Task<IReadOnlyList<Client>> QueryAsync(ClientQuery listQuery, CancellationToken ct)
     {
-        return ListAsync(listQuery, ClientSearchFilter.Empty, ct);
+        return QueryAsync(listQuery, ClientFilter.Empty, ct);
     }
 
-    public Task<IReadOnlyList<Client>> ListAsync(ClientListQuery listQuery,
-                                                 ClientSearchFilter filter,
+    public Task<IReadOnlyList<Client>> QueryAsync(ClientQuery listQuery,
+                                                 ClientFilter filter,
                                                  CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();

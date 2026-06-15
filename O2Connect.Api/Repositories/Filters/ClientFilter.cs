@@ -2,9 +2,9 @@
 
 namespace O2Connect.Api.Repositories.Filters;
 
-public sealed record ClientSearchFilter
+public sealed record ClientFilter
 {
-    public static ClientSearchFilter Empty => new();
+    public static ClientFilter Empty => new();
 
     public string? Name { get; init; }
     public IReadOnlySet<EntityStatus>? Status { get; init; }
