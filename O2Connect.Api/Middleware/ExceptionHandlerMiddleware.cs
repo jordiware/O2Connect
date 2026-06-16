@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models.Options;
 using O2Connect.Dto.Responses;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,13 +11,16 @@ namespace O2Connect.Api.Middleware;
 public class ExceptionHandlerMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ApiOptions _apiOptions;
     private readonly ILogger<ExceptionHandlerMiddleware> _logger;
 
     public ExceptionHandlerMiddleware(
         RequestDelegate next,
+        IOptions<ApiOptions> apiOptions,
         ILogger<ExceptionHandlerMiddleware> logger)
     {
         _next = next;
+        _apiOptions = apiOptions.Value;
         _logger = logger;
     }
 
@@ -36,7 +41,7 @@ public class ExceptionHandlerMiddleware
         {
             var problem = new ProblemDetails
             {
-                Type = ex.Type,
+                Type = $"{_apiOptions.Domain}{ex.Type}",
                 Title = ex.Title,
                 Status = ex.StatusCode,
                 Detail = ex.Message,
