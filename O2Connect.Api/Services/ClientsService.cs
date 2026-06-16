@@ -10,12 +10,20 @@ namespace O2Connect.Api.Services;
 
 public interface IClientsService
 {
-    Task<ClientDetailsResponse?> GetClientAsync(string clientId, CancellationToken ct);
+    Task<ClientDetailsResponse?> GetClientAsync(string clientId,
+                                                CancellationToken ct);
     Task<ClientListResponse> QueryClientsAsync(ClientPagination pagination,
                                                ClientFilter filter,
                                                CancellationToken ct);
-    Task UpdateClientScopesAsync(string clientId, IReadOnlyList<string> scopes, CancellationToken ct);
-    Task UpdateClientStatusAsync(string clientId, string status, CancellationToken ct);
+    Task UpdateClientRedirectUrisAsync(string clientId,
+                                       IReadOnlyList<string> redirectUris,
+                                       CancellationToken ct);
+    Task UpdateClientScopesAsync(string clientId,
+                                 IReadOnlyList<string> scopes,
+                                 CancellationToken ct);
+    Task UpdateClientStatusAsync(string clientId,
+                                 string status,
+                                 CancellationToken ct);
 }
 
 public class ClientsService : IClientsService
@@ -94,12 +102,40 @@ public class ClientsService : IClientsService
         return response;
     }
 
+    public async Task UpdateClientRedirectUrisAsync(string clientId,
+                                                    IReadOnlyList<string> redirectUris,
+                                                    CancellationToken ct)
+    {
+        var newRedirectUris = redirectUris.Select(r => r.Trim())
+                                          .Where(r => !string.IsNullOrWhiteSpace(r))
+                                          .Distinct()
+                                          .ToHashSet();
+
+        if (!newRedirectUris.All(r => Uri.IsWellFormedUriString(r, UriKind.Absolute)))
+        {
+            _logger.LogWarning("Invalid redirect URIs provided for client {ClientId}.", clientId);
+            throw ApiException.BadRequest("invalid_redirect_uris", "One or more redirect URIs are invalid.");
+        }
+
+        var client = await GetClientForUpdateAsync(clientId, ct);
+
+        var now = DateTimeOffset.UtcNow;
+
+        client = client with
+        {
+            RedirectUris = newRedirectUris,
+            LastModifiedAt = now
+        };
+
+        await _repository.StoreAsync(client, ct);
+    }
+
     public async Task UpdateClientScopesAsync(string clientId,
                                               IReadOnlyList<string> scopes,
                                               CancellationToken ct)
     {
         var newScopes = scopes.Select(s => s.Trim())
-                              .Where(s => !string.IsNullOrEmpty(s))
+                              .Where(s => !string.IsNullOrWhiteSpace(s))
                               .Distinct()
                               .ToHashSet();
 

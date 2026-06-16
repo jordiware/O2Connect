@@ -136,4 +136,31 @@ public class ClientsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPatch("{clientId}/redirect_uris")]
+    [RequireScope(Scopes.Clients.Write)]
+    public async Task<IActionResult> UpdateClientRedirectUris([FromRoute] string clientId,
+                                                              [FromBody] UpdateClientRedirectUrisRequest request,
+                                                              CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            _logger.LogWarning("Client ID is missing in the request.");
+            throw ApiException.BadRequest("invalid_request_params", "Client ID is required.");
+        }
+
+        if (request.RedirectUris is null)
+        {
+            _logger.LogWarning("Redirect URIs are missing in request.");
+            throw ApiException.BadRequest("invalid_request_params", "Redirect URIs is required.");
+        }
+
+        _logger.LogInformation("Updating client {ClientId} redirect URIs to [{RedirectUris}]",
+                               clientId,
+                               string.Join(' ', request.RedirectUris));
+
+        await _clientsService.UpdateClientRedirectUrisAsync(clientId, request.RedirectUris, ct);
+
+        return NoContent();
+    }
 }
