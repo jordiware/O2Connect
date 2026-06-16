@@ -1,4 +1,5 @@
 ﻿using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models;
 using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
@@ -13,6 +14,7 @@ public interface IClientsService
     Task<ClientListResponse> QueryClientsAsync(ClientPagination pagination,
                                                ClientFilter filter,
                                                CancellationToken ct);
+    Task UpdateClientScopesAsync(string clientId, IReadOnlyList<string> scopes, CancellationToken ct);
     Task UpdateClientStatusAsync(string clientId, string status, CancellationToken ct);
 }
 
@@ -92,6 +94,38 @@ public class ClientsService : IClientsService
         return response;
     }
 
+    public async Task UpdateClientScopesAsync(string clientId,
+                                              IReadOnlyList<string> scopes,
+                                              CancellationToken ct)
+    {
+        var newScopes = scopes.Select(s => s.Trim())
+                              .Where(s => !string.IsNullOrEmpty(s))
+                              .Distinct()
+                              .ToHashSet();
+
+        if (!newScopes.All(Scopes.All.Contains))
+        {
+            var invalidScopes = newScopes.Except(Scopes.All);
+
+            _logger.LogWarning("Invalid scopes provided: {InvalidScopes}", string.Join(", ", invalidScopes));
+
+            throw ApiException.BadRequest("invalid_requested_scopes",
+                                          $"Invalid scopes provided: {string.Join(", ", invalidScopes)}");
+        }
+
+        var client = await GetClientForUpdateAsync(clientId, ct);
+
+        var now = DateTimeOffset.UtcNow;
+
+        client = client with
+        {
+            AllowedScopes = newScopes,
+            LastModifiedAt = now
+        };
+
+        await _repository.StoreAsync(client, ct);
+    }
+
     public async Task UpdateClientStatusAsync(string clientId, string status, CancellationToken ct)
     {
         status = status.Trim();
@@ -102,20 +136,7 @@ public class ClientsService : IClientsService
             throw ApiException.BadRequest("invalid_requested_status", $"Invalid status value: {status}");
         }
 
-        var client = await _repository.GetAsync(clientId, ct);
-
-        if (client is null)
-        {
-            _logger.LogInformation("Client with ID '{ClientId}' not found.", clientId);
-            throw ApiException.NotFound("client_not_found", $"Client '{clientId}' not found.");
-        }
-
-        if (client.Status == EntityStatus.Revoked)
-        {
-            _logger.LogInformation("Client '{ClientId}' is already revoked. No status update performed.", clientId);
-            throw ApiException.Conflict("client_revoked",
-                                        $"Client '{clientId}' is revoked and its status cannot be changed.");
-        }
+        var client = await GetClientForUpdateAsync(clientId, ct);
 
         if (client.Status == newStatus)
             return;
@@ -132,5 +153,25 @@ public class ClientsService : IClientsService
             client = client with { RevokedAt = now };
 
         await _repository.StoreAsync(client, ct);
+    }
+
+    private async Task<Client> GetClientForUpdateAsync(string clientId, CancellationToken ct)
+    {
+        var client = await _repository.GetAsync(clientId, ct);
+
+        if (client is null)
+        {
+            _logger.LogInformation("Client with ID '{ClientId}' not found.", clientId);
+            throw ApiException.NotFound("client_not_found", $"Client '{clientId}' not found.");
+        }
+
+        if (client.Status == EntityStatus.Revoked)
+        {
+            _logger.LogInformation("Client '{ClientId}' is already revoked. No updates performed.", clientId);
+            throw ApiException.Conflict("client_revoked",
+                                        $"Client '{clientId}' is revoked and updates cannot be performed.");
+        }
+
+        return client;
     }
 }

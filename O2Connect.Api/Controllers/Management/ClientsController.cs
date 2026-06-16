@@ -109,4 +109,31 @@ public class ClientsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPatch("{clientId}/scopes")]
+    [RequireScope(Scopes.Clients.Write)]
+    public async Task<IActionResult> UpdateClientScopes([FromRoute] string clientId,
+                                                        [FromBody] UpdateClientScopesRequest request,
+                                                        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            _logger.LogWarning("Client ID is missing in the request.");
+            throw ApiException.BadRequest("invalid_request_params", "Client ID is required.");
+        }
+
+        if (request.Scopes is null)
+        {
+            _logger.LogWarning("Scopes are missing in request.");
+            throw ApiException.BadRequest("invalid_request_params", "Scopes is required.");
+        }
+
+        _logger.LogInformation("Updating client {ClientId} scopes to [{Scopes}]",
+                               clientId,
+                               string.Join(' ', request.Scopes));
+
+        await _clientsService.UpdateClientScopesAsync(clientId, request.Scopes, ct);
+
+        return NoContent();
+    }
 }
