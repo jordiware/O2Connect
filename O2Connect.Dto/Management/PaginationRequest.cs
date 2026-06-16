@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace O2Connect.Dto.Management.Clients;
+namespace O2Connect.Dto.Management;
 
-public sealed record ClientsPaginationRequest
+public sealed record PaginationRequest
 {
     [FromQuery(Name = "page")]
     public int Page { get; init; } = 1;

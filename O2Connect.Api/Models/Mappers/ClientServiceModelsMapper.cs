@@ -1,12 +1,13 @@
 ﻿using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories.Filters;
+using O2Connect.Dto.Management;
 using O2Connect.Dto.Management.Clients;
 
 namespace O2Connect.Api.Models.Mappers;
 
 public static class ClientServiceModelsMapper
 {
-    public static ClientPagination ToPagination(this ClientsPaginationRequest request)
+    public static ClientPagination ToPagination(this PaginationRequest request)
     {
         return new ClientPagination
         {
@@ -28,9 +29,9 @@ public static class ClientServiceModelsMapper
         };
     }
 
-    public static ClientsPaginationRequest ToPaginationRequest(this ClientsSearchPaginationRequest request)
+    public static PaginationRequest ToPaginationRequest(this ClientsSearchPaginationRequest request)
     {
-        return new ClientsPaginationRequest
+        return new PaginationRequest
         {
             Page = request.Page,
             PageSize = request.PageSize,
@@ -63,12 +64,12 @@ public static class ClientServiceModelsMapper
         return filter;
     }
 
-    public static ClientSummaryDto ToSummary(this Client client)
+    public static ClientSummaryResponse ToSummary(this Client client)
     {
         if (client == null)
             throw new ArgumentNullException(nameof(client));
 
-        var summary = new ClientSummaryDto
+        var summary = new ClientSummaryResponse
         {
             Id = client.Id,
             Name = client.Name,

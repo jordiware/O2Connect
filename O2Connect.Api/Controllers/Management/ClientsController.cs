@@ -6,6 +6,7 @@ using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Repositories.Filters;
 using O2Connect.Api.Security;
 using O2Connect.Api.Services;
+using O2Connect.Dto.Management;
 using O2Connect.Dto.Management.Clients;
 
 namespace O2Connect.Api.Controllers.Management;
@@ -30,7 +31,7 @@ public class ClientsController : ControllerBase
 
     [HttpGet]
     [RequireScope(Scopes.Clients.Query)]
-    public async Task<IActionResult> ListClients([FromQuery] ClientsPaginationRequest paginationRequest,
+    public async Task<IActionResult> ListClients([FromQuery] PaginationRequest paginationRequest,
                                                  CancellationToken ct)
     {
         if (!_queryValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))

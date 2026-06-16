@@ -5,7 +5,7 @@ namespace O2Connect.Dto.Management.Clients;
 public sealed record ClientListResponse
 {
     [JsonPropertyName("items")]
-    public required IReadOnlyList<ClientSummaryDto> Items { get; init; }
+    public required IReadOnlyList<ClientSummaryResponse> Items { get; init; }
 
     [JsonPropertyName("total_items")]
     public required int TotalItems { get; init; }

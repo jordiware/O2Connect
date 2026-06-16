@@ -2,19 +2,20 @@
 using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
+using O2Connect.Dto.Management;
 using O2Connect.Dto.Management.Clients;
 
 namespace O2Connect.Api.DataValidators;
 
 public interface IClientsQueryValidator
 {
-    bool ValidatePaginationRequest(ClientsPaginationRequest request, out string errorMessage);
+    bool ValidatePaginationRequest(PaginationRequest request, out string errorMessage);
     bool ValidateSearchRequest(ClientsSearchRequest request, out string errorMessage);
 }
 
 public class ClientsQueryValidator : IClientsQueryValidator
 {
-    public bool ValidatePaginationRequest(ClientsPaginationRequest request, out string errorMessage)
+    public bool ValidatePaginationRequest(PaginationRequest request, out string errorMessage)
     {
         errorMessage = string.Empty;
 
