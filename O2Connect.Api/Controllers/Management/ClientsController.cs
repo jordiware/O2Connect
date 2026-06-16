@@ -48,7 +48,7 @@ public class ClientsController : ControllerBase
 
     [HttpPost("search")]
     [RequireScope(Scopes.Clients.Query)]
-    public async Task<IActionResult> SearchClients([FromBody] ClientSearchRequest searchRequest,
+    public async Task<IActionResult> SearchClients([FromBody] ClientsSearchRequest searchRequest,
                                                    CancellationToken ct)
     {
         if (!_queryValidator.ValidateSearchRequest(searchRequest, out var errorMessage))

@@ -2,16 +2,16 @@
 
 namespace O2Connect.Dto.Management.Clients;
 
-public sealed record ClientSearchRequest
+public sealed record ClientsSearchRequest
 {
     [JsonPropertyName("pagination")]
-    public ClientSearchPaginationRequest Pagination { get; init; } = new();
+    public ClientsSearchPaginationRequest Pagination { get; init; } = new();
 
     [JsonPropertyName("filters")]
-    public ClientSearchFilterRequest Filters { get; init; } = new();
+    public ClientsSearchFilterRequest Filters { get; init; } = new();
 }
 
-public sealed record ClientSearchPaginationRequest
+public sealed record ClientsSearchPaginationRequest
 {
     [JsonPropertyName("page")]
     public int Page { get; init; } = 1;
@@ -28,7 +28,7 @@ public sealed record ClientSearchPaginationRequest
     public string? Order { get; init; }
 }
 
-public sealed record ClientSearchFilterRequest
+public sealed record ClientsSearchFilterRequest
 {
     [JsonPropertyName("name")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

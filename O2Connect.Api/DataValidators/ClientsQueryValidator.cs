@@ -9,7 +9,7 @@ namespace O2Connect.Api.DataValidators;
 public interface IClientsQueryValidator
 {
     bool ValidatePaginationRequest(ClientsPaginationRequest request, out string errorMessage);
-    bool ValidateSearchRequest(ClientSearchRequest request, out string errorMessage);
+    bool ValidateSearchRequest(ClientsSearchRequest request, out string errorMessage);
 }
 
 public class ClientsQueryValidator : IClientsQueryValidator
@@ -39,7 +39,7 @@ public class ClientsQueryValidator : IClientsQueryValidator
         return true;
     }
 
-    public bool ValidateSearchRequest(ClientSearchRequest request, out string errorMessage)
+    public bool ValidateSearchRequest(ClientsSearchRequest request, out string errorMessage)
     {
         errorMessage = string.Empty;
 

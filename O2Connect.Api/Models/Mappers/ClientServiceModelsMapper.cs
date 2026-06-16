@@ -17,7 +17,7 @@ public static class ClientServiceModelsMapper
         };
     }
 
-    public static ClientPagination ToPagination(this ClientSearchPaginationRequest request)
+    public static ClientPagination ToPagination(this ClientsSearchPaginationRequest request)
     {
         return new ClientPagination
         {
@@ -28,7 +28,18 @@ public static class ClientServiceModelsMapper
         };
     }
 
-    public static ClientFilter ToFilter(this ClientSearchFilterRequest filterRequest)
+    public static ClientsPaginationRequest ToPaginationRequest(this ClientsSearchPaginationRequest request)
+    {
+        return new ClientsPaginationRequest
+        {
+            Page = request.Page,
+            PageSize = request.PageSize,
+            SortBy = request.SortBy ?? "created_at",
+            Order = request.Order ?? "desc"
+        };
+    }
+
+    public static ClientFilter ToFilter(this ClientsSearchFilterRequest filterRequest)
     {
         if (filterRequest == null)
             return ClientFilter.Empty;
