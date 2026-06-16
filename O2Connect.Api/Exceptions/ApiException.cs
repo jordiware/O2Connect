@@ -16,6 +16,13 @@ public class ApiException : Exception
                          "/errors/not-found",
                          detail);
 
+    public static ApiException Conflict(string errorCode, string detail) =>
+        new ApiException(StatusCodes.Status409Conflict,
+                         errorCode,
+                         "Bad request",
+                         "/errors/conflict",
+                         detail);
+
     public int StatusCode { get; }
     public string ErrorCode { get; }
     public string Title { get; }

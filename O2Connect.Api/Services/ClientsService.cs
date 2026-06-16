@@ -106,14 +106,30 @@ public class ClientsService : IClientsService
 
         if (client is null)
         {
-            _logger.LogInformation("Client with ID {ClientId} not found.", clientId);
-            throw ApiException.NotFound("client_not_found", $"Client {clientId} not found.");
+            _logger.LogInformation("Client with ID '{ClientId}' not found.", clientId);
+            throw ApiException.NotFound("client_not_found", $"Client '{clientId}' not found.");
+        }
+
+        if (client.Status == EntityStatus.Revoked)
+        {
+            _logger.LogInformation("Client '{ClientId}' is already revoked. No status update performed.", clientId);
+            throw ApiException.Conflict("client_revoked",
+                                        $"Client '{clientId}' is revoked and its status cannot be changed.");
         }
 
         if (client.Status == newStatus)
             return;
 
-        client = client with { Status = newStatus };
+        var now = DateTimeOffset.UtcNow;
+
+        client = client with
+        {
+            Status = newStatus,
+            LastModifiedAt = now
+        };
+
+        if (newStatus == EntityStatus.Revoked)
+            client = client with { RevokedAt = now };
 
         await _repository.StoreAsync(client, ct);
     }
