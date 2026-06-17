@@ -9,4 +9,5 @@ public interface IAuthorizationCodeRepository
     Task<AuthorizationCode?> RedeemAsync(string code, CancellationToken ct);
     Task<bool> TryConsumeAsync(string code, CancellationToken ct);
     Task RemoveAsync(string code, CancellationToken ct);
+    Task RevokeForClientAsync(string clientId, CancellationToken ct);
 }

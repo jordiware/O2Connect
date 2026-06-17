@@ -36,5 +36,33 @@ public class MemoryUserConsentRepository : IUserConsentRepository
         return Task.FromResult(consent == newStoredConsent);
     }
 
+    public Task RevokeForClientAsync(string clientId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var keys = _consents.Keys.Where(k => k.ClientId.Equals(clientId, StringComparison.Ordinal));
+
+        foreach (var key in keys)
+        {
+            _consents.Remove(key, out _);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeForUserAsync(string userId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var keys = _consents.Keys.Where(k => k.UserId.Equals(userId, StringComparison.Ordinal));
+
+        foreach (var key in keys)
+        {
+            _consents.Remove(key, out _);
+        }
+
+        return Task.CompletedTask;
+    }
+
     private sealed record UserClientKey(string UserId, string ClientId);
 }

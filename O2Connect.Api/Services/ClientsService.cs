@@ -28,23 +28,29 @@ public interface IClientsService
 
 public class ClientsService : IClientsService
 {
-    private readonly IClientRepository _repository;
+    private readonly IClientRepository _clientRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
+    private readonly IUserConsentRepository _userConsentRepository;
     private readonly ILogger<ClientsService> _logger;
 
     public ClientsService(
-        IClientRepository repository,
+        IClientRepository clientRepository,
         IRefreshTokenRepository refreshTokenRepository,
+        IAuthorizationCodeRepository authorizationCodeRepository,
+        IUserConsentRepository userConsentRepository,
         ILogger<ClientsService> logger)
     {
-        _repository = repository;
+        _clientRepository = clientRepository;
         _refreshTokenRepository = refreshTokenRepository;
+        _authorizationCodeRepository = authorizationCodeRepository;
+        _userConsentRepository = userConsentRepository;
         _logger = logger;
     }
 
     public async Task<ClientDetailsResponse?> GetClientAsync(string clientId, CancellationToken ct)
     {
-        var client = await _repository.GetAsync(clientId, ct);
+        var client = await _clientRepository.GetAsync(clientId, ct);
 
         if (client is null)
         {
@@ -61,7 +67,7 @@ public class ClientsService : IClientsService
                                                             ClientFilter filter,
                                                             CancellationToken ct)
     {
-        var totalClients = await _repository.CountAsync(filter, ct);
+        var totalClients = await _clientRepository.CountAsync(filter, ct);
 
         if (totalClients == 0)
         {
@@ -89,7 +95,7 @@ public class ClientsService : IClientsService
 
         pagination = pagination with { PageSize = pageSize };
 
-        var clients = await _repository.QueryAsync(pagination, filter, ct);
+        var clients = await _clientRepository.QueryAsync(pagination, filter, ct);
 
         var summaries = clients.Select(c => c.ToSummary()).ToList();
 
@@ -122,6 +128,9 @@ public class ClientsService : IClientsService
 
         var client = await GetClientForUpdateAsync(clientId, ct);
 
+        if (client.RedirectUris.SetEquals(newRedirectUris))
+            return;
+
         var now = DateTimeOffset.UtcNow;
 
         client = client with
@@ -130,9 +139,7 @@ public class ClientsService : IClientsService
             LastModifiedAt = now
         };
 
-        await _repository.StoreAsync(client, ct);
-
-        await _refreshTokenRepository.RevokeClientAsync(client.Id, ct);
+        await _clientRepository.StoreAsync(client, ct);
     }
 
     public async Task UpdateClientScopesAsync(string clientId,
@@ -156,6 +163,9 @@ public class ClientsService : IClientsService
 
         var client = await GetClientForUpdateAsync(clientId, ct);
 
+        if (client.AllowedScopes.SetEquals(newScopes))
+            return;
+
         var now = DateTimeOffset.UtcNow;
 
         client = client with
@@ -164,9 +174,11 @@ public class ClientsService : IClientsService
             LastModifiedAt = now
         };
 
-        await _repository.StoreAsync(client, ct);
+        await _clientRepository.StoreAsync(client, ct);
 
         await _refreshTokenRepository.RevokeClientAsync(client.Id, ct);
+
+        await _userConsentRepository.RevokeForClientAsync(client.Id, ct);
     }
 
     public async Task UpdateClientStatusAsync(string clientId, string status, CancellationToken ct)
@@ -180,6 +192,13 @@ public class ClientsService : IClientsService
         }
 
         var client = await GetClientForUpdateAsync(clientId, ct);
+
+        if (newStatus == EntityStatus.Pending)
+        {
+            _logger.LogWarning("Client {ClientName} can't be reverted to pending status.", client.Name);
+            throw ApiException.BadRequest("invalid_requested_status",
+                                          $"{client.Name} can't revert to 'pending' status");
+        }
 
         if (client.Status == newStatus)
             return;
@@ -195,14 +214,23 @@ public class ClientsService : IClientsService
         if (newStatus == EntityStatus.Revoked)
             client = client with { RevokedAt = now };
 
-        await _repository.StoreAsync(client, ct);
+        await _clientRepository.StoreAsync(client, ct);
 
-        await _refreshTokenRepository.RevokeClientAsync(client.Id, ct);
+        if (client.Status != EntityStatus.Active)
+        {
+            await _refreshTokenRepository.RevokeClientAsync(client.Id, ct);
+            await _authorizationCodeRepository.RevokeForClientAsync(client.Id, ct);
+        }
+
+        if (client.Status == EntityStatus.Revoked)
+        {
+            await _userConsentRepository.RevokeForClientAsync(client.Id, ct);
+        }
     }
 
     private async Task<Client> GetClientForUpdateAsync(string clientId, CancellationToken ct)
     {
-        var client = await _repository.GetAsync(clientId, ct);
+        var client = await _clientRepository.GetAsync(clientId, ct);
 
         if (client is null)
         {

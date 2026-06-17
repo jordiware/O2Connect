@@ -7,4 +7,6 @@ public interface IUserConsentRepository
     Task<UserConsent?> GetAsync(string userId, string clientId, CancellationToken ct);
     Task<bool> StoreAsync(UserConsent consent, CancellationToken ct);
     Task<bool> DeleteAsync(string userId, string clientId, CancellationToken ct);
+    Task RevokeForClientAsync(string clientId, CancellationToken ct);
+    Task RevokeForUserAsync(string userId, CancellationToken ct);
 }
