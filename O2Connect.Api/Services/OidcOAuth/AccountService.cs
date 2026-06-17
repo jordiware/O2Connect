@@ -4,6 +4,7 @@ using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
+using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
@@ -112,11 +113,9 @@ public class AccountService : IAccountService
 
         var additionalClaims = new Dictionary<string, object>
         {
-            { "name", user.Username }
+            ["name"] = user.Username,
+            ["role"] = user.Role
         };
-
-        if (user.Roles is not null && user.Roles.Count > 0)
-            additionalClaims["roles"] = user.Roles.ToArray();
 
         var tokenFactoryRequest = new JwtTokenFactoryRequest
         {
@@ -212,7 +211,6 @@ public class AccountService : IAccountService
         if (await _userRepository.ContainsUserAsync(normalizedUsername, ct))
             throw OAuthException.FromInvalidRequest();
 
-        var roles = ValueSet.FromDataString(request.Roles, ' ').Values;
         var scopes = ValueSet.FromDataString(request.Scopes, ' ').Values;
 
         if (!_secretHasher.TryHash(request.Password, out var passwordHash))
@@ -225,7 +223,7 @@ public class AccountService : IAccountService
             NormalizedUsername = normalizedUsername,
             Email = request.Email,
             PasswordHash = passwordHash,
-            Roles = roles,
+            Role = request.Role ?? UserRole.User,
             Scopes = scopes,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,

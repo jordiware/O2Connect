@@ -13,9 +13,9 @@ public sealed record RegisterUserRequest
     [JsonPropertyName("email")]
     public required string Email { get; init; }
 
-    [JsonPropertyName("roles")]
+    [JsonPropertyName("role")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Roles { get; init; }
+    public string? Role { get; init; }
 
     [JsonPropertyName("scopes")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
