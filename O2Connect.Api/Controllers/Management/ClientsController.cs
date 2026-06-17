@@ -84,11 +84,11 @@ public class ClientsController : ControllerBase
         return Ok(response);
     }
 
-    [HttpPatch("{clientId}/status")]
+    [HttpPatch("{clientId}/name")]
     [RequireScope(Scopes.Clients.Write)]
-    public async Task<IActionResult> UpdateClientStatus([FromRoute] string clientId,
-                                                        [FromBody] UpdateClientStatusRequest request,
-                                                        CancellationToken ct)
+    public async Task<IActionResult> UpdateClientName([FromRoute] string clientId,
+                                                              [FromBody] UpdateClientDisplayNameRequest request,
+                                                              CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -96,17 +96,44 @@ public class ClientsController : ControllerBase
             throw ApiException.BadRequest("invalid_request_params", "Client ID is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.Status))
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
         {
-            _logger.LogWarning("Status is missing in request.");
-            throw ApiException.BadRequest("invalid_request_params", "Status is required.");
+            _logger.LogWarning("Requested display name is empty.");
+            throw ApiException.BadRequest("invalid_request_params", "Display name is required.");
         }
 
-        _logger.LogInformation("Updating client {ClientId} status to {Status}",
+        _logger.LogInformation("Updating client {ClientId} display name to [{DisplayName}]",
                                clientId,
-                               request.Status);
+                               request.DisplayName);
 
-        await _clientsService.UpdateClientStatusAsync(clientId, request.Status, ct);
+        await _clientsService.UpdateClientDisplayNameAsync(clientId, request.DisplayName, ct);
+
+        return NoContent();
+    }
+
+    [HttpPatch("{clientId}/redirect_uris")]
+    [RequireScope(Scopes.Clients.Write)]
+    public async Task<IActionResult> UpdateClientRedirectUris([FromRoute] string clientId,
+                                                              [FromBody] UpdateClientRedirectUrisRequest request,
+                                                              CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            _logger.LogWarning("Client ID is missing in the request.");
+            throw ApiException.BadRequest("invalid_request_params", "Client ID is required.");
+        }
+
+        if (request.RedirectUris is null)
+        {
+            _logger.LogWarning("Redirect URIs are missing in request.");
+            throw ApiException.BadRequest("invalid_request_params", "Redirect URIs is required.");
+        }
+
+        _logger.LogInformation("Updating client {ClientId} redirect URIs to [{RedirectUris}]",
+                               clientId,
+                               string.Join(' ', request.RedirectUris));
+
+        await _clientsService.UpdateClientRedirectUrisAsync(clientId, request.RedirectUris, ct);
 
         return NoContent();
     }
@@ -138,11 +165,11 @@ public class ClientsController : ControllerBase
         return NoContent();
     }
 
-    [HttpPatch("{clientId}/redirect_uris")]
+    [HttpPatch("{clientId}/status")]
     [RequireScope(Scopes.Clients.Write)]
-    public async Task<IActionResult> UpdateClientRedirectUris([FromRoute] string clientId,
-                                                              [FromBody] UpdateClientRedirectUrisRequest request,
-                                                              CancellationToken ct)
+    public async Task<IActionResult> UpdateClientStatus([FromRoute] string clientId,
+                                                        [FromBody] UpdateClientStatusRequest request,
+                                                        CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -150,17 +177,17 @@ public class ClientsController : ControllerBase
             throw ApiException.BadRequest("invalid_request_params", "Client ID is required.");
         }
 
-        if (request.RedirectUris is null)
+        if (string.IsNullOrWhiteSpace(request.Status))
         {
-            _logger.LogWarning("Redirect URIs are missing in request.");
-            throw ApiException.BadRequest("invalid_request_params", "Redirect URIs is required.");
+            _logger.LogWarning("Status is missing in request.");
+            throw ApiException.BadRequest("invalid_request_params", "Status is required.");
         }
 
-        _logger.LogInformation("Updating client {ClientId} redirect URIs to [{RedirectUris}]",
+        _logger.LogInformation("Updating client {ClientId} status to {Status}",
                                clientId,
-                               string.Join(' ', request.RedirectUris));
+                               request.Status);
 
-        await _clientsService.UpdateClientRedirectUrisAsync(clientId, request.RedirectUris, ct);
+        await _clientsService.UpdateClientStatusAsync(clientId, request.Status, ct);
 
         return NoContent();
     }

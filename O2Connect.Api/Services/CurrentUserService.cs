@@ -53,8 +53,7 @@ public sealed class CurrentUserService : ICurrentUserService
     {
         return Principal.FindAll("role")
                         .Union(Principal.FindAll("roles"))
-                        .SelectMany(x => x.Value.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                        .Select(x => x.TrimStart(['[', '{']).TrimEnd([']', '}']).Trim())
+                        .SelectMany(x => x.Value.Split([' ', ',', '[', '{', ']', '}'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                         .Any(x => x.Equals(role, StringComparison.Ordinal));
     }
 }

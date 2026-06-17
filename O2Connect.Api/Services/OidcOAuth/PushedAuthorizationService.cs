@@ -82,7 +82,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
             Request = request.ToData(),
             RequestUriCode = code,
             ClientId = client.Id,
-            ClientDisplayName = client.Name
+            ClientDisplayName = client.DisplayName
         };
 
         await _authorizationSessionRepository.StoreAsync(session, ct);

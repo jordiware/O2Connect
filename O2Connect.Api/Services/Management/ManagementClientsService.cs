@@ -6,6 +6,8 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Filters;
 using O2Connect.Dto.Management.Clients;
+using System.Globalization;
+using System.Text;
 
 namespace O2Connect.Api.Services.Management;
 
@@ -16,6 +18,9 @@ public interface IManagementClientsService
     Task<ClientListResponse> QueryClientsAsync(EntityPagination pagination,
                                                ClientFilter filter,
                                                CancellationToken ct);
+    Task UpdateClientDisplayNameAsync(string clientId,
+                                      string displayName,
+                                      CancellationToken ct);
     Task UpdateClientRedirectUrisAsync(string clientId,
                                        IReadOnlyList<string> redirectUris,
                                        CancellationToken ct);
@@ -149,6 +154,48 @@ public class ManagementClientsService : IManagementClientsService
         await _clientRepository.StoreAsync(client, ct);
     }
 
+    public async Task UpdateClientDisplayNameAsync(string clientId,
+                                                   string displayName,
+                                                   CancellationToken ct)
+    {
+        displayName = displayName.Trim();
+        var normalizedName = NormalizeName(displayName);
+        var filter = new ClientFilter
+        {
+            Name = normalizedName
+        };
+
+        var clientCount = await _clientRepository.CountAsync(filter, ct);
+
+        if (clientCount > 0)
+        {
+            _logger.LogWarning("There already exists a client with name {displayName}.", displayName);
+            throw ApiException.BadRequest("invalid_redirect_uris",
+                                          $"There already exists a client with name {displayName}.");
+        }
+
+        var client = await GetClientForUpdateAsync(clientId, ct);
+
+        if (string.Equals(client.DisplayName, displayName, StringComparison.InvariantCulture))
+        {
+            _logger.LogInformation("Client {clientId} already has name {displayName}. No update needed.",
+                                   client.Id,
+                                   displayName);
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+
+        client = client with
+        {
+            DisplayName = displayName,
+            NormalizedName = normalizedName,
+            LastModifiedAt = now
+        };
+
+        await _clientRepository.StoreAsync(client, ct);
+    }
+
     public async Task UpdateClientScopesAsync(string clientId,
                                               IReadOnlyList<string> scopes,
                                               CancellationToken ct)
@@ -202,9 +249,9 @@ public class ManagementClientsService : IManagementClientsService
 
         if (newStatus == EntityStatus.Pending)
         {
-            _logger.LogWarning("Client {ClientName} can't be reverted to pending status.", client.Name);
+            _logger.LogWarning("Client {ClientName} can't be reverted to pending status.", client.DisplayName);
             throw ApiException.BadRequest("invalid_requested_status",
-                                          $"{client.Name} can't revert to 'pending' status");
+                                          $"{client.DisplayName} can't revert to 'pending' status");
         }
 
         if (client.Status == newStatus)
@@ -264,5 +311,31 @@ public class ManagementClientsService : IManagementClientsService
         }
 
         return client;
+    }
+
+    private static string NormalizeName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw OAuthException.FromInvalidRequest();
+
+        var trimmed = name.Trim();
+
+        var normalized = trimmed.Normalize(NormalizationForm.FormKD);
+
+        var sb = new StringBuilder(normalized.Length);
+
+        foreach (var c in normalized)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(c);
+
+            if (category != UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(c);
+            }
+        }
+
+        return sb.ToString()
+                 .Normalize(NormalizationForm.FormKC)
+                 .ToLowerInvariant();
     }
 }

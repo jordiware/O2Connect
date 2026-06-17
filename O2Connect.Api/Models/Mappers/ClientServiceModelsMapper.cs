@@ -72,7 +72,7 @@ public static class ClientServiceModelsMapper
         var summary = new ClientSummaryResponse
         {
             Id = client.Id,
-            Name = client.Name,
+            Name = client.DisplayName,
             ImageUrl = client.ImageUrl,
             Status = client.Status.ToString(),
         };
@@ -88,7 +88,7 @@ public static class ClientServiceModelsMapper
         var detail = new ClientDetailsResponse
         {
             Id = client.Id,
-            Name = client.Name,
+            Name = client.DisplayName,
             ImageUrl = client.ImageUrl,
             Status = client.Status.ToString(),
             OwnerId = client.OwnerId,

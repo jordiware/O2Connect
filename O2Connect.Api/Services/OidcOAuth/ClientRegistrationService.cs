@@ -53,7 +53,7 @@ public class ClientRegistrationService : IClientRegistrationService
         return new ClientRegistrationResponse
         {
             ClientId = clientId,
-            ClientName = client.Name,
+            ClientName = client.DisplayName,
             ClientSecret = null,
             ClientIdIssuedAt = client.CreatedAt.ToUnixTimeSeconds(),
             ClientSecretExpiresAt = 0,
@@ -110,7 +110,7 @@ public class ClientRegistrationService : IClientRegistrationService
         return new Client
         {
             Id = clientId,
-            Name = clientName,
+            DisplayName = clientName,
             NormalizedName = NormalizeName(clientName),
             Status = EntityStatus.Active,
             OwnerId = ownerId,

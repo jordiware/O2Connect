@@ -84,7 +84,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
                 ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(10),
                 Request = request,
                 ClientId = client.Id,
-                ClientDisplayName = client.Name,
+                ClientDisplayName = client.DisplayName,
                 RequestedScopes = requestScopes.ToHashSet()
             };
         }
