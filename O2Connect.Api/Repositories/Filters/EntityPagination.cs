@@ -1,6 +1,6 @@
 ﻿namespace O2Connect.Api.Repositories.Filters;
 
-public sealed record ClientPagination
+public sealed record EntityPagination
 {
     public required int Page { get; init; }
     public required int PageSize { get; init; }

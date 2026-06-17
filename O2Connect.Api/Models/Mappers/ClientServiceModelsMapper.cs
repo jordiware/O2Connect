@@ -7,9 +7,9 @@ namespace O2Connect.Api.Models.Mappers;
 
 public static class ClientServiceModelsMapper
 {
-    public static ClientPagination ToPagination(this PaginationRequest request)
+    public static EntityPagination ToPagination(this PaginationRequest request)
     {
-        return new ClientPagination
+        return new EntityPagination
         {
             Page = request.Page,
             PageSize = request.PageSize,
@@ -18,9 +18,9 @@ public static class ClientServiceModelsMapper
         };
     }
 
-    public static ClientPagination ToPagination(this ClientsSearchPaginationRequest request)
+    public static EntityPagination ToPagination(this ClientsSearchPaginationRequest request)
     {
-        return new ClientPagination
+        return new EntityPagination
         {
             Page = request.Page,
             PageSize = request.PageSize,

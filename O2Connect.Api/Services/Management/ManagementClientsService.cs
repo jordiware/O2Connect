@@ -12,7 +12,7 @@ public interface IManagementClientsService
 {
     Task<ClientDetailsResponse?> GetClientAsync(string clientId,
                                                 CancellationToken ct);
-    Task<ClientListResponse> QueryClientsAsync(ClientPagination pagination,
+    Task<ClientListResponse> QueryClientsAsync(EntityPagination pagination,
                                                ClientFilter filter,
                                                CancellationToken ct);
     Task UpdateClientRedirectUrisAsync(string clientId,
@@ -63,7 +63,7 @@ public class ManagementClientsService : IManagementClientsService
         return response;
     }
 
-    public async Task<ClientListResponse> QueryClientsAsync(ClientPagination pagination,
+    public async Task<ClientListResponse> QueryClientsAsync(EntityPagination pagination,
                                                             ClientFilter filter,
                                                             CancellationToken ct)
     {

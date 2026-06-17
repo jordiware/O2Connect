@@ -8,8 +8,8 @@ public interface IClientRepository
     Task<int> CountAsync(CancellationToken ct);
     Task<int> CountAsync(ClientFilter filter, CancellationToken ct);
     Task<Client?> GetAsync(string clientId, CancellationToken ct);
-    Task<IReadOnlyList<Client>> QueryAsync(ClientPagination listQuery, CancellationToken ct);
-    Task<IReadOnlyList<Client>> QueryAsync(ClientPagination listQuery,
+    Task<IReadOnlyList<Client>> QueryAsync(EntityPagination listQuery, CancellationToken ct);
+    Task<IReadOnlyList<Client>> QueryAsync(EntityPagination listQuery,
                                            ClientFilter filter,
                                            CancellationToken ct);
     Task StoreAsync(Client client, CancellationToken ct);
