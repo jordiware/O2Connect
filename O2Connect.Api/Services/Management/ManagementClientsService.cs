@@ -71,7 +71,7 @@ public class ManagementClientsService : IManagementClientsService
                                                             ClientFilter filter,
                                                             CancellationToken ct)
     {
-        if (_currentUserService.IsInRole(UserRole.Developer))
+        if (_currentUserService.HasRole(UserRole.Developer))
             filter = filter with { OwnerId = _currentUserService.UserId };
 
         var totalClients = await _clientRepository.CountAsync(filter, ct);
@@ -252,8 +252,8 @@ public class ManagementClientsService : IManagementClientsService
                                         $"Client '{clientId}' is revoked and updates cannot be performed.");
         }
 
-        if (!_currentUserService.IsInRole(UserRole.Admin)
-            || !(_currentUserService.IsInRole(UserRole.Developer)
+        if (!_currentUserService.HasRole(UserRole.Admin)
+            && !(_currentUserService.HasRole(UserRole.Developer)
                 && client.OwnerId.Equals(_currentUserService.UserId, StringComparison.Ordinal)))
         {
             _logger.LogWarning("Unprivileged user {UserId} accessing to client {ClientId}",

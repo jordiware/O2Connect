@@ -13,7 +13,7 @@ public interface ICurrentUserService
     IReadOnlyCollection<string> Roles { get; }
 
     bool HasScope(string scope);
-    bool IsInRole(UserRole role);
+    bool HasRole(UserRole role);
 }
 
 public sealed class CurrentUserService : ICurrentUserService
@@ -49,9 +49,10 @@ public sealed class CurrentUserService : ICurrentUserService
                         .Contains(scope, StringComparer.Ordinal) == true;
     }
 
-    public bool IsInRole(UserRole role)
+    public bool HasRole(UserRole role)
     {
         return Principal.FindAll("role")
+                        .Union(Principal.FindAll("roles"))
                         .Any(x => x.Value.Equals(role, StringComparison.Ordinal));
     }
 }

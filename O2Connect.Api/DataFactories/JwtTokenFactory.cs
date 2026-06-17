@@ -30,6 +30,7 @@ public class JwtTokenFactory : ITokenFactory
     public Task<TokenResponse> GenerateAsync(JwtTokenFactoryRequest request, CancellationToken ct)
     {
         var now = DateTimeOffset.UtcNow;
+
         if (!_keyProvider.TryGetActiveKey(out var key))
             throw new InvalidOperationException("Active signing key required.");
 
