@@ -9,6 +9,13 @@ public class ApiException : Exception
                          "/errors/bad-request",
                          detail);
 
+    public static ApiException Unauthorized(string errorCode, string detail) =>
+        new ApiException(StatusCodes.Status401Unauthorized,
+                         errorCode,
+                         "Unauthorized",
+                         "/errors/unauthorized",
+                         detail);
+
     public static ApiException NotFound(string errorCode, string detail) =>
         new ApiException(StatusCodes.Status404NotFound,
                          errorCode,

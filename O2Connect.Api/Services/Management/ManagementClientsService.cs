@@ -1,6 +1,7 @@
 ﻿using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Mappers;
+using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Filters;
@@ -32,6 +33,7 @@ public class ManagementClientsService : IManagementClientsService
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IUserConsentRepository _userConsentRepository;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ManagementClientsService> _logger;
 
     public ManagementClientsService(
@@ -39,12 +41,14 @@ public class ManagementClientsService : IManagementClientsService
         IRefreshTokenRepository refreshTokenRepository,
         IAuthorizationCodeRepository authorizationCodeRepository,
         IUserConsentRepository userConsentRepository,
+        ICurrentUserService currentUserService,
         ILogger<ManagementClientsService> logger)
     {
         _clientRepository = clientRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _authorizationCodeRepository = authorizationCodeRepository;
         _userConsentRepository = userConsentRepository;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -67,6 +71,9 @@ public class ManagementClientsService : IManagementClientsService
                                                             ClientFilter filter,
                                                             CancellationToken ct)
     {
+        if (_currentUserService.IsInRole(UserRole.Developer))
+            filter = filter with { OwnerId = _currentUserService.UserId };
+
         var totalClients = await _clientRepository.CountAsync(filter, ct);
 
         if (totalClients == 0)
@@ -243,6 +250,17 @@ public class ManagementClientsService : IManagementClientsService
             _logger.LogInformation("Client '{ClientId}' is already revoked. No updates performed.", clientId);
             throw ApiException.Conflict("client_revoked",
                                         $"Client '{clientId}' is revoked and updates cannot be performed.");
+        }
+
+        if (!_currentUserService.IsInRole(UserRole.Admin)
+            || !(_currentUserService.IsInRole(UserRole.Developer)
+                && client.OwnerId.Equals(_currentUserService.UserId, StringComparison.Ordinal)))
+        {
+            _logger.LogWarning("Unprivileged user {UserId} accessing to client {ClientId}",
+                               _currentUserService.UserId,
+                               client.Id);
+            throw ApiException.Unauthorized("restricted_access",
+                                            "You don't have permissions for this action.");
         }
 
         return client;
