@@ -5,7 +5,7 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Repositories.Filters;
 using O2Connect.Api.Security;
-using O2Connect.Api.Services;
+using O2Connect.Api.Services.Management;
 using O2Connect.Dto.Management;
 using O2Connect.Dto.Management.Clients;
 
@@ -16,12 +16,12 @@ namespace O2Connect.Api.Controllers.Management;
 public class ClientsController : ControllerBase
 {
     private readonly IClientsQueryValidator _queryValidator;
-    private readonly IClientsService _clientsService;
+    private readonly IManagementClientsService _clientsService;
     private readonly ILogger<ClientsController> _logger;
 
     public ClientsController(
         IClientsQueryValidator queryValidator,
-        IClientsService clientsService,
+        IManagementClientsService clientsService,
         ILogger<ClientsController> logger)
     {
         _queryValidator = queryValidator;

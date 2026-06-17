@@ -14,6 +14,7 @@ using O2Connect.Api.Repositories.Cache;
 using O2Connect.Api.Repositories.InMemoryRepositories;
 using O2Connect.Api.Security;
 using O2Connect.Api.Services;
+using O2Connect.Api.Services.Management;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -146,7 +147,7 @@ builder.Services.AddScoped<IParAuthorizationService, ParAuthorizationService>();
 builder.Services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
 builder.Services.AddScoped<IDeviceConnectService, DeviceConnectService>();
 
-builder.Services.AddScoped<IClientsService, ClientsService>();
+builder.Services.AddScoped<IManagementClientsService, ManagementClientsService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

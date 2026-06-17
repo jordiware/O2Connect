@@ -6,9 +6,9 @@ using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Filters;
 using O2Connect.Dto.Management.Clients;
 
-namespace O2Connect.Api.Services;
+namespace O2Connect.Api.Services.Management;
 
-public interface IClientsService
+public interface IManagementClientsService
 {
     Task<ClientDetailsResponse?> GetClientAsync(string clientId,
                                                 CancellationToken ct);
@@ -26,20 +26,20 @@ public interface IClientsService
                                  CancellationToken ct);
 }
 
-public class ClientsService : IClientsService
+public class ManagementClientsService : IManagementClientsService
 {
     private readonly IClientRepository _clientRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IUserConsentRepository _userConsentRepository;
-    private readonly ILogger<ClientsService> _logger;
+    private readonly ILogger<ManagementClientsService> _logger;
 
-    public ClientsService(
+    public ManagementClientsService(
         IClientRepository clientRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IAuthorizationCodeRepository authorizationCodeRepository,
         IUserConsentRepository userConsentRepository,
-        ILogger<ClientsService> logger)
+        ILogger<ManagementClientsService> logger)
     {
         _clientRepository = clientRepository;
         _refreshTokenRepository = refreshTokenRepository;
