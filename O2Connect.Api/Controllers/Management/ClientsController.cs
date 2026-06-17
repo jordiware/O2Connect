@@ -84,7 +84,7 @@ public class ClientsController : ControllerBase
         return Ok(response);
     }
 
-    [HttpPatch("{clientId}/name")]
+    [HttpPatch("{clientId}/display_name")]
     [RequireScope(Scopes.Clients.Write)]
     public async Task<IActionResult> UpdateClientName([FromRoute] string clientId,
                                                               [FromBody] UpdateClientDisplayNameRequest request,
@@ -107,6 +107,33 @@ public class ClientsController : ControllerBase
                                request.DisplayName);
 
         await _clientsService.UpdateClientDisplayNameAsync(clientId, request.DisplayName, ct);
+
+        return NoContent();
+    }
+
+    [HttpPatch("{clientId}/image_url")]
+    [RequireScope(Scopes.Clients.Write)]
+    public async Task<IActionResult> UpdateImageUrl([FromRoute] string clientId,
+                                                              [FromBody] UpdateClientImageUrlRequest request,
+                                                              CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            _logger.LogWarning("Client ID is missing in the request.");
+            throw ApiException.BadRequest("invalid_request_params", "Client ID is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ImageUrl))
+        {
+            _logger.LogWarning("Requested image URL is empty.");
+            throw ApiException.BadRequest("invalid_request_params", "Image URL is required.");
+        }
+
+        _logger.LogInformation("Updating client {ClientId} image URL to [{ImageUrl}]",
+                               clientId,
+                               request.ImageUrl);
+
+        await _clientsService.UpdateClientImageUrlAsync(clientId, request.ImageUrl, ct);
 
         return NoContent();
     }

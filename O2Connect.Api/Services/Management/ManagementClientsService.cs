@@ -21,6 +21,9 @@ public interface IManagementClientsService
     Task UpdateClientDisplayNameAsync(string clientId,
                                       string displayName,
                                       CancellationToken ct);
+    Task UpdateClientImageUrlAsync(string clientId,
+                                   string imageUrl,
+                                   CancellationToken ct);
     Task UpdateClientRedirectUrisAsync(string clientId,
                                        IReadOnlyList<string> redirectUris,
                                        CancellationToken ct);
@@ -123,37 +126,6 @@ public class ManagementClientsService : IManagementClientsService
         return response;
     }
 
-    public async Task UpdateClientRedirectUrisAsync(string clientId,
-                                                    IReadOnlyList<string> redirectUris,
-                                                    CancellationToken ct)
-    {
-        var newRedirectUris = redirectUris.Select(r => r.Trim())
-                                          .Where(r => !string.IsNullOrWhiteSpace(r))
-                                          .Distinct()
-                                          .ToHashSet();
-
-        if (!newRedirectUris.All(r => Uri.IsWellFormedUriString(r, UriKind.Absolute)))
-        {
-            _logger.LogWarning("Invalid redirect URIs provided for client {ClientId}.", clientId);
-            throw ApiException.BadRequest("invalid_redirect_uris", "One or more redirect URIs are invalid.");
-        }
-
-        var client = await GetClientForUpdateAsync(clientId, ct);
-
-        if (client.RedirectUris.SetEquals(newRedirectUris))
-            return;
-
-        var now = DateTimeOffset.UtcNow;
-
-        client = client with
-        {
-            RedirectUris = newRedirectUris,
-            LastModifiedAt = now
-        };
-
-        await _clientRepository.StoreAsync(client, ct);
-    }
-
     public async Task UpdateClientDisplayNameAsync(string clientId,
                                                    string displayName,
                                                    CancellationToken ct)
@@ -190,6 +162,76 @@ public class ManagementClientsService : IManagementClientsService
         {
             DisplayName = displayName,
             NormalizedName = normalizedName,
+            LastModifiedAt = now
+        };
+
+        await _clientRepository.StoreAsync(client, ct);
+    }
+
+    public async Task UpdateClientImageUrlAsync(string clientId,
+                                                string imageUrl,
+                                                CancellationToken ct)
+    {
+        imageUrl = imageUrl.Trim();
+
+        if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri) || 
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            _logger.LogWarning("Invalid image URL scheme for client {ClientId}.", clientId);
+            throw ApiException.BadRequest("invalid_image_url", "Image URL must be HTTP or HTTPS.");
+        }
+
+        if (uri.IsLoopback || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Invalid image URL host for client {ClientId}.", clientId);
+            throw ApiException.BadRequest("invalid_image_url", "Local URLs are not allowed.");
+        }
+
+        var client = await GetClientForUpdateAsync(clientId, ct);
+
+        if (string.Equals(client.ImageUrl, imageUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogInformation("Client already has image URL {imageUrl}. No update needed.",
+                                   imageUrl);
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+
+        client = client with
+        {
+            ImageUrl = imageUrl,
+            LastModifiedAt = now
+        };
+
+        await _clientRepository.StoreAsync(client, ct);
+    }
+
+    public async Task UpdateClientRedirectUrisAsync(string clientId,
+                                                    IReadOnlyList<string> redirectUris,
+                                                    CancellationToken ct)
+    {
+        var newRedirectUris = redirectUris.Select(r => r.Trim())
+                                          .Where(r => !string.IsNullOrWhiteSpace(r))
+                                          .Distinct()
+                                          .ToHashSet();
+
+        if (!newRedirectUris.All(r => Uri.IsWellFormedUriString(r, UriKind.Absolute)))
+        {
+            _logger.LogWarning("Invalid redirect URIs provided for client {ClientId}.", clientId);
+            throw ApiException.BadRequest("invalid_redirect_uris", "One or more redirect URIs are invalid.");
+        }
+
+        var client = await GetClientForUpdateAsync(clientId, ct);
+
+        if (client.RedirectUris.SetEquals(newRedirectUris))
+            return;
+
+        var now = DateTimeOffset.UtcNow;
+
+        client = client with
+        {
+            RedirectUris = newRedirectUris,
             LastModifiedAt = now
         };
 
