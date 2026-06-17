@@ -13,6 +13,7 @@ using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
 using O2Connect.Api.Repositories.InMemoryRepositories;
 using O2Connect.Api.Security;
+using O2Connect.Api.Services;
 using O2Connect.Api.Services.Management;
 using O2Connect.Api.Services.OidcOAuth;
 
@@ -27,13 +28,16 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptio
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddMemoryCache(options =>
 {
     options.SizeLimit = 1000;
 });
 
 builder.Services.AddAuthorizationBuilder()
-                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser().Build());
+                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser()
+                                                                          .Build());
 
 builder.Services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, ScopePolicyProvider>();
@@ -132,6 +136,8 @@ builder.Services.AddSingleton<ITokenRequestValidatorResolver, TokenRequestValida
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretBasicHandler>();
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretPostHandler>();
 builder.Services.AddScoped<IClientAuthenticationHandler, PrivateKeyJwtHandler>();
+
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();

@@ -8,6 +8,7 @@ public sealed record ClientFilter
     public static ClientFilter Empty => new();
 
     public string? Name { get; init; }
+    public string? OwnerId { get; init; }
     public IReadOnlySet<EntityStatus>? Status { get; init; }
     public DateTimeOffset? MinCreatedAt { get; init; }
     public DateTimeOffset? MaxCreatedAt { get; init; }
@@ -22,6 +23,7 @@ public sealed record ClientFilter
 
     public bool IsEmpty =>
         Name is null &&
+        OwnerId is null &&
         Status is null &&
         MinCreatedAt is null &&
         MaxCreatedAt is null &&
@@ -37,8 +39,8 @@ public sealed record ClientFilter
     public Expression<Func<Client, bool>> ToExpression()
     {
         return client =>
-            (string.IsNullOrEmpty(Name) || 
-                client.NormalizedName.Contains(Name)) &&
+            (string.IsNullOrWhiteSpace(Name) || client.NormalizedName.Contains(Name)) &&
+            (string.IsNullOrWhiteSpace(OwnerId) || client.OwnerId.Equals(OwnerId, StringComparison.Ordinal)) &&
             (Status == null || Status.Contains(client.Status)) &&
             (MinCreatedAt == null || client.CreatedAt >= MinCreatedAt) &&
             (MaxCreatedAt == null || client.CreatedAt <= MaxCreatedAt) &&
