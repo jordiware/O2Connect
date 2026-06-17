@@ -1,5 +1,6 @@
 ﻿using O2Connect.Api.Models.Store;
 using System.Collections.Concurrent;
+using static O2Connect.Api.Models.Scopes;
 
 namespace O2Connect.Api.Repositories.InMemoryRepositories;
 
@@ -67,20 +68,42 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         return Task.CompletedTask;
     }
 
+    public Task RevokeClientAsync(string clientId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var utcNow = DateTimeOffset.UtcNow;
+
+        var tokens = _tokens.Where(kvp => kvp.Value.ClientId.Equals(clientId, StringComparison.Ordinal));
+
+        foreach (var token in tokens)
+        {
+            _tokens[token.Key] = token.Value with
+            {
+                Revoked = true,
+                RevokedAt = utcNow
+            };
+        }
+
+        return Task.CompletedTask;
+    }
+
     public Task RevokeSessionAsync(string sessionId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        var kvp = _tokens.SingleOrDefault(kvp => kvp.Value.SessionId.Equals(sessionId, StringComparison.Ordinal));
+        var utcNow = DateTimeOffset.UtcNow;
 
-        if (!_tokens.ContainsKey(kvp.Key))
-            return Task.CompletedTask;
+        var tokens = _tokens.Where(kvp => kvp.Value.SessionId.Equals(sessionId, StringComparison.Ordinal));
 
-        _tokens[kvp.Key] = kvp.Value with
+        foreach (var token in tokens)
         {
-            Revoked = true,
-            RevokedAt = DateTimeOffset.UtcNow
-        };
+            _tokens[token.Key] = token.Value with
+            {
+                Revoked = true,
+                RevokedAt = utcNow
+            };
+        }
 
         return Task.CompletedTask;
     }
@@ -89,16 +112,18 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
     {
         ct.ThrowIfCancellationRequested();
 
-        var kvp = _tokens.SingleOrDefault(kvp => kvp.Value.Subject.Equals(subjectId, StringComparison.Ordinal));
+        var utcNow = DateTimeOffset.UtcNow;
 
-        if (!_tokens.ContainsKey(kvp.Key))
-            return Task.CompletedTask;
+        var tokens = _tokens.Where(kvp => kvp.Value.Subject.Equals(subjectId, StringComparison.Ordinal));
 
-        _tokens[kvp.Key] = kvp.Value with
+        foreach (var token in tokens)
         {
-            Revoked = true,
-            RevokedAt = DateTimeOffset.UtcNow
-        };
+            _tokens[token.Key] = token.Value with
+            {
+                Revoked = true,
+                RevokedAt = utcNow
+            };
+        }
 
         return Task.CompletedTask;
     }

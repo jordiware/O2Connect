@@ -29,13 +29,16 @@ public interface IClientsService
 public class ClientsService : IClientsService
 {
     private readonly IClientRepository _repository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly ILogger<ClientsService> _logger;
 
     public ClientsService(
         IClientRepository repository,
+        IRefreshTokenRepository refreshTokenRepository,
         ILogger<ClientsService> logger)
     {
         _repository = repository;
+        _refreshTokenRepository = refreshTokenRepository;
         _logger = logger;
     }
 
@@ -128,6 +131,8 @@ public class ClientsService : IClientsService
         };
 
         await _repository.StoreAsync(client, ct);
+
+        await _refreshTokenRepository.RevokeClientAsync(client.Id, ct);
     }
 
     public async Task UpdateClientScopesAsync(string clientId,
@@ -160,6 +165,8 @@ public class ClientsService : IClientsService
         };
 
         await _repository.StoreAsync(client, ct);
+
+        await _refreshTokenRepository.RevokeClientAsync(client.Id, ct);
     }
 
     public async Task UpdateClientStatusAsync(string clientId, string status, CancellationToken ct)
@@ -189,6 +196,8 @@ public class ClientsService : IClientsService
             client = client with { RevokedAt = now };
 
         await _repository.StoreAsync(client, ct);
+
+        await _refreshTokenRepository.RevokeClientAsync(client.Id, ct);
     }
 
     private async Task<Client> GetClientForUpdateAsync(string clientId, CancellationToken ct)

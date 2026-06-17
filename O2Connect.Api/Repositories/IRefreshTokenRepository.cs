@@ -11,6 +11,7 @@ public interface IRefreshTokenRepository
     Task<bool> IsConsumedAsync(string token, CancellationToken ct);
     Task<bool> IsSessionActiveAsync(string sessionId, CancellationToken ct);
     Task RevokeAsync(string token, CancellationToken ct);
+    Task RevokeClientAsync(string clientId, CancellationToken ct);
     Task RevokeSessionAsync(string sessionId, CancellationToken ct);
     Task RevokeSubjectAsync(string subjectId, CancellationToken ct);
     Task<RefreshToken?> RotateAsync(string token, RefreshToken newToken, CancellationToken ct);
