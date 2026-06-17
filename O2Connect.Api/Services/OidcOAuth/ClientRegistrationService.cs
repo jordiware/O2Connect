@@ -8,7 +8,7 @@ using O2Connect.Dto.Responses;
 using System.Globalization;
 using System.Text;
 
-namespace O2Connect.Api.Services;
+namespace O2Connect.Api.Services.OidcOAuth;
 
 public interface IClientRegistrationService
 {

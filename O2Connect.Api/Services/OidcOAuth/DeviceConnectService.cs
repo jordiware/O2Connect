@@ -9,7 +9,7 @@ using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
 using System.Security.Cryptography;
 
-namespace O2Connect.Api.Services;
+namespace O2Connect.Api.Services.OidcOAuth;
 
 public interface IDeviceConnectService
 {

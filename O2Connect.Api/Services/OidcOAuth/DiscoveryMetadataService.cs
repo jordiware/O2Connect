@@ -4,7 +4,7 @@ using O2Connect.Api.Models.Options;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Dto.Responses;
 
-namespace O2Connect.Api.Services;
+namespace O2Connect.Api.Services.OidcOAuth;
 
 public interface IDiscoveryMetadataService
 {

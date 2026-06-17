@@ -13,8 +13,8 @@ using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
 using O2Connect.Api.Repositories.InMemoryRepositories;
 using O2Connect.Api.Security;
-using O2Connect.Api.Services;
 using O2Connect.Api.Services.Management;
+using O2Connect.Api.Services.OidcOAuth;
 
 var builder = WebApplication.CreateBuilder(args);
 

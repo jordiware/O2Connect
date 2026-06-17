@@ -2,7 +2,7 @@
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Requests;
 
-namespace O2Connect.Api.Services;
+namespace O2Connect.Api.Services.OidcOAuth;
 
 public interface IRevocationService
 {

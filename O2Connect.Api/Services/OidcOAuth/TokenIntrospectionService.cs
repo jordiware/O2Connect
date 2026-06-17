@@ -3,7 +3,7 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Responses;
 
-namespace O2Connect.Api.Services;
+namespace O2Connect.Api.Services.OidcOAuth;
 
 public interface ITokenIntrospectionService
 {

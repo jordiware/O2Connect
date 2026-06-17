@@ -8,7 +8,7 @@ using O2Connect.Dto.Requests;
 using O2Connect.Dto.Responses;
 using System.Collections.Immutable;
 
-namespace O2Connect.Api.Services;
+namespace O2Connect.Api.Services.OidcOAuth;
 
 public interface IConsentService
 {
@@ -247,7 +247,6 @@ public class ConsentService : IConsentService
         {
             var consent = new UserConsent
             {
-                Id = Guid.NewGuid().ToString(),
                 UserId = userId,
                 ClientId = clientId,
                 GrantedScopes = approvedScopes,
@@ -262,7 +261,6 @@ public class ConsentService : IConsentService
 
         var updatedConsent = new UserConsent
         {
-            Id = existing.Id,
             UserId = userId,
             ClientId = clientId,
             GrantedScopes = grantedScopes,

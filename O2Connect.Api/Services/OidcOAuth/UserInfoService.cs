@@ -1,7 +1,7 @@
 ﻿using O2Connect.Api.Exceptions;
 using System.Security.Claims;
 
-namespace O2Connect.Api.Services;
+namespace O2Connect.Api.Services.OidcOAuth;
 
 public interface IUserInfoService
 {
