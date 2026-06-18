@@ -5,6 +5,8 @@ namespace O2Connect.Api.Repositories;
 public interface IUserConsentRepository
 {
     Task<UserConsent?> GetAsync(string userId, string clientId, CancellationToken ct);
+    Task<IReadOnlyList<UserConsent>> GetForClientAsync(string clientId, CancellationToken ct);
+    Task<IReadOnlyList<UserConsent>> GetForUserAsync(string userId, CancellationToken ct);
     Task<bool> StoreAsync(UserConsent consent, CancellationToken ct);
     Task<bool> DeleteAsync(string userId, string clientId, CancellationToken ct);
     Task RevokeForClientAsync(string clientId, CancellationToken ct);

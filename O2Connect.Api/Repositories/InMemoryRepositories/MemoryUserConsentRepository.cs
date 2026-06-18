@@ -1,5 +1,6 @@
 ﻿using O2Connect.Api.Models.Store;
 using System.Collections.Concurrent;
+using static O2Connect.Api.Models.Scopes;
 
 namespace O2Connect.Api.Repositories.InMemoryRepositories;
 
@@ -23,6 +24,32 @@ public class MemoryUserConsentRepository : IUserConsentRepository
         var key = new UserClientKey(userId, clientId);
         _consents.TryGetValue(key, out var value);
         return Task.FromResult(value);
+    }
+
+    public Task<IReadOnlyList<UserConsent>> GetForClientAsync(string clientId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var keys = _consents.Keys.Where(k => k.ClientId.Equals(clientId, StringComparison.Ordinal));
+
+        var consents = _consents.Where(kvp => keys.Contains(kvp.Key))
+                                .Select(kvp => kvp.Value)
+                                .ToList();
+
+        return Task.FromResult<IReadOnlyList<UserConsent>>(consents);
+    }
+
+    public Task<IReadOnlyList<UserConsent>> GetForUserAsync(string userId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var keys = _consents.Keys.Where(k => k.UserId.Equals(userId, StringComparison.Ordinal));
+
+        var consents = _consents.Where(kvp => keys.Contains(kvp.Key))
+                                .Select(kvp => kvp.Value)
+                                .ToList();
+
+        return Task.FromResult<IReadOnlyList<UserConsent>>(consents);
     }
 
     public Task<bool> StoreAsync(UserConsent consent, CancellationToken ct)

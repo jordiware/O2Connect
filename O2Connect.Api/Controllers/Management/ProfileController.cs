@@ -28,4 +28,13 @@ public class ProfileController : ControllerBase
 
         return Ok(me);
     }
+
+    [HttpGet]
+    [RequireScope(Scopes.Profile.Read)]
+    public async Task<IActionResult> GetConsentedClients(CancellationToken ct)
+    {
+        var consents = await _profileService.GetConsentedClientsAsync(ct);
+
+        return Ok(consents);
+    }
 }
