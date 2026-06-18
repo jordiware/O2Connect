@@ -75,6 +75,7 @@ builder.Services.AddSingleton<ISecretHasher, Pbkdf2SecretHasher>();
 builder.Services.AddSingleton<IPushedAuthorizationValidator, PushedAuthorizationValidator>();
 
 builder.Services.AddSingleton<IClientsQueryValidator, ClientsQueryValidator>();
+builder.Services.AddSingleton<IUsersQueryValidator, UsersQueryValidator>();
 
 builder.Services.AddSingleton(sp =>
 {

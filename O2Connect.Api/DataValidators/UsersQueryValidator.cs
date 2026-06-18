@@ -2,18 +2,18 @@
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Dto.Management;
-using O2Connect.Dto.Management.Clients;
+using O2Connect.Dto.Management.Users;
 
 namespace O2Connect.Api.DataValidators;
 
-public interface IClientsQueryValidator
+public interface IUsersQueryValidator
 {
     bool ValidatePaginationRequest(QueryPaginationRequest request, out string errorMessage);
     bool ValidatePaginationRequest(JsonPaginationRequest request, out string errorMessage);
-    bool ValidateSearchRequest(ClientsSearchRequest request, out string errorMessage);
+    bool ValidateSearchRequest(UsersSearchRequest request, out string errorMessage);
 }
 
-public class ClientsQueryValidator : IClientsQueryValidator
+public class UsersQueryValidator : IUsersQueryValidator
 {
     public bool ValidatePaginationRequest(QueryPaginationRequest request, out string errorMessage)
     {
@@ -65,7 +65,7 @@ public class ClientsQueryValidator : IClientsQueryValidator
         return true;
     }
 
-    public bool ValidateSearchRequest(ClientsSearchRequest request, out string errorMessage)
+    public bool ValidateSearchRequest(UsersSearchRequest request, out string errorMessage)
     {
         errorMessage = string.Empty;
 
@@ -75,6 +75,14 @@ public class ClientsQueryValidator : IClientsQueryValidator
         }
 
         var filterRequest = request.Filter;
+
+        if (filterRequest.Role != null
+            && !UserRole.TryParse(filterRequest.Role, out _))
+        {
+            errorMessage = "Invalid role value provided.";
+            return false;
+        }
+
         if (filterRequest.Status != null 
             && filterRequest.Status.Any(s => !Enum.TryParse<EntityStatus>(s, true, out _)))
         {
@@ -103,27 +111,6 @@ public class ClientsQueryValidator : IClientsQueryValidator
             && filterRequest.MinRevokedAt > filterRequest.MaxRevokedAt)
         {
             errorMessage = "MinRevokedAt cannot be greater than MaxRevokedAt.";
-            return false;
-        }
-
-        if (filterRequest.GrantTypes != null 
-            && filterRequest.GrantTypes.Any(gt => !GrantType.TryParse(gt, out _)))
-        {
-            errorMessage = "GrantTypes cannot invalid values.";
-            return false;
-        }
-
-        if (filterRequest.Scopes != null
-            && filterRequest.Scopes.Any(s => !Scopes.All.Contains(s)))
-        {
-            errorMessage = "Scopes cannot contain invalid values.";
-            return false;
-        }
-
-        if (filterRequest.AuthenticationMethods != null
-            && filterRequest.AuthenticationMethods.Any(am => !ClientAuthenticationMethod.TryParse(am, out _)))
-        {
-            errorMessage = "AuthenticationMethods cannot contain invalid values.";
             return false;
         }
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using O2Connect.Api.DataValidators;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.Mappers;
@@ -15,13 +16,16 @@ namespace O2Connect.Api.Controllers.Management;
 public class UsersController : ControllerBase
 {
     private readonly IManagementUsersService _usersService;
+    private readonly IUsersQueryValidator _queryValidator;
     private readonly ILogger<UsersController> _logger;
 
     public UsersController(
         IManagementUsersService usersService,
+        IUsersQueryValidator queryValidator,
         ILogger<UsersController> logger)
     {
         _usersService = usersService;
+        _queryValidator = queryValidator;
         _logger = logger;
     }
 
@@ -30,6 +34,12 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> ListUsers([FromQuery] QueryPaginationRequest paginationRequest,
                                                CancellationToken ct)
     {
+        if (!_queryValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
+        {
+            _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
+            throw ApiException.BadRequest("invalid_request_params", errorMessage);
+        }
+
         var pagination = paginationRequest.ToPagination();
 
         var response = await _usersService.QueryUsersAsync(pagination, UserFilter.Empty, ct);
@@ -42,8 +52,14 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> SearchUsers([FromBody] UsersSearchRequest searchRequest,
                                                  CancellationToken ct)
     {
+        if (!_queryValidator.ValidateSearchRequest(searchRequest, out var errorMessage))
+        {
+            _logger.LogWarning("Invalid search parameters: {ErrorMessage}", errorMessage);
+            throw ApiException.BadRequest("invalid_request_params", errorMessage);
+        }
+
         var pagination = searchRequest.Pagination.ToPagination();
-        var filter = searchRequest.Filters.ToFilter();
+        var filter = searchRequest.Filter.ToFilter();
 
         var response = await _usersService.QueryUsersAsync(pagination, filter, ct);
 

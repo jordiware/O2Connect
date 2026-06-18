@@ -59,7 +59,7 @@ public class ClientsController : ControllerBase
         }
 
         var pagination = searchRequest.Pagination.ToPagination();
-        var filter = searchRequest.Filters.ToFilter();
+        var filter = searchRequest.Filter.ToFilter();
 
         var response = await _clientsService.QueryClientsAsync(pagination, filter, ct);
 

@@ -7,8 +7,8 @@ public sealed record ClientsSearchRequest
     [JsonPropertyName("pagination")]
     public JsonPaginationRequest Pagination { get; init; } = new();
 
-    [JsonPropertyName("filters")]
-    public ClientsSearchFilterRequest Filters { get; init; } = new();
+    [JsonPropertyName("filter")]
+    public ClientsSearchFilterRequest Filter { get; init; } = new();
 }
 
 public sealed record ClientsSearchFilterRequest
