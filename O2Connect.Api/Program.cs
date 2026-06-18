@@ -157,6 +157,7 @@ builder.Services.AddScoped<IDeviceConnectService, DeviceConnectService>();
 
 builder.Services.AddScoped<IManagementClientsService, ManagementClientsService>();
 builder.Services.AddScoped<IManagementUsersService, ManagementUsersService>();
+builder.Services.AddScoped<IManagementProfileService, ManagementProfileService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
