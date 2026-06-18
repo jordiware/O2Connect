@@ -37,6 +37,12 @@ public class ClientsController : ControllerBase
     public async Task<IActionResult> ListClients([FromQuery] QueryPaginationRequest paginationRequest,
                                                  CancellationToken ct)
     {
+        if (paginationRequest is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (!_paginationValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
@@ -55,6 +61,12 @@ public class ClientsController : ControllerBase
     public async Task<IActionResult> SearchClients([FromBody] ClientsSearchRequest searchRequest,
                                                    CancellationToken ct)
     {
+        if (searchRequest is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (!_paginationValidator.ValidatePaginationRequest(searchRequest.Pagination,
                                                             out var paginationErrorMessage))
         {
@@ -101,6 +113,12 @@ public class ClientsController : ControllerBase
                                                       [FromBody] UpdateClientDisplayNameRequest request,
                                                       CancellationToken ct)
     {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");
@@ -128,6 +146,12 @@ public class ClientsController : ControllerBase
                                                     [FromBody] UpdateClientImageUrlRequest request,
                                                     CancellationToken ct)
     {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");
@@ -155,6 +179,12 @@ public class ClientsController : ControllerBase
                                                         [FromBody] UpdateClientRedirectUrisRequest request,
                                                         CancellationToken ct)
     {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");
@@ -182,6 +212,12 @@ public class ClientsController : ControllerBase
                                                   [FromBody] UpdateClientScopesRequest request,
                                                   CancellationToken ct)
     {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");
@@ -209,6 +245,12 @@ public class ClientsController : ControllerBase
                                                   [FromBody] UpdateClientStatusRequest request,
                                                   CancellationToken ct)
     {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (string.IsNullOrWhiteSpace(clientId))
         {
             _logger.LogWarning("Client ID is missing in the request.");

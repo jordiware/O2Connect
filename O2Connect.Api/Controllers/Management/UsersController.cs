@@ -37,6 +37,12 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> ListUsers([FromQuery] QueryPaginationRequest paginationRequest,
                                                CancellationToken ct)
     {
+        if (paginationRequest is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (!_paginationValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
@@ -55,6 +61,12 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> SearchUsers([FromBody] UsersSearchRequest searchRequest,
                                                  CancellationToken ct)
     {
+        if (searchRequest is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (!_paginationValidator.ValidatePaginationRequest(searchRequest.Pagination,
                                                             out var paginationErrorMessage))
         {
@@ -100,6 +112,12 @@ public class UsersController : ControllerBase
                                                        [FromBody] UpdateUserDisplayNameRequest request,
                                                        CancellationToken ct)
     {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (string.IsNullOrWhiteSpace(userId))
         {
             _logger.LogWarning("User ID is missing in the request.");
@@ -127,6 +145,12 @@ public class UsersController : ControllerBase
                                                     [FromBody] UpdateUserImageUrlRequest request,
                                                     CancellationToken ct)
     {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (string.IsNullOrWhiteSpace(userId))
         {
             _logger.LogWarning("User ID is missing in the request.");
@@ -154,6 +178,12 @@ public class UsersController : ControllerBase
                                                 [FromBody] UpdateUserRoleRequest request,
                                                 CancellationToken ct)
     {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (string.IsNullOrWhiteSpace(userId))
         {
             _logger.LogWarning("User ID is missing in the request.");
@@ -181,6 +211,12 @@ public class UsersController : ControllerBase
                                                   [FromBody] UpdateUserStatusRequest request,
                                                   CancellationToken ct)
     {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
         if (string.IsNullOrWhiteSpace(userId))
         {
             _logger.LogWarning("User ID is missing in the request.");

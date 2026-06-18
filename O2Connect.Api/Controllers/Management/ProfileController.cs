@@ -41,14 +41,14 @@ public class ProfileController : ControllerBase
     }
 
     [HttpPatch("change_password")]
-    [RequireScope(Scopes.Profile.Read)]
+    [RequireScope(Scopes.Profile.Write)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request,
                                                     CancellationToken ct)
     {
-        if (request is null)
+        if (request is null || !ModelState.IsValid)
         {
-            _logger.LogWarning("Missing request body.");
-            throw ApiException.BadRequest("invalid_request_params", "Missing request body.");
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
         }
 
         if (string.IsNullOrWhiteSpace(request.OldPassword))
