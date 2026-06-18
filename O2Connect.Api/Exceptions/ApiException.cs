@@ -30,6 +30,13 @@ public class ApiException : Exception
                          "/errors/conflict",
                          detail);
 
+    public static ApiException ServerError(string errorCode, string detail) =>
+        new ApiException(StatusCodes.Status500InternalServerError,
+                         errorCode,
+                         "Server error",
+                         "/errors/server-error",
+                         detail);
+
     public int StatusCode { get; }
     public string ErrorCode { get; }
     public string Title { get; }

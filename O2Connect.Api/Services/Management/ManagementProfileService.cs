@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Exceptions;
+﻿using O2Connect.Api.Crypto;
+using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
@@ -11,6 +12,9 @@ public interface IManagementProfileService
 {
     Task<UserDetailResponse> GetMeAsync(CancellationToken ct);
     Task<IReadOnlyList<ClientSummaryResponse>> GetConsentedClientsAsync(CancellationToken ct);
+    Task UpdatePasswordAsync(string oldPassword,
+                             string newPassword,
+                             CancellationToken ct);
 }
 
 public class ManagementProfileService : IManagementProfileService
@@ -20,6 +24,7 @@ public class ManagementProfileService : IManagementProfileService
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IUserConsentRepository _userConsentRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ISecretHasher _secretHasher;
     private readonly ILogger<ManagementUsersService> _logger;
 
     public ManagementProfileService(
@@ -28,6 +33,7 @@ public class ManagementProfileService : IManagementProfileService
         IRefreshTokenRepository refreshTokenRepository,
         IUserConsentRepository userConsentRepository,
         ICurrentUserService currentUserService,
+        ISecretHasher secretHasher,
         ILogger<ManagementUsersService> logger)
     {
         _userRepository = userRepository;
@@ -35,6 +41,7 @@ public class ManagementProfileService : IManagementProfileService
         _refreshTokenRepository = refreshTokenRepository;
         _userConsentRepository = userConsentRepository;
         _currentUserService = currentUserService;
+        _secretHasher = secretHasher;
         _logger = logger;
     }
 
@@ -68,6 +75,37 @@ public class ManagementProfileService : IManagementProfileService
         return clients;
     }
 
+    public async Task UpdatePasswordAsync(string oldPassword,
+                                          string newPassword,
+                                          CancellationToken ct)
+    {
+        if (!ValidatePassword(newPassword))
+        {
+            _logger.LogWarning("Malformed new password.");
+            throw ApiException.BadRequest("invalid_request_params", $"Malformed new password.");
+        }
+
+        var user = await GetCurrentUserAsync(ct);
+
+        if (!_secretHasher.Verify(oldPassword, user.PasswordHash))
+        {
+            _logger.LogWarning("Current password mismatch.");
+            throw ApiException.Unauthorized("invalid_credentials", "Invalid credentials.");
+        }
+
+        if (!_secretHasher.TryHash(newPassword, out var passwordHash))
+        {
+            _logger.LogWarning("Unexpected hashing error.");
+            throw ApiException.ServerError("unexpected_error", "Unexpected error.");
+        }
+
+        user = user with { PasswordHash = passwordHash };
+
+        await _userRepository.StoreAsync(user, ct);
+
+        await _refreshTokenRepository.RevokeSubjectAsync(user.Id, ct);
+    }
+
     private async Task<User> GetCurrentUserAsync(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
@@ -94,5 +132,30 @@ public class ManagementProfileService : IManagementProfileService
         var userId = _currentUserService.UserId;
 
         return userId;
+    }
+
+    private static bool ValidatePassword(string password)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+            return false;
+
+        if (password.Length < 8 || password.Length > 128)
+            return false;
+
+        bool hasLower = false;
+        bool hasUpper = false;
+        bool hasDigit = false;
+
+        foreach (var c in password)
+        {
+            if (char.IsLower(c)) hasLower = true;
+            else if (char.IsUpper(c)) hasUpper = true;
+            else if (char.IsDigit(c)) hasDigit = true;
+        }
+
+        if (!hasLower || !hasUpper || !hasDigit)
+            return false;
+
+        return true;
     }
 }
