@@ -15,17 +15,20 @@ namespace O2Connect.Api.Controllers.Management;
 [Route("management/clients")]
 public class ClientsController : ControllerBase
 {
-    private readonly IClientsQueryValidator _queryValidator;
     private readonly IManagementClientsService _clientsService;
+    private readonly IPaginationQueryValidator _paginationValidator;
+    private readonly IClientsQueryValidator _queryValidator;
     private readonly ILogger<ClientsController> _logger;
 
     public ClientsController(
-        IClientsQueryValidator queryValidator,
         IManagementClientsService clientsService,
+        IPaginationQueryValidator paginationValidator,
+        IClientsQueryValidator queryValidator,
         ILogger<ClientsController> logger)
     {
-        _queryValidator = queryValidator;
         _clientsService = clientsService;
+        _paginationValidator = paginationValidator;
+        _queryValidator = queryValidator;
         _logger = logger;
     }
 
@@ -34,13 +37,13 @@ public class ClientsController : ControllerBase
     public async Task<IActionResult> ListClients([FromQuery] QueryPaginationRequest paginationRequest,
                                                  CancellationToken ct)
     {
-        if (!_queryValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
+        if (!_paginationValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
             throw ApiException.BadRequest("invalid_request_params", errorMessage);
         }
         
-        var pagination = paginationRequest.ToPagination();
+        var pagination = paginationRequest.ToEntityPagination();
 
         var response = await _clientsService.QueryClientsAsync(pagination, ClientFilter.Empty, ct);
 
@@ -52,13 +55,20 @@ public class ClientsController : ControllerBase
     public async Task<IActionResult> SearchClients([FromBody] ClientsSearchRequest searchRequest,
                                                    CancellationToken ct)
     {
-        if (!_queryValidator.ValidateSearchRequest(searchRequest, out var errorMessage))
+        if (!_paginationValidator.ValidatePaginationRequest(searchRequest.Pagination,
+                                                            out var paginationErrorMessage))
         {
-            _logger.LogWarning("Invalid search parameters: {ErrorMessage}", errorMessage);
-            throw ApiException.BadRequest("invalid_request_params", errorMessage);
+            _logger.LogWarning("Invalid request parameters: {ErrorMessage}", paginationErrorMessage);
+            throw ApiException.BadRequest("invalid_request_params", paginationErrorMessage);
         }
 
-        var pagination = searchRequest.Pagination.ToPagination();
+        if (!_queryValidator.ValidateSearchRequest(searchRequest, out var queryErrorMessage))
+        {
+            _logger.LogWarning("Invalid search parameters: {ErrorMessage}", queryErrorMessage);
+            throw ApiException.BadRequest("invalid_request_params", queryErrorMessage);
+        }
+
+        var pagination = searchRequest.Pagination.ToEntityPagination();
         var filter = searchRequest.Filter.ToFilter();
 
         var response = await _clientsService.QueryClientsAsync(pagination, filter, ct);

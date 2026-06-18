@@ -5,7 +5,7 @@ namespace O2Connect.Api.Models.Mappers;
 
 public static class EntityPaginationMapper
 {
-    public static EntityPagination ToPagination(this QueryPaginationRequest request)
+    public static EntityPagination ToEntityPagination(this QueryPaginationRequest request)
     {
         return new EntityPagination
         {
@@ -16,7 +16,7 @@ public static class EntityPaginationMapper
         };
     }
 
-    public static EntityPagination ToPagination(this JsonPaginationRequest request)
+    public static EntityPagination ToEntityPagination(this JsonPaginationRequest request)
     {
         return new EntityPagination
         {

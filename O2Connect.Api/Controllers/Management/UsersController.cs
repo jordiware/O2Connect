@@ -16,15 +16,18 @@ namespace O2Connect.Api.Controllers.Management;
 public class UsersController : ControllerBase
 {
     private readonly IManagementUsersService _usersService;
+    private readonly IPaginationQueryValidator _paginationValidator;
     private readonly IUsersQueryValidator _queryValidator;
     private readonly ILogger<UsersController> _logger;
 
     public UsersController(
         IManagementUsersService usersService,
+        IPaginationQueryValidator paginationValidator,
         IUsersQueryValidator queryValidator,
         ILogger<UsersController> logger)
     {
         _usersService = usersService;
+        _paginationValidator = paginationValidator;
         _queryValidator = queryValidator;
         _logger = logger;
     }
@@ -34,13 +37,13 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> ListUsers([FromQuery] QueryPaginationRequest paginationRequest,
                                                CancellationToken ct)
     {
-        if (!_queryValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
+        if (!_paginationValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))
         {
             _logger.LogWarning("Invalid request parameters: {ErrorMessage}", errorMessage);
             throw ApiException.BadRequest("invalid_request_params", errorMessage);
         }
 
-        var pagination = paginationRequest.ToPagination();
+        var pagination = paginationRequest.ToEntityPagination();
 
         var response = await _usersService.QueryUsersAsync(pagination, UserFilter.Empty, ct);
 
@@ -52,13 +55,20 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> SearchUsers([FromBody] UsersSearchRequest searchRequest,
                                                  CancellationToken ct)
     {
-        if (!_queryValidator.ValidateSearchRequest(searchRequest, out var errorMessage))
+        if (!_paginationValidator.ValidatePaginationRequest(searchRequest.Pagination,
+                                                            out var paginationErrorMessage))
         {
-            _logger.LogWarning("Invalid search parameters: {ErrorMessage}", errorMessage);
-            throw ApiException.BadRequest("invalid_request_params", errorMessage);
+            _logger.LogWarning("Invalid request parameters: {ErrorMessage}", paginationErrorMessage);
+            throw ApiException.BadRequest("invalid_request_params", paginationErrorMessage);
         }
 
-        var pagination = searchRequest.Pagination.ToPagination();
+        if (!_queryValidator.ValidateSearchRequest(searchRequest, out var queryErrorMessage))
+        {
+            _logger.LogWarning("Invalid search parameters: {ErrorMessage}", queryErrorMessage);
+            throw ApiException.BadRequest("invalid_request_params", queryErrorMessage);
+        }
+
+        var pagination = searchRequest.Pagination.ToEntityPagination();
         var filter = searchRequest.Filter.ToFilter();
 
         var response = await _usersService.QueryUsersAsync(pagination, filter, ct);
@@ -67,8 +77,8 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{userId}")]
-    [RequireScope(Scopes.Clients.Read)]
-    public async Task<IActionResult> GetClient([FromRoute] string userId, CancellationToken ct)
+    [RequireScope(Scopes.Users.Read)]
+    public async Task<IActionResult> GetUser([FromRoute] string userId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(userId))
         {
