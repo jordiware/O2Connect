@@ -19,22 +19,22 @@ public class MemoryClientRepository : IClientRepository
         return Task.FromResult(_clients.Values.Count(filter.ToExpression().Compile()));
     }
 
-    public Task<IReadOnlyList<Client>> QueryAsync(EntityPagination listQuery, CancellationToken ct)
+    public Task<IReadOnlyList<Client>> QueryAsync(EntityPagination pagination, CancellationToken ct)
     {
-        return QueryAsync(listQuery, ClientFilter.Empty, ct);
+        return QueryAsync(pagination, ClientFilter.Empty, ct);
     }
 
-    public Task<IReadOnlyList<Client>> QueryAsync(EntityPagination listQuery,
+    public Task<IReadOnlyList<Client>> QueryAsync(EntityPagination pagination,
                                                   ClientFilter filter,
                                                   CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        var orderAscending = listQuery.Order.Equals("asc", StringComparison.OrdinalIgnoreCase);
+        var orderAscending = pagination.Order.Equals("asc", StringComparison.OrdinalIgnoreCase);
 
         var filtered = _clients.Values.Where(filter.ToExpression().Compile());
 
-        var clients = listQuery.SortBy switch
+        var clients = pagination.SortBy switch
         {
             _ => orderAscending
                  ? filtered.OrderBy(c => c.NormalizedName,
@@ -43,8 +43,8 @@ public class MemoryClientRepository : IClientRepository
                                                    StringComparer.InvariantCultureIgnoreCase)
         };
 
-        var page = clients.Skip((listQuery.Page - 1) * listQuery.PageSize)
-                          .Take(listQuery.PageSize)
+        var page = clients.Skip((pagination.Page - 1) * pagination.PageSize)
+                          .Take(pagination.PageSize)
                           .ToList();
 
         return Task.FromResult<IReadOnlyList<Client>>(page);

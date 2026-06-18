@@ -30,7 +30,7 @@ public static class ClientServiceModelsMapper
         return filter;
     }
 
-    public static ClientSummaryResponse ToSummary(this Client client)
+    public static ClientSummaryResponse ToSummaryDto(this Client client)
     {
         if (client == null)
             throw new ArgumentNullException(nameof(client));
@@ -46,7 +46,7 @@ public static class ClientServiceModelsMapper
         return summary;
     }
 
-    public static ClientDetailResponse ToDetails(this Client client)
+    public static ClientDetailResponse ToDetailDto(this Client client)
     {
         if (client == null)
             throw new ArgumentNullException(nameof(client));

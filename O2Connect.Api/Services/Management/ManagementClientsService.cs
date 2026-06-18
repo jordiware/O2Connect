@@ -14,7 +14,7 @@ namespace O2Connect.Api.Services.Management;
 public interface IManagementClientsService
 {
     Task<ClientDetailResponse?> GetClientAsync(string clientId,
-                                                CancellationToken ct);
+                                               CancellationToken ct);
     Task<ClientListResponse> QueryClientsAsync(EntityPagination pagination,
                                                ClientFilter filter,
                                                CancellationToken ct);
@@ -70,7 +70,7 @@ public class ManagementClientsService : IManagementClientsService
             return null;
         }
 
-        var response = client.ToDetails();
+        var response = client.ToDetailDto();
 
         return response;
     }
@@ -112,7 +112,7 @@ public class ManagementClientsService : IManagementClientsService
 
         var clients = await _clientRepository.QueryAsync(pagination, filter, ct);
 
-        var summaries = clients.Select(c => c.ToSummary()).ToList();
+        var summaries = clients.Select(c => c.ToSummaryDto()).ToList();
 
         var response = new ClientListResponse
         {
