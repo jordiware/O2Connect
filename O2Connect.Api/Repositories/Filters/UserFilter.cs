@@ -9,6 +9,7 @@ public sealed record UserFilter
 
     public string? Name { get; init; }
     public string? Email { get; init; }
+    public string? Role { get; init; }
     public IReadOnlySet<EntityStatus>? Status { get; init; }
     public DateTimeOffset? MinCreatedAt { get; init; }
     public DateTimeOffset? MaxCreatedAt { get; init; }
@@ -20,6 +21,7 @@ public sealed record UserFilter
     public bool IsEmpty =>
         Name is null &&
         Email is null &&
+        Role is null &&
         Status is null &&
         MinCreatedAt is null &&
         MaxCreatedAt is null &&
@@ -34,6 +36,7 @@ public sealed record UserFilter
             (string.IsNullOrWhiteSpace(Name) || client.NormalizedUsername.Contains(Name) 
                 || (!string.IsNullOrWhiteSpace(client.DisplayName) && client.DisplayName.Contains(Name))) &&
             (string.IsNullOrWhiteSpace(Email) || client.Email.Contains(Email)) &&
+            (string.IsNullOrWhiteSpace(Role) || client.Role.Equals(Role, StringComparison.Ordinal)) &&
             (Status == null || Status.Contains(client.Status)) &&
             (MinCreatedAt == null || client.CreatedAt >= MinCreatedAt) &&
             (MaxCreatedAt == null || client.CreatedAt <= MaxCreatedAt) &&

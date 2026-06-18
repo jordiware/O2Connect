@@ -15,6 +15,7 @@ public static class UserServiceModelsMapper
         {
             Name = filterRequest.Name,
             Email = filterRequest.Email,
+            Role = filterRequest.Role,
             Status = filterRequest.Status?.Select(s => Enum.Parse<EntityStatus>(s, true)).ToHashSet(),
             MinCreatedAt = filterRequest.MinCreatedAt,
             MaxCreatedAt = filterRequest.MaxCreatedAt,

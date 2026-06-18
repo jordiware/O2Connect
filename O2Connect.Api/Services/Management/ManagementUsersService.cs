@@ -34,7 +34,6 @@ public class ManagementUsersService : IManagementUsersService
 {
     private readonly IUserRepository _userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
-    private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly IUserConsentRepository _userConsentRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ManagementUsersService> _logger;
@@ -42,14 +41,12 @@ public class ManagementUsersService : IManagementUsersService
     public ManagementUsersService(
         IUserRepository userRepository,
         IRefreshTokenRepository refreshTokenRepository,
-        IAuthorizationCodeRepository authorizationCodeRepository,
         IUserConsentRepository userConsentRepository,
         ICurrentUserService currentUserService,
         ILogger<ManagementUsersService> logger)
     {
         _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
-        _authorizationCodeRepository = authorizationCodeRepository;
         _userConsentRepository = userConsentRepository;
         _currentUserService = currentUserService;
         _logger = logger;
@@ -208,6 +205,22 @@ public class ManagementUsersService : IManagementUsersService
         if (user.Status == newStatus)
             return;
 
+        var adminFilter = new UserFilter
+        {
+            Role = UserRole.Admin,
+            Status = new HashSet<EntityStatus>([EntityStatus.Active])
+        };
+
+        var adminCount = await _userRepository.CountAsync(adminFilter, ct);
+
+        if (adminCount == 1
+            && user.Role.Equals(UserRole.Admin, StringComparison.Ordinal)
+            && user.Status == EntityStatus.Active)
+        {
+            _logger.LogWarning("At least one admin user must remain active in the system.");
+            throw ApiException.BadRequest("invalid_status", $"Invalid requested status [{newStatus}].");
+        }
+
         var now = DateTimeOffset.UtcNow;
 
         user = user with
@@ -251,6 +264,22 @@ public class ManagementUsersService : IManagementUsersService
             _logger.LogInformation("User already has role {newRole}. No update needed.",
                                    newRole);
             return;
+        }
+
+        var adminFilter = new UserFilter
+        {
+            Role = UserRole.Admin,
+            Status = new HashSet<EntityStatus>([EntityStatus.Active])
+        };
+
+        var adminCount = await _userRepository.CountAsync(adminFilter, ct);
+
+        if (adminCount == 1
+            && user.Role.Equals(UserRole.Admin, StringComparison.Ordinal)
+            && user.Status == EntityStatus.Active)
+        {
+            _logger.LogWarning("At least one admin user must remain active in the system.");
+            throw ApiException.BadRequest("invalid_role", $"Invalid requested role [{role}].");
         }
 
         var now = DateTimeOffset.UtcNow;

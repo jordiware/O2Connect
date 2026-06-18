@@ -21,6 +21,10 @@ public sealed record UsersSearchFilterRequest
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Email { get; init; }
 
+    [JsonPropertyName("role")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Role { get; init; }
+
     [JsonPropertyName("status")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? Status { get; init; }
