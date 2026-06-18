@@ -2,7 +2,7 @@
 
 namespace O2Connect.Dto.Management;
 
-public sealed record PaginationRequest
+public sealed record QueryPaginationRequest
 {
     [FromQuery(Name = "page")]
     public int Page { get; init; } = 1;

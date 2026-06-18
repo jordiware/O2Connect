@@ -5,27 +5,10 @@ namespace O2Connect.Dto.Management.Clients;
 public sealed record ClientsSearchRequest
 {
     [JsonPropertyName("pagination")]
-    public ClientsSearchPaginationRequest Pagination { get; init; } = new();
+    public JsonPaginationRequest Pagination { get; init; } = new();
 
     [JsonPropertyName("filters")]
     public ClientsSearchFilterRequest Filters { get; init; } = new();
-}
-
-public sealed record ClientsSearchPaginationRequest
-{
-    [JsonPropertyName("page")]
-    public int Page { get; init; } = 1;
-
-    [JsonPropertyName("page_size")]
-    public int PageSize { get; init; } = 20;
-
-    [JsonPropertyName("sort_by")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? SortBy { get; init; }
-
-    [JsonPropertyName("order")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Order { get; init; }
 }
 
 public sealed record ClientsSearchFilterRequest

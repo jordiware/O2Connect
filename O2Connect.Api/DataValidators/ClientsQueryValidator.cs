@@ -1,5 +1,4 @@
 ﻿using O2Connect.Api.Models;
-using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Dto.Management;
@@ -9,13 +8,39 @@ namespace O2Connect.Api.DataValidators;
 
 public interface IClientsQueryValidator
 {
-    bool ValidatePaginationRequest(PaginationRequest request, out string errorMessage);
+    bool ValidatePaginationRequest(QueryPaginationRequest request, out string errorMessage);
+    bool ValidatePaginationRequest(JsonPaginationRequest request, out string errorMessage);
     bool ValidateSearchRequest(ClientsSearchRequest request, out string errorMessage);
 }
 
 public class ClientsQueryValidator : IClientsQueryValidator
 {
-    public bool ValidatePaginationRequest(PaginationRequest request, out string errorMessage)
+    public bool ValidatePaginationRequest(QueryPaginationRequest request, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        if (request.Page < 1)
+        {
+            errorMessage = "Page must be greater than or equal to 1.";
+            return false;
+        }
+
+        if (request.PageSize < 10 || request.PageSize > 100)
+        {
+            errorMessage = "Page size must be between 10 and 100.";
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(request.Order) && request.Order != "asc" && request.Order != "desc")
+        {
+            errorMessage = "Order must be either 'asc' or 'desc'.";
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool ValidatePaginationRequest(JsonPaginationRequest request, out string errorMessage)
     {
         errorMessage = string.Empty;
 
@@ -44,7 +69,7 @@ public class ClientsQueryValidator : IClientsQueryValidator
     {
         errorMessage = string.Empty;
 
-        if (!ValidatePaginationRequest(request.Pagination.ToPaginationRequest(), out errorMessage))
+        if (!ValidatePaginationRequest(request.Pagination, out errorMessage))
         {
             return false;
         }

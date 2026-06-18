@@ -31,7 +31,7 @@ public class ClientsController : ControllerBase
 
     [HttpGet]
     [RequireScope(Scopes.Clients.Query)]
-    public async Task<IActionResult> ListClients([FromQuery] PaginationRequest paginationRequest,
+    public async Task<IActionResult> ListClients([FromQuery] QueryPaginationRequest paginationRequest,
                                                  CancellationToken ct)
     {
         if (!_queryValidator.ValidatePaginationRequest(paginationRequest, out var errorMessage))

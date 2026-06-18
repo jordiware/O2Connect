@@ -1,45 +1,11 @@
 ﻿using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories.Filters;
-using O2Connect.Dto.Management;
 using O2Connect.Dto.Management.Clients;
 
 namespace O2Connect.Api.Models.Mappers;
 
 public static class ClientServiceModelsMapper
 {
-    public static EntityPagination ToPagination(this PaginationRequest request)
-    {
-        return new EntityPagination
-        {
-            Page = request.Page,
-            PageSize = request.PageSize,
-            SortBy = request.SortBy ?? "created_at",
-            Order = request.Order ?? "desc"
-        };
-    }
-
-    public static EntityPagination ToPagination(this ClientsSearchPaginationRequest request)
-    {
-        return new EntityPagination
-        {
-            Page = request.Page,
-            PageSize = request.PageSize,
-            SortBy = request.SortBy ?? "created_at",
-            Order = request.Order ?? "desc"
-        };
-    }
-
-    public static PaginationRequest ToPaginationRequest(this ClientsSearchPaginationRequest request)
-    {
-        return new PaginationRequest
-        {
-            Page = request.Page,
-            PageSize = request.PageSize,
-            SortBy = request.SortBy ?? "created_at",
-            Order = request.Order ?? "desc"
-        };
-    }
-
     public static ClientFilter ToFilter(this ClientsSearchFilterRequest filterRequest)
     {
         if (filterRequest == null)
