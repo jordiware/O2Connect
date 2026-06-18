@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Models.Mappers;
+﻿using O2Connect.Api.Exceptions;
+using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Dto.Management.Users;
@@ -45,12 +46,12 @@ public class ManagementProfileService : IManagementProfileService
     {
         var userId = GetCurrentUserId();
 
-        var user = await _userRepository.GetAsync(userId!, ct);
+        var user = await _userRepository.GetAsync(userId, ct);
 
         if (user is null)
         {
             _logger.LogWarning("User with ID {UserId} not found.", userId);
-            throw new InvalidOperationException();
+            throw ApiException.NotFound("user_not_found", $"User with ID {userId} not found.");
         }
 
         return user;
@@ -58,14 +59,14 @@ public class ManagementProfileService : IManagementProfileService
 
     private string GetCurrentUserId()
     {
-        if (!_currentUserService.IsAuthenticated)
+        if (!_currentUserService.IsAuthenticated || _currentUserService.UserId is null)
         {
             _logger.LogWarning("User is not authenticated.");
-            throw new InvalidOperationException();
+            throw ApiException.Unauthorized("user_not_authenticated", "User is not authenticated.");
         }
 
         var userId = _currentUserService.UserId;
 
-        return userId!;
+        return userId;
     }
 }
