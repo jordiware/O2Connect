@@ -13,7 +13,7 @@ namespace O2Connect.Api.Services.Management;
 
 public interface IManagementClientsService
 {
-    Task<ClientDetailsResponse?> GetClientAsync(string clientId,
+    Task<ClientDetailResponse?> GetClientAsync(string clientId,
                                                 CancellationToken ct);
     Task<ClientListResponse> QueryClientsAsync(EntityPagination pagination,
                                                ClientFilter filter,
@@ -60,7 +60,7 @@ public class ManagementClientsService : IManagementClientsService
         _logger = logger;
     }
 
-    public async Task<ClientDetailsResponse?> GetClientAsync(string clientId, CancellationToken ct)
+    public async Task<ClientDetailResponse?> GetClientAsync(string clientId, CancellationToken ct)
     {
         var client = await _clientRepository.GetAsync(clientId, ct);
 

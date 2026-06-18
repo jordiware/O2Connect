@@ -80,12 +80,12 @@ public static class ClientServiceModelsMapper
         return summary;
     }
 
-    public static ClientDetailsResponse ToDetails(this Client client)
+    public static ClientDetailResponse ToDetails(this Client client)
     {
         if (client == null)
             throw new ArgumentNullException(nameof(client));
 
-        var detail = new ClientDetailsResponse
+        var detail = new ClientDetailResponse
         {
             Id = client.Id,
             Name = client.DisplayName,

@@ -1,11 +1,12 @@
-﻿using O2Connect.Api.Models.Store;
+﻿using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Repositories;
+using O2Connect.Dto.Management.Users;
 
 namespace O2Connect.Api.Services.Management;
 
 public interface IManagementUsersService
 {
-    Task<User?> GetUserAsync(string userId, CancellationToken ct);
+    Task<UserDetailResponse?> GetUserAsync(string userId, CancellationToken ct);
 }
 
 public class ManagementUsersService : IManagementUsersService
@@ -33,7 +34,7 @@ public class ManagementUsersService : IManagementUsersService
         _logger = logger;
     }
 
-    public async Task<User?> GetUserAsync(string userId, CancellationToken ct)
+    public async Task<UserDetailResponse?> GetUserAsync(string userId, CancellationToken ct)
     {
         var user = await _userRepository.GetAsync(userId, ct);
 
@@ -43,7 +44,7 @@ public class ManagementUsersService : IManagementUsersService
             return null;
         }
 
-        var response = user;
+        var response = user.ToDetailDto();
 
         return response;
     }

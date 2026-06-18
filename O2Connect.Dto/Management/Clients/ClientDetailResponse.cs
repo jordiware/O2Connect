@@ -2,7 +2,7 @@
 
 namespace O2Connect.Dto.Management.Clients;
 
-public sealed record ClientDetailsResponse
+public sealed record ClientDetailResponse
 {
     [JsonPropertyName("id")]
     public required string Id { get; init; }
