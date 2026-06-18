@@ -36,7 +36,7 @@ public static class UserServiceModelsMapper
             Role = user.Role,
             Status = user.Status.ToString(),
             DisplayName = user.DisplayName,
-            ImageUrl = user.PictureUri,
+            ImageUrl = user.ImageUrl,
         };
     }
 
@@ -51,7 +51,7 @@ public static class UserServiceModelsMapper
             Status = user.Status.ToString(),
             CreatedAt = user.CreatedAt,
             DisplayName = user.DisplayName,
-            ImageUrl = user.PictureUri,
+            ImageUrl = user.ImageUrl,
             LastModifiedAt = user.LastModifiedAt,
             RevokedAt = user.RevokedAt
         };

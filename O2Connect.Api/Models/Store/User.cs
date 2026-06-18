@@ -15,5 +15,5 @@ public sealed record User
     public DateTimeOffset? RevokedAt { get; init; }
 
     public string? DisplayName { get; init; }
-    public string? PictureUri { get; init; }
+    public string? ImageUrl { get; init; }
 }

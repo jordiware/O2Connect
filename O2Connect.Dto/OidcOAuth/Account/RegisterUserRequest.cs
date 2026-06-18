@@ -25,7 +25,7 @@ public sealed record RegisterUserRequest
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? DisplayName { get; init; }
 
-    [JsonPropertyName("picture_uri")]
+    [JsonPropertyName("image_url")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? PictureUri { get; init; }
+    public string? ImageUrl { get; init; }
 }

@@ -187,7 +187,7 @@ public class AccountService : IAccountService
 
             ValidateUri(pictureUri);
 
-            user = user with { PictureUri = request.PictureUri };
+            user = user with { ImageUrl = request.PictureUri };
         }
 
         await _userRepository.StoreAsync(user, ct);
@@ -229,7 +229,7 @@ public class AccountService : IAccountService
             Status = EntityStatus.Active,
             CreatedAt = DateTime.UtcNow,
             DisplayName = request.DisplayName,
-            PictureUri = request.PictureUri
+            ImageUrl = request.ImageUrl
         };
 
         await _userRepository.StoreAsync(user, ct);
