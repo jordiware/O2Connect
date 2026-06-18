@@ -1,4 +1,5 @@
-﻿using O2Connect.Dto.Responses;
+﻿using O2Connect.Dto.OidcOAuth;
+using O2Connect.Dto.OidcOAuth.Connect;
 
 namespace O2Connect.Api.Models;
 

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace O2Connect.Dto.Responses;
+namespace O2Connect.Dto.OidcOAuth.Account;
 
 public sealed record RegisterUserResponse
 {

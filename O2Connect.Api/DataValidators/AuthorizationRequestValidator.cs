@@ -1,4 +1,4 @@
-﻿using O2Connect.Dto.Requests;
+﻿using O2Connect.Dto.OidcOAuth.Connect;
 
 namespace O2Connect.Api.DataValidators;
 

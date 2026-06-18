@@ -7,8 +7,9 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
-using O2Connect.Dto.Requests;
-using O2Connect.Dto.Responses;
+using O2Connect.Dto.OidcOAuth.Account;
+using O2Connect.Dto.OidcOAuth.Connect;
+using O2Connect.Dto.OidcOAuth;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -225,7 +226,7 @@ public class AccountService : IAccountService
             PasswordHash = passwordHash,
             Role = request.Role ?? UserRole.User,
             Scopes = scopes,
-            IsActive = true,
+            Status = EntityStatus.Active,
             CreatedAt = DateTime.UtcNow,
             DisplayName = request.DisplayName,
             PictureUri = request.PictureUri

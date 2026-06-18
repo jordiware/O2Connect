@@ -2,7 +2,7 @@
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.Models.Options;
-using O2Connect.Dto.Responses;
+using O2Connect.Dto.OidcOAuth.Connect;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

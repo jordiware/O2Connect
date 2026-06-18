@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace O2Connect.Dto.Requests;
+namespace O2Connect.Dto.OidcOAuth.Connect;
 
 public sealed record EndSessionRequest
 {

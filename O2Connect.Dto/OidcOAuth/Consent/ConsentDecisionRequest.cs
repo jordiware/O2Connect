@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace O2Connect.Dto.Requests;
+namespace O2Connect.Dto.OidcOAuth.Consent;
 
 public sealed record ConsentDecisionRequest
 {

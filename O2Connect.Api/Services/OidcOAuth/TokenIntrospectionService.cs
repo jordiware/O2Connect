@@ -1,7 +1,7 @@
 ﻿using O2Connect.Api.DataValidators;
 using O2Connect.Api.Models;
 using O2Connect.Api.Repositories;
-using O2Connect.Dto.Responses;
+using O2Connect.Dto.OidcOAuth.Connect;
 
 namespace O2Connect.Api.Services.OidcOAuth;
 

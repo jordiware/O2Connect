@@ -7,7 +7,7 @@ using O2Connect.Api.Models.Options;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories.Cache;
-using O2Connect.Dto.Requests;
+using O2Connect.Dto.OidcOAuth.Connect;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 

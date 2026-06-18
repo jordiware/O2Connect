@@ -2,7 +2,7 @@
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
-using O2Connect.Dto.Responses;
+using O2Connect.Dto.OidcOAuth;
 
 namespace O2Connect.Api.Services.OidcOAuth;
 

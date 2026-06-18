@@ -4,8 +4,7 @@ using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Security;
 using O2Connect.Api.Services.OidcOAuth;
-using O2Connect.Dto.Requests;
-using O2Connect.Dto.Responses;
+using O2Connect.Dto.OidcOAuth.Account;
 using System.Security.Claims;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;

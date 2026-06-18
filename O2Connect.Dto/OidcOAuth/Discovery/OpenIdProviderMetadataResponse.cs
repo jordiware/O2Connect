@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace O2Connect.Dto.Responses;
+namespace O2Connect.Dto.OidcOAuth.Discovery;
 
-public sealed record OAuthAuthorizationServerMetadataResponse
+public sealed record OpenIdProviderMetadataResponse
 {
     [JsonPropertyName("issuer")]
     public required string Issuer { get; init; }
@@ -13,6 +13,12 @@ public sealed record OAuthAuthorizationServerMetadataResponse
     [JsonPropertyName("token_endpoint")]
     public required string TokenEndpoint { get; init; }
 
+    [JsonPropertyName("userinfo_endpoint")]
+    public required string UserInfoEndpoint { get; init; }
+
+    [JsonPropertyName("end_session_endpoint")]
+    public required string EndSessionEndpoint { get; init; }
+
     [JsonPropertyName("jwks_uri")]
     public required string JwksUri { get; init; }
 
@@ -22,36 +28,33 @@ public sealed record OAuthAuthorizationServerMetadataResponse
     [JsonPropertyName("response_modes_supported")]
     public required string[] ResponseModesSupported { get; init; }
 
+    [JsonPropertyName("subject_types_supported")]
+    public required string[] SubjectTypesSupported { get; init; }
+
+    [JsonPropertyName("id_token_signing_alg_values_supported")]
+    public required string[] IdTokenSigningAlgValuesSupported { get; init; }
+
     [JsonPropertyName("grant_types_supported")]
     public required string[] GrantTypesSupported { get; init; }
 
     [JsonPropertyName("token_endpoint_auth_methods_supported")]
     public required string[] TokenEndpointAuthMethodsSupported { get; init; }
 
-    [JsonPropertyName("revocation_endpoint")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? RevocationEndpoint { get; init; }
-
-    [JsonPropertyName("introspection_endpoint")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? IntrospectionEndpoint { get; init; }
-
     [JsonPropertyName("code_challenge_methods_supported")]
     public required string[] CodeChallengeMethodsSupported { get; init; }
 
     [JsonPropertyName("scopes_supported")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string[]? ScopesSupported { get; init; }
 
+    [JsonPropertyName("claims_supported")]
+    public string[]? ClaimsSupported { get; init; }
+
     [JsonPropertyName("service_documentation")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? ServiceDocumentation { get; init; }
 
     [JsonPropertyName("op_policy_uri")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? OpPolicyUri { get; init; }
 
     [JsonPropertyName("op_tos_uri")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? OpTosUri { get; init; }
 }
