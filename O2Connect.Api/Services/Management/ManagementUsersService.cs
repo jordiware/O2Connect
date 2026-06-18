@@ -5,7 +5,6 @@ using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Filters;
 using O2Connect.Dto.Management.Users;
-using System.Data;
 
 namespace O2Connect.Api.Services.Management;
 
@@ -16,15 +15,15 @@ public interface IManagementUsersService
     Task<UserListResponse> QueryUsersAsync(EntityPagination pagination,
                                            UserFilter filter,
                                            CancellationToken ct);
-    Task UpdateUserDisplayName(string userId,
-                               string newDisplayName,
-                               CancellationToken ct);
-    Task UpdateUserImageUrl(string userId,
-                            string? newImageUrl,
-                            CancellationToken ct);
-    Task UpdateUserRole(string userId,
-                        string role,
-                        CancellationToken ct);
+    Task UpdateUserDisplayNameAsync(string userId,
+                                    string newDisplayName,
+                                    CancellationToken ct);
+    Task UpdateUserImageUrlAsync(string userId,
+                                 string? newImageUrl,
+                                 CancellationToken ct);
+    Task UpdateUserRoleAsync(string userId,
+                             string role,
+                             CancellationToken ct);
     Task UpdateUserStatusAsync(string userId,
                                string status,
                                CancellationToken ct);
@@ -116,7 +115,7 @@ public class ManagementUsersService : IManagementUsersService
         return response;
     }
 
-    public async Task UpdateUserDisplayName(string userId,
+    public async Task UpdateUserDisplayNameAsync(string userId,
                                             string newDisplayName,
                                             CancellationToken ct)
     {
@@ -135,7 +134,7 @@ public class ManagementUsersService : IManagementUsersService
         await _userRepository.StoreAsync(user, ct);
     }
 
-    public async Task UpdateUserImageUrl(string userId,
+    public async Task UpdateUserImageUrlAsync(string userId,
                                          string? newImageUrl,
                                          CancellationToken ct)
     {
@@ -245,7 +244,7 @@ public class ManagementUsersService : IManagementUsersService
         }
     }
 
-    public async Task UpdateUserRole(string userId,
+    public async Task UpdateUserRoleAsync(string userId,
                                      string role,
                                      CancellationToken ct)
     {

@@ -68,7 +68,8 @@ public class ClientsController : ControllerBase
 
     [HttpGet("{clientId}")]
     [RequireScope(Scopes.Clients.Read)]
-    public async Task<IActionResult> GetClient([FromRoute] string clientId, CancellationToken ct)
+    public async Task<IActionResult> GetClient([FromRoute] string clientId,
+                                               CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -86,9 +87,9 @@ public class ClientsController : ControllerBase
 
     [HttpPatch("{clientId}/display_name")]
     [RequireScope(Scopes.Clients.Write)]
-    public async Task<IActionResult> UpdateClientName([FromRoute] string clientId,
-                                                              [FromBody] UpdateClientDisplayNameRequest request,
-                                                              CancellationToken ct)
+    public async Task<IActionResult> UpdateDisplayName([FromRoute] string clientId,
+                                                      [FromBody] UpdateClientDisplayNameRequest request,
+                                                      CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -114,8 +115,8 @@ public class ClientsController : ControllerBase
     [HttpPatch("{clientId}/image_url")]
     [RequireScope(Scopes.Clients.Write)]
     public async Task<IActionResult> UpdateImageUrl([FromRoute] string clientId,
-                                                              [FromBody] UpdateClientImageUrlRequest request,
-                                                              CancellationToken ct)
+                                                    [FromBody] UpdateClientImageUrlRequest request,
+                                                    CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -140,9 +141,9 @@ public class ClientsController : ControllerBase
 
     [HttpPatch("{clientId}/redirect_uris")]
     [RequireScope(Scopes.Clients.Write)]
-    public async Task<IActionResult> UpdateClientRedirectUris([FromRoute] string clientId,
-                                                              [FromBody] UpdateClientRedirectUrisRequest request,
-                                                              CancellationToken ct)
+    public async Task<IActionResult> UpdateRedirectUris([FromRoute] string clientId,
+                                                        [FromBody] UpdateClientRedirectUrisRequest request,
+                                                        CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -167,9 +168,9 @@ public class ClientsController : ControllerBase
 
     [HttpPatch("{clientId}/scopes")]
     [RequireScope(Scopes.Clients.Write)]
-    public async Task<IActionResult> UpdateClientScopes([FromRoute] string clientId,
-                                                        [FromBody] UpdateClientScopesRequest request,
-                                                        CancellationToken ct)
+    public async Task<IActionResult> UpdateScopes([FromRoute] string clientId,
+                                                  [FromBody] UpdateClientScopesRequest request,
+                                                  CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {
@@ -194,9 +195,9 @@ public class ClientsController : ControllerBase
 
     [HttpPatch("{clientId}/status")]
     [RequireScope(Scopes.Clients.Write)]
-    public async Task<IActionResult> UpdateClientStatus([FromRoute] string clientId,
-                                                        [FromBody] UpdateClientStatusRequest request,
-                                                        CancellationToken ct)
+    public async Task<IActionResult> UpdateStatus([FromRoute] string clientId,
+                                                  [FromBody] UpdateClientStatusRequest request,
+                                                  CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(clientId))
         {

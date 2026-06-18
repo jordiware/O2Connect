@@ -11,6 +11,7 @@ public static class Scopes
         Oidc.Phone,
         OAuth.OfflineAccess,
         Users.Read,
+        Users.Query,
         Users.Write,
         Users.Delete,
         Clients.Read,
@@ -57,6 +58,7 @@ public static class Scopes
     /// </summary>
     public static class Users
     {
+        public const string Query = "users.query";
         public const string Read = "users.read";
         public const string Write = "users.write";
         public const string Delete = "users.delete";
