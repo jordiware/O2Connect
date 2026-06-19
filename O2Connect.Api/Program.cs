@@ -79,6 +79,7 @@ builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
 builder.Services.AddSingleton<ISecretHasher, Pbkdf2SecretHasher>();
 builder.Services.AddSingleton<IPushedAuthorizationValidator, PushedAuthorizationValidator>();
 
+builder.Services.AddSingleton<IClientSecretValidator, ClientSecretValidator>();
 builder.Services.AddSingleton<IPaginationQueryValidator, PaginationQueryValidator>();
 builder.Services.AddSingleton<IClientsQueryValidator, ClientsQueryValidator>();
 builder.Services.AddSingleton<IUsersQueryValidator, UsersQueryValidator>();
