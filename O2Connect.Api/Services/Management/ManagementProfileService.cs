@@ -1,10 +1,14 @@
-﻿using O2Connect.Api.Crypto;
+﻿using Microsoft.AspNetCore.Identity;
+using O2Connect.Api.Crypto;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models.Mappers;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
+using O2Connect.Api.Repositories.Filters;
 using O2Connect.Dto.Management.Clients;
 using O2Connect.Dto.Management.Users;
+using System.Globalization;
+using System.Text;
 
 namespace O2Connect.Api.Services.Management;
 
@@ -18,6 +22,8 @@ public interface IManagementProfileService
                              CancellationToken ct);
     Task UpdatePasswordAsync(string oldPassword,
                              string newPassword,
+                             CancellationToken ct);
+    Task UpdateUsernameAsync(string username,
                              CancellationToken ct);
     Task RevokeConsentedClientAsync(string clientId,
                                     CancellationToken ct);
@@ -110,13 +116,13 @@ public class ManagementProfileService : IManagementProfileService
             if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri) ||
                 (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
             {
-                _logger.LogWarning("Invalid image URL scheme for user {UserId}.", userId);
+                _logger.LogWarning("Invalid image URL scheme.");
                 throw ApiException.BadRequest("invalid_image_url", "Image URL must be HTTP or HTTPS.");
             }
 
             if (uri.IsLoopback || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogWarning("Invalid image URL host for user {UserId}.", userId);
+                _logger.LogWarning("Invalid image URL host.");
                 throw ApiException.BadRequest("invalid_image_url", "Local URLs are not allowed.");
             }
         }
@@ -174,6 +180,42 @@ public class ManagementProfileService : IManagementProfileService
         user = user with
         {
             PasswordHash = passwordHash,
+            LastModifiedAt = now,
+        };
+
+        await _userRepository.StoreAsync(user, ct);
+
+        await _refreshTokenRepository.RevokeSubjectAsync(user.Id, ct);
+
+        await _authorizationCodeRepository.RevokeForSubjectAsync(user.Id, ct);
+    }
+
+    public async Task UpdateUsernameAsync(string username, CancellationToken ct)
+    {
+        username = username.Trim();
+
+        var normalizedName = NormalizeName(username);
+        var filter = new UserFilter
+        {
+            Name = normalizedName,
+        };
+
+        var userCount = await _userRepository.CountAsync(filter, ct);
+
+        if (userCount > 0)
+        {
+            _logger.LogWarning("There already exists a user with name {displayName}.", username);
+            throw ApiException.BadRequest("invalid_request_params",
+                                          $"There already exists a user with name {username}.");
+        }
+
+        var user = await GetCurrentUserAsync(ct);
+
+        var now = DateTimeOffset.UtcNow;
+
+        user = user with
+        {
+            Username = username,
             LastModifiedAt = now,
         };
 
@@ -262,5 +304,31 @@ public class ManagementProfileService : IManagementProfileService
             return false;
 
         return true;
+    }
+
+    private static string NormalizeName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw OAuthException.FromInvalidRequest();
+
+        var trimmed = name.Trim();
+
+        var normalized = trimmed.Normalize(NormalizationForm.FormKD);
+
+        var sb = new StringBuilder(normalized.Length);
+
+        foreach (var c in normalized)
+        {
+            var category = CharUnicodeInfo.GetUnicodeCategory(c);
+
+            if (category != UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(c);
+            }
+        }
+
+        return sb.ToString()
+                 .Normalize(NormalizationForm.FormKC)
+                 .ToLowerInvariant();
     }
 }

@@ -106,6 +106,28 @@ public class ProfileController : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("update_username")]
+    [RequireScope(Scopes.Profile.Write)]
+    public async Task<IActionResult> UpdateUsername([FromBody] UpdateUsernameRequest request,
+                                                    CancellationToken ct)
+    {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Username))
+        {
+            _logger.LogWarning("Display name is missing in the request.");
+            throw ApiException.BadRequest("invalid_request_params", "A display name is required.");
+        }
+
+        await _profileService.UpdateUsernameAsync(request.Username, ct);
+
+        return NoContent();
+    }
+
     [HttpPatch("revoke_consent")]
     [RequireScope(Scopes.Profile.Write)]
     public async Task<IActionResult> RevokeConsent([FromBody] RevokeConsentRequest request,

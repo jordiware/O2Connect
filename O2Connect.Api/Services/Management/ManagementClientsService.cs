@@ -142,7 +142,7 @@ public class ManagementClientsService : IManagementClientsService
         if (clientCount > 0)
         {
             _logger.LogWarning("There already exists a client with name {displayName}.", displayName);
-            throw ApiException.BadRequest("invalid_redirect_uris",
+            throw ApiException.BadRequest("invalid_request_params",
                                           $"There already exists a client with name {displayName}.");
         }
 
