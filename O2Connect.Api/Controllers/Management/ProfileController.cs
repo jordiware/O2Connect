@@ -67,4 +67,26 @@ public class ProfileController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpPatch("revoke_consent")]
+    [RequireScope(Scopes.Profile.Write)]
+    public async Task<IActionResult> RevokeConsent([FromBody] RevokeConsentRequest request,
+                                                    CancellationToken ct)
+    {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ClientId))
+        {
+            _logger.LogWarning("Client ID is missing in the request.");
+            throw ApiException.BadRequest("invalid_request_params", "Client ID is required.");
+        }
+
+        await _profileService.RevokeConsentedClientAsync(request.ClientId, ct);
+
+        return NoContent();
+    }
 }

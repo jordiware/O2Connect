@@ -1,6 +1,5 @@
 ﻿using O2Connect.Api.Models.Store;
 using System.Collections.Concurrent;
-using static O2Connect.Api.Models.Scopes;
 
 namespace O2Connect.Api.Repositories.InMemoryRepositories;
 
@@ -115,6 +114,27 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         var utcNow = DateTimeOffset.UtcNow;
 
         var tokens = _tokens.Where(kvp => kvp.Value.Subject.Equals(subjectId, StringComparison.Ordinal));
+
+        foreach (var token in tokens)
+        {
+            _tokens[token.Key] = token.Value with
+            {
+                Revoked = true,
+                RevokedAt = utcNow
+            };
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeForSubjectAndClientAsync(string subjectId, string clientId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var utcNow = DateTimeOffset.UtcNow;
+
+        var tokens = _tokens.Where(kvp => kvp.Value.Subject.Equals(subjectId, StringComparison.Ordinal)
+                                          && kvp.Value.ClientId.Equals(clientId, StringComparison.Ordinal));
 
         foreach (var token in tokens)
         {

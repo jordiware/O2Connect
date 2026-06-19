@@ -15,6 +15,8 @@ public interface IManagementProfileService
     Task UpdatePasswordAsync(string oldPassword,
                              string newPassword,
                              CancellationToken ct);
+    Task RevokeConsentedClientAsync(string clientId,
+                                    CancellationToken ct);
 }
 
 public class ManagementProfileService : IManagementProfileService
@@ -78,6 +80,33 @@ public class ManagementProfileService : IManagementProfileService
         return clients;
     }
 
+    public async Task RevokeConsentedClientAsync(string clientId,
+                                                 CancellationToken ct)
+    {
+        var client = await _clientRepository.GetAsync(clientId, ct);
+
+        if (client is null)
+        {
+            _logger.LogWarning("Client [{ClientId}] not found.", clientId);
+            throw ApiException.BadRequest("invalid_request_params", $"Could not find requested client.");
+        }
+
+        var userId = GetCurrentUserId();
+
+        var revoked = await _userConsentRepository.DeleteAsync(userId, client.Id, ct);
+
+        if (revoked)
+        {
+            await _refreshTokenRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
+
+            await _authorizationCodeRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
+        }
+        else
+        {
+            _logger.LogInformation("Client [{ClientId}] was not consented.", clientId);
+        }
+    }
+
     public async Task UpdatePasswordAsync(string oldPassword,
                                           string newPassword,
                                           CancellationToken ct)
@@ -102,7 +131,11 @@ public class ManagementProfileService : IManagementProfileService
             throw ApiException.ServerError("unexpected_error", "Unexpected error.");
         }
 
-        user = user with { PasswordHash = passwordHash };
+        user = user with
+        {
+            PasswordHash = passwordHash,
+            LastModifiedAt = DateTimeOffset.UtcNow,
+        };
 
         await _userRepository.StoreAsync(user, ct);
 

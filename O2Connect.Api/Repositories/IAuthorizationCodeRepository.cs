@@ -11,4 +11,5 @@ public interface IAuthorizationCodeRepository
     Task RemoveAsync(string code, CancellationToken ct);
     Task RevokeForClientAsync(string clientId, CancellationToken ct);
     Task RevokeForSubjectAsync(string subjectId, CancellationToken ct);
+    Task RevokeForSubjectAndClientAsync(string subjectId, string clientId, CancellationToken ct);
 }
