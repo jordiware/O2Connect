@@ -57,6 +57,8 @@ public class ProfileController : ControllerBase
             throw ApiException.BadRequest("invalid_request_params", "A display name is required.");
         }
 
+        await _profileService.UpdateDisplayNameAsync(request.DisplayName, ct);
+
         return NoContent();
     }
 
@@ -71,11 +73,7 @@ public class ProfileController : ControllerBase
             throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.ImageUrl))
-        {
-            _logger.LogWarning("Image URL is missing in the request.");
-            throw ApiException.BadRequest("invalid_request_params", "A image URL is required.");
-        }
+        await _profileService.UpdateImageUrlAsync(request.ImageUrl, ct);
 
         return NoContent();
     }

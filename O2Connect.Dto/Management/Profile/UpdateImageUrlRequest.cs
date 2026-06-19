@@ -5,5 +5,5 @@ namespace O2Connect.Dto.Management.Profile;
 public sealed record UpdateImageUrlRequest
 {
     [JsonPropertyName("image_url")]
-    public required string ImageUrl { get; init; }
+    public required string? ImageUrl { get; init; }
 }

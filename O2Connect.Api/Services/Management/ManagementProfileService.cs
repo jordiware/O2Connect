@@ -12,6 +12,10 @@ public interface IManagementProfileService
 {
     Task<UserDetailResponse> GetMeAsync(CancellationToken ct);
     Task<IReadOnlyList<ClientSummaryResponse>> GetConsentedClientsAsync(CancellationToken ct);
+    Task UpdateDisplayNameAsync(string displayName,
+                                CancellationToken ct);
+    Task UpdateImageUrlAsync(string? imageUrl,
+                             CancellationToken ct);
     Task UpdatePasswordAsync(string oldPassword,
                              string newPassword,
                              CancellationToken ct);
@@ -80,31 +84,65 @@ public class ManagementProfileService : IManagementProfileService
         return clients;
     }
 
-    public async Task RevokeConsentedClientAsync(string clientId,
-                                                 CancellationToken ct)
+    public async Task UpdateDisplayNameAsync(string displayName, CancellationToken ct)
     {
-        var client = await _clientRepository.GetAsync(clientId, ct);
+        displayName = displayName.Trim();
 
-        if (client is null)
+        var user = await GetCurrentUserAsync(ct);
+
+        var now = DateTimeOffset.UtcNow;
+
+        user = user with
         {
-            _logger.LogWarning("Client [{ClientId}] not found.", clientId);
-            throw ApiException.BadRequest("invalid_request_params", $"Could not find requested client.");
-        }
+            DisplayName = displayName,
+            LastModifiedAt = now
+        };
 
-        var userId = GetCurrentUserId();
+        await _userRepository.StoreAsync(user, ct);
+    }
 
-        var revoked = await _userConsentRepository.DeleteAsync(userId, client.Id, ct);
-
-        if (revoked)
+    public async Task UpdateImageUrlAsync(string? imageUrl, CancellationToken ct)
+    {
+        if (!string.IsNullOrWhiteSpace(imageUrl))
         {
-            await _refreshTokenRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
+            imageUrl = imageUrl.Trim();
 
-            await _authorizationCodeRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
+            if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                _logger.LogWarning("Invalid image URL scheme for user {UserId}.", userId);
+                throw ApiException.BadRequest("invalid_image_url", "Image URL must be HTTP or HTTPS.");
+            }
+
+            if (uri.IsLoopback || string.Equals(uri.Host, "localhost", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning("Invalid image URL host for user {UserId}.", userId);
+                throw ApiException.BadRequest("invalid_image_url", "Local URLs are not allowed.");
+            }
         }
         else
         {
-            _logger.LogInformation("Client [{ClientId}] was not consented.", clientId);
+            imageUrl = null;
         }
+
+        var user = await GetCurrentUserAsync(ct);
+
+        if (string.Equals(user.ImageUrl, imageUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogInformation("User already has image URL {imageUrl}. No update needed.",
+                                   imageUrl);
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+
+        user = user with
+        {
+            ImageUrl = imageUrl,
+            LastModifiedAt = now
+        };
+
+        await _userRepository.StoreAsync(user, ct);
     }
 
     public async Task UpdatePasswordAsync(string oldPassword,
@@ -131,10 +169,12 @@ public class ManagementProfileService : IManagementProfileService
             throw ApiException.ServerError("unexpected_error", "Unexpected error.");
         }
 
+        var now = DateTimeOffset.UtcNow;
+
         user = user with
         {
             PasswordHash = passwordHash,
-            LastModifiedAt = DateTimeOffset.UtcNow,
+            LastModifiedAt = now,
         };
 
         await _userRepository.StoreAsync(user, ct);
@@ -142,6 +182,33 @@ public class ManagementProfileService : IManagementProfileService
         await _refreshTokenRepository.RevokeSubjectAsync(user.Id, ct);
 
         await _authorizationCodeRepository.RevokeForSubjectAsync(user.Id, ct);
+    }
+
+    public async Task RevokeConsentedClientAsync(string clientId,
+                                                 CancellationToken ct)
+    {
+        var client = await _clientRepository.GetAsync(clientId, ct);
+
+        if (client is null)
+        {
+            _logger.LogWarning("Client [{ClientId}] not found.", clientId);
+            throw ApiException.BadRequest("invalid_request_params", $"Could not find requested client.");
+        }
+
+        var userId = GetCurrentUserId();
+
+        var revoked = await _userConsentRepository.DeleteAsync(userId, client.Id, ct);
+
+        if (revoked)
+        {
+            await _refreshTokenRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
+
+            await _authorizationCodeRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
+        }
+        else
+        {
+            _logger.LogInformation("Client [{ClientId}] was not consented.", clientId);
+        }
     }
 
     private async Task<User> GetCurrentUserAsync(CancellationToken ct)
