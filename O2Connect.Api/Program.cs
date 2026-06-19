@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using O2Connect.Api.Contexts;
+using O2Connect.Api.Persistence;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
