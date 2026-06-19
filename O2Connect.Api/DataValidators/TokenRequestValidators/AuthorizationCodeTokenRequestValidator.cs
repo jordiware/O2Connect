@@ -3,7 +3,7 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
-using O2Connect.Dto.Requests;
+using O2Connect.Dto.OidcOAuth.Connect;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -32,7 +32,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
             && method == ClientAuthenticationMethod.ClientSecretPost)
             throw OAuthException.FromInvalidRequest("Missing 'client_id'.");
 
-        if (!string.IsNullOrWhiteSpace(request.ClientId) && request.ClientId != client.ClientId)
+        if (!string.IsNullOrWhiteSpace(request.ClientId) && request.ClientId != client.Id)
             throw OAuthException.FromInvalidGrant();
 
         if (string.IsNullOrWhiteSpace(request.Code))
@@ -58,7 +58,7 @@ public class AuthorizationCodeTokenRequestValidator : ITokenRequestValidator
         if (code.ExpiresAt < DateTimeOffset.UtcNow)
             throw OAuthException.FromInvalidGrant();
 
-        if (code.ClientId != client.ClientId)
+        if (code.ClientId != client.Id)
             throw OAuthException.FromInvalidGrant();
 
         if (!string.Equals(code.RedirectUri, request.RedirectUri, StringComparison.Ordinal))

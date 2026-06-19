@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using O2Connect.Api.Crypto;
-using O2Connect.Api.Services;
+using O2Connect.Api.Services.OidcOAuth;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
 

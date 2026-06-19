@@ -7,7 +7,7 @@ using O2Connect.Api.Models.Options;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories.Cache;
-using O2Connect.Dto.Requests;
+using O2Connect.Dto.OidcOAuth.Connect;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -137,7 +137,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
 
         var jwt = handler.ReadJwtToken(assertion);
 
-        if (!string.IsNullOrEmpty(jwt.Issuer) && jwt.Issuer != client.ClientId)
+        if (!string.IsNullOrEmpty(jwt.Issuer) && jwt.Issuer != client.Id)
             throw OAuthException.FromInvalidRequest();
 
         if (!string.IsNullOrEmpty(jwt.Subject) && jwt.Subject != jwt.Issuer)
@@ -203,7 +203,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
         var parameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = client.ClientId,
+            ValidIssuer = client.Id,
 
             ValidateAudience = true,
             ValidAudience = _oauthOptions.TokenEndpoint,

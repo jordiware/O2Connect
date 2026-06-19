@@ -11,8 +11,11 @@ using O2Connect.Api.Middleware;
 using O2Connect.Api.Models.Options;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
+using O2Connect.Api.Repositories.InMemoryRepositories;
 using O2Connect.Api.Security;
 using O2Connect.Api.Services;
+using O2Connect.Api.Services.Management;
+using O2Connect.Api.Services.OidcOAuth;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,9 +23,12 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.SuppressModelStateInvalidFilter = true;
 });
+builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection(ApiOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddMemoryCache(options =>
 {
@@ -30,7 +36,8 @@ builder.Services.AddMemoryCache(options =>
 });
 
 builder.Services.AddAuthorizationBuilder()
-                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser().Build());
+                .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser()
+                                                                          .Build());
 
 builder.Services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, ScopePolicyProvider>();
@@ -50,14 +57,14 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
 builder.Services.AddSingleton<ITokenReplayCache, MemoryTokenReplayCache>();
 
-builder.Services.AddSingleton<IClientRepository, InMemoryClientRepository>();
-builder.Services.AddSingleton<IAuthorizationCodeRepository, InMemoryAuthorizationCodeRepository>();
-builder.Services.AddSingleton<IAuthorizationSessionRepository, InMemoryAuthorizationSessionRepository>();
-builder.Services.AddSingleton<IRefreshTokenRepository, InMemoryRefreshTokenRepository>();
-builder.Services.AddSingleton<IUserConsentRepository, InMemoryUserConsentRepository>();
-builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
-builder.Services.AddSingleton<IParEntryRepository, InMemoryParEntryRepository>();
-builder.Services.AddSingleton<IDeviceAuthorizationRepository, InMemoryDeviceAuthorizationRepository>();
+builder.Services.AddSingleton<IClientRepository, MemoryClientRepository>();
+builder.Services.AddSingleton<IAuthorizationCodeRepository, MemoryAuthorizationCodeRepository>();
+builder.Services.AddSingleton<IAuthorizationSessionRepository, MemoryAuthorizationSessionRepository>();
+builder.Services.AddSingleton<IRefreshTokenRepository, MemoryRefreshTokenRepository>();
+builder.Services.AddSingleton<IUserConsentRepository, MemoryUserConsentRepository>();
+builder.Services.AddSingleton<IUserRepository, MemoryUserRepository>();
+builder.Services.AddSingleton<IParEntryRepository, MemoryParEntryRepository>();
+builder.Services.AddSingleton<IDeviceAuthorizationRepository, MemoryDeviceAuthorizationRepository>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
@@ -66,6 +73,10 @@ builder.Services.AddSingleton<ISigningKeyProvider, RsaSigningKeyProvider>();
 builder.Services.AddSingleton<ITokenFactory, JwtTokenFactory>();
 builder.Services.AddSingleton<ISecretHasher, Pbkdf2SecretHasher>();
 builder.Services.AddSingleton<IPushedAuthorizationValidator, PushedAuthorizationValidator>();
+
+builder.Services.AddSingleton<IPaginationQueryValidator, PaginationQueryValidator>();
+builder.Services.AddSingleton<IClientsQueryValidator, ClientsQueryValidator>();
+builder.Services.AddSingleton<IUsersQueryValidator, UsersQueryValidator>();
 
 builder.Services.AddSingleton(sp =>
 {
@@ -128,6 +139,8 @@ builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretBasicHandle
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretPostHandler>();
 builder.Services.AddScoped<IClientAuthenticationHandler, PrivateKeyJwtHandler>();
 
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
 builder.Services.AddScoped<IClientAuthenticationService, ClientAuthenticationService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IConnectAuthorizationService, ConnectAuthorizationService>();
@@ -141,6 +154,10 @@ builder.Services.AddScoped<IPushedAuthorizationService, PushedAuthorizationServi
 builder.Services.AddScoped<IParAuthorizationService, ParAuthorizationService>();
 builder.Services.AddScoped<IClientRegistrationService, ClientRegistrationService>();
 builder.Services.AddScoped<IDeviceConnectService, DeviceConnectService>();
+
+builder.Services.AddScoped<IManagementClientsService, ManagementClientsService>();
+builder.Services.AddScoped<IManagementUsersService, ManagementUsersService>();
+builder.Services.AddScoped<IManagementProfileService, ManagementProfileService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -156,7 +173,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.UseMiddleware<OAuthExceptionMiddleware>();
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.MapControllers();
 

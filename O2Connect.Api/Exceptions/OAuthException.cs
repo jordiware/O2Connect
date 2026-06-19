@@ -1,4 +1,4 @@
-﻿namespace O2Connect.Api.Exceptions;
+namespace O2Connect.Api.Exceptions;
 
 public sealed class OAuthException : Exception
 {

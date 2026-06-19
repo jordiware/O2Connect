@@ -3,7 +3,7 @@ using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.SmartEnums;
-using O2Connect.Dto.Responses;
+using O2Connect.Dto.OidcOAuth.Connect;
 
 namespace O2Connect.Api.DataHandlers.TokenContextHandlers;
 
@@ -35,9 +35,9 @@ public class ClientCredentialsContextHandler : ITokenContextHandler
 
         return await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
-            ClientId = context.Client.ClientId,
+            ClientId = context.Client.Id,
             Scopes = context.Scopes,
-            Subject = context.Client.ClientId
+            Subject = context.Client.Id
         }, ct);
     }
 }

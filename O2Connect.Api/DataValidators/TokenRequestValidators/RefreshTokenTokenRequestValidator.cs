@@ -4,7 +4,7 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
-using O2Connect.Dto.Requests;
+using O2Connect.Dto.OidcOAuth.Connect;
 using System.Collections.Immutable;
 
 namespace O2Connect.Api.DataValidators.TokenRequestValidators;
@@ -40,7 +40,7 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
         if (token == null)
             throw OAuthException.FromInvalidGrant();
 
-        if (token.ClientId != client.ClientId)
+        if (token.ClientId != client.Id)
             throw OAuthException.FromInvalidGrant();
 
         if (token.Revoked)

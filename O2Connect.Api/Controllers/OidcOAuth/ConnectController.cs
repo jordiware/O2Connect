@@ -2,9 +2,8 @@
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Security;
-using O2Connect.Api.Services;
-using O2Connect.Dto.Requests;
-using O2Connect.Dto.Responses;
+using O2Connect.Api.Services.OidcOAuth;
+using O2Connect.Dto.OidcOAuth.Connect;
 using System.Security.Claims;
 
 namespace O2Connect.Api.Controllers.OidcOAuth;
@@ -51,9 +50,8 @@ public sealed class ConnectController : ControllerBase
     [HttpPost("par")]
     [RequireScope(Scopes.Clients.Write)]
     [RequireClientToken]
-    public async Task<ActionResult<PushedAuthorizationResponse>> Par(
-        [FromBody] PushedAuthorizationRequest request,
-        CancellationToken ct)
+    public async Task<IActionResult> Par([FromBody] PushedAuthorizationRequest request,
+                                         CancellationToken ct)
     {
         if (!ModelState.IsValid)
             throw OAuthException.FromInvalidRequest();

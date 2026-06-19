@@ -4,7 +4,7 @@ using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Repositories;
-using O2Connect.Dto.Responses;
+using O2Connect.Dto.OidcOAuth.Connect;
 
 namespace O2Connect.Api.DataHandlers.TokenContextHandlers;
 
@@ -44,7 +44,7 @@ public class DeviceCodeContextHandler : ITokenContextHandler
 
         var response = await _tokenFactory.GenerateAsync(new JwtTokenFactoryRequest
         {
-            ClientId = context.Client.ClientId,
+            ClientId = context.Client.Id,
             Scopes = context.Scopes,
             Subject = context.UserId,
             AdditionalClaims = new Dictionary<string, object>

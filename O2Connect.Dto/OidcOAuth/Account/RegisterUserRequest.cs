@@ -1,0 +1,31 @@
+﻿using System.Text.Json.Serialization;
+
+namespace O2Connect.Dto.OidcOAuth.Account;
+
+public sealed record RegisterUserRequest
+{
+    [JsonPropertyName("username")]
+    public required string Username { get; init; }
+
+    [JsonPropertyName("password")]
+    public required string Password { get; init; }
+
+    [JsonPropertyName("email")]
+    public required string Email { get; init; }
+
+    [JsonPropertyName("role")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Role { get; init; }
+
+    [JsonPropertyName("scopes")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Scopes { get; init; }
+
+    [JsonPropertyName("display_name")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? DisplayName { get; init; }
+
+    [JsonPropertyName("image_url")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ImageUrl { get; init; }
+}

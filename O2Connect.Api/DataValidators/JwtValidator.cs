@@ -81,7 +81,7 @@ public class JwtValidator : IJwtValidator
                 return JwtValidationResult.Invalid;
 
             var scopes = principal.FindAll(c => c.Type == "scope" || c.Type == "scp")
-                                  .SelectMany(c => c.Value.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries))
+                                  .SelectMany(c => c.Value.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                                   .Distinct(StringComparer.Ordinal);
 
             if (!isClientCredentials && !scopes.Any())

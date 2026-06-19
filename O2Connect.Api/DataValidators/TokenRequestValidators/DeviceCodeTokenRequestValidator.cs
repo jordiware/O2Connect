@@ -4,7 +4,7 @@ using O2Connect.Api.Models;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Repositories;
-using O2Connect.Dto.Requests;
+using O2Connect.Dto.OidcOAuth.Connect;
 
 namespace O2Connect.Api.DataValidators.TokenRequestValidators;
 
@@ -37,7 +37,7 @@ public class DeviceCodeTokenRequestValidator : ITokenRequestValidator
         if (deviceAuth is null)
             throw OAuthException.FromInvalidGrant();
 
-        if (!string.Equals(deviceAuth.ClientId, client.ClientId, StringComparison.Ordinal))
+        if (!string.Equals(deviceAuth.ClientId, client.Id, StringComparison.Ordinal))
             throw OAuthException.FromInvalidGrant();
 
         var now = DateTimeOffset.UtcNow;
