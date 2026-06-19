@@ -23,6 +23,7 @@ public class ManagementProfileService : IManagementProfileService
     private readonly IClientRepository _clientRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IUserConsentRepository _userConsentRepository;
+    private readonly IAuthorizationCodeRepository _authorizationCodeRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly ISecretHasher _secretHasher;
     private readonly ILogger<ManagementUsersService> _logger;
@@ -32,6 +33,7 @@ public class ManagementProfileService : IManagementProfileService
         IClientRepository clientRepository,
         IRefreshTokenRepository refreshTokenRepository,
         IUserConsentRepository userConsentRepository,
+        IAuthorizationCodeRepository authorizationCodeRepository,
         ICurrentUserService currentUserService,
         ISecretHasher secretHasher,
         ILogger<ManagementUsersService> logger)
@@ -40,6 +42,7 @@ public class ManagementProfileService : IManagementProfileService
         _clientRepository = clientRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _userConsentRepository = userConsentRepository;
+        _authorizationCodeRepository = authorizationCodeRepository;
         _currentUserService = currentUserService;
         _secretHasher = secretHasher;
         _logger = logger;
@@ -104,6 +107,8 @@ public class ManagementProfileService : IManagementProfileService
         await _userRepository.StoreAsync(user, ct);
 
         await _refreshTokenRepository.RevokeSubjectAsync(user.Id, ct);
+
+        await _authorizationCodeRepository.RevokeForSubjectAsync(user.Id, ct);
     }
 
     private async Task<User> GetCurrentUserAsync(CancellationToken ct)

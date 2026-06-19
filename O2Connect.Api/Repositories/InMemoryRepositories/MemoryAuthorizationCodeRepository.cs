@@ -1,5 +1,6 @@
 ﻿using O2Connect.Api.Models.Store;
 using System.Collections.Concurrent;
+using static O2Connect.Api.Models.Scopes;
 
 namespace O2Connect.Api.Repositories.InMemoryRepositories;
 
@@ -47,6 +48,19 @@ public class MemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
     public Task RevokeForClientAsync(string clientId, CancellationToken ct)
     {
         var keys = _codes.Where(kvp => kvp.Value.ClientId.Equals(clientId, StringComparison.Ordinal))
+                         .Select(kvp => kvp.Key);
+
+        foreach (var key in keys)
+        {
+            _codes.Remove(key, out _);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeForSubjectAsync(string subjectId, CancellationToken ct)
+    {
+        var keys = _codes.Where(kvp => kvp.Value.SubjectId?.Equals(subjectId, StringComparison.Ordinal) == true)
                          .Select(kvp => kvp.Key);
 
         foreach (var key in keys)
