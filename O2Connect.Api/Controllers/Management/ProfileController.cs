@@ -40,9 +40,49 @@ public class ProfileController : ControllerBase
         return Ok(consents);
     }
 
-    [HttpPatch("change_password")]
+    [HttpPatch("update_display_name")]
     [RequireScope(Scopes.Profile.Write)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request,
+    public async Task<IActionResult> UpdateDisplayName([FromBody] UpdateDisplayNameRequest request,
+                                                       CancellationToken ct)
+    {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DisplayName))
+        {
+            _logger.LogWarning("Display name is missing in the request.");
+            throw ApiException.BadRequest("invalid_request_params", "A display name is required.");
+        }
+
+        return NoContent();
+    }
+
+    [HttpPatch("update_image_url")]
+    [RequireScope(Scopes.Profile.Write)]
+    public async Task<IActionResult> UpdateImageUrl([FromBody] UpdateImageUrlRequest request,
+                                                    CancellationToken ct)
+    {
+        if (request is null || !ModelState.IsValid)
+        {
+            _logger.LogWarning("Missing or malformed request body.");
+            throw ApiException.BadRequest("invalid_request_params", "Missing or malformed request body.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ImageUrl))
+        {
+            _logger.LogWarning("Image URL is missing in the request.");
+            throw ApiException.BadRequest("invalid_request_params", "A image URL is required.");
+        }
+
+        return NoContent();
+    }
+
+    [HttpPatch("update_password")]
+    [RequireScope(Scopes.Profile.Write)]
+    public async Task<IActionResult> UpdatePassword([FromBody] ChangePasswordRequest request,
                                                     CancellationToken ct)
     {
         if (request is null || !ModelState.IsValid)
