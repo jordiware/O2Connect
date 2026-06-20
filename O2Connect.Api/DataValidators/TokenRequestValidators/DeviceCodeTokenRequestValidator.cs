@@ -81,7 +81,7 @@ public class DeviceCodeTokenRequestValidator : ITokenRequestValidator
             Client = client,
             GrantType = GrantType.DeviceCode,
             ClientAuthenticationMethod = method,
-            Scopes = ValueSet.FromDataString(deviceAuth.Scope, ' ').Values,
+            Scopes = deviceAuth.Scopes.ToHashSet(),
 
             UserId = deviceAuth.UserId,
             DeviceAuthorization = deviceAuth

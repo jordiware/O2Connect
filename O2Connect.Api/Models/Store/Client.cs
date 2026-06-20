@@ -29,4 +29,5 @@ public sealed record Client
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public ICollection<AuthorizationCode> AuthorizationCodes { get; set; } = new List<AuthorizationCode>();
     public ICollection<ParEntry> ParEntries { get; set; } = new List<ParEntry>();
+    public ICollection<DeviceAuthorization> DeviceAuthorizations { get; set; } = new List<DeviceAuthorization>();
 }

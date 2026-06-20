@@ -12,6 +12,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<AuthorizationCode> AuthorizationCodes => Set<AuthorizationCode>();
     public DbSet<ParEntry> ParEntries => Set<ParEntry>();
+    public DbSet<DeviceAuthorization> DeviceAuthorizations => Set<DeviceAuthorization>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -28,5 +29,6 @@ public sealed class AppDbContext : DbContext
         builder.ApplyConfiguration(new RefreshTokenConfiguration());
         builder.ApplyConfiguration(new AuthorizationCodeConfiguration());
         builder.ApplyConfiguration(new ParEntryConfiguration());
+        builder.ApplyConfiguration(new DeviceAuthorizationConfiguration());
     }
 }

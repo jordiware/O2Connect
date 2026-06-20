@@ -8,6 +8,8 @@ public class ParEntryConfiguration : IEntityTypeConfiguration<ParEntry>
 {
     public void Configure(EntityTypeBuilder<ParEntry> builder)
     {
+        builder.ToTable("par_entries");
+
         builder.HasKey(x => x.RequestUriCode);
 
         builder.Property(x => x.RequestUriCode).IsRequired().HasMaxLength(200);

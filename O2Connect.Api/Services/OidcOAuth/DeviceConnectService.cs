@@ -67,7 +67,7 @@ public sealed class DeviceConnectService : IDeviceConnectService
             DeviceCodeHash = _secretHasher.FastHash(deviceCode),
             UserCodeHash = _secretHasher.FastHash(userCode),
             ClientId = clientId,
-            Scope = scope,
+            Scopes = requestedScopes.Values.ToArray(),
             CreatedAtUtc = now,
             ExpiresAtUtc = now.AddSeconds(expiresIn),
             PollCount = 0,
