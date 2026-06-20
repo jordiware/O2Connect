@@ -224,14 +224,14 @@ public class ManagementClientsService : IManagementClientsService
 
         var client = await GetClientForUpdateAsync(clientId, ct);
 
-        if (client.RedirectUris.SetEquals(newRedirectUris))
+        if (client.RedirectUris.ToHashSet().SetEquals(newRedirectUris))
             return;
 
         var now = DateTimeOffset.UtcNow;
 
         client = client with
         {
-            RedirectUris = newRedirectUris,
+            RedirectUris = newRedirectUris.ToArray(),
             LastModifiedAt = now
         };
 
@@ -259,14 +259,14 @@ public class ManagementClientsService : IManagementClientsService
 
         var client = await GetClientForUpdateAsync(clientId, ct);
 
-        if (client.AllowedScopes.SetEquals(newScopes))
+        if (client.AllowedScopes.ToHashSet().SetEquals(newScopes))
             return;
 
         var now = DateTimeOffset.UtcNow;
 
         client = client with
         {
-            AllowedScopes = newScopes,
+            AllowedScopes = newScopes.ToArray(),
             LastModifiedAt = now
         };
 

@@ -70,7 +70,7 @@ public class RefreshTokenContextHandler : ITokenContextHandler
             Token = _secureTokenGenerator.GenerateSecureToken(),
             ClientId = storedToken.ClientId,
             Subject = storedToken.Subject,
-            Scopes = context.Scopes,
+            Scopes = context.Scopes.ToArray(),
             CreatedAt = now,
             ExpiresAt = now.AddDays(30),
             SessionId = storedToken.SessionId,

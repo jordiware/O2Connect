@@ -15,7 +15,7 @@ public sealed record RefreshToken
     public required string ClientId { get; init; }
     public required string Subject { get; init; }
     
-    public required IReadOnlySet<string> Scopes { get; init; }
+    public required string[] Scopes { get; init; }
     
     public DateTimeOffset? ConsumedAt { get; init; }
     public bool IsConsumed => ConsumedAt != null;

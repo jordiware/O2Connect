@@ -225,7 +225,7 @@ public class AccountService : IAccountService
             Email = request.Email,
             PasswordHash = passwordHash,
             Role = request.Role ?? UserRole.User,
-            Scopes = scopes,
+            Scopes = scopes.ToArray(),
             Status = EntityStatus.Active,
             CreatedAt = DateTime.UtcNow,
             DisplayName = request.DisplayName,

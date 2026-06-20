@@ -286,7 +286,7 @@ public class ManagementUsersService : IManagementUsersService
         user = user with
         {
             Role = newRole,
-            Scopes = newRole.GetScopes().ToHashSet(),
+            Scopes = newRole.GetScopes().ToArray(),
             LastModifiedAt = now
         };
 

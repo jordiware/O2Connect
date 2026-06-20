@@ -18,11 +18,11 @@ public sealed record Client
     public bool RequiresConsent { get; init; } = true;
     public bool AllowPlainPkce { get; init; } = false;
     public bool AllowPar { get; init; } = true;
-    public required IReadOnlySet<string> RedirectUris { get; init; }
-    public required IReadOnlySet<string> AllowedGrantTypes { get; init; }
-    public required IReadOnlySet<string> AllowedScopes { get; init; }
-    public required IReadOnlySet<string> AllowedAuthenticationMethods { get; init; }
-    public required IReadOnlySet<string> AllowedResponseTypes { get; init; }
+    public required string[] RedirectUris { get; init; }
+    public required string[] AllowedGrantTypes { get; init; }
+    public required string[] AllowedScopes { get; init; }
+    public required string[] AllowedAuthenticationMethods { get; init; }
+    public required string[] AllowedResponseTypes { get; init; }
 
     public User Owner { get; init; } = default!;
     public ICollection<UserConsent> Consents { get; set; } = new List<UserConsent>();

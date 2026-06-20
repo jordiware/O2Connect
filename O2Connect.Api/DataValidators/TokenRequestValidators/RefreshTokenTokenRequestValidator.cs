@@ -61,7 +61,7 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
         var requestedScopes = ValueSet.FromDataString(request.Scope, ' ');
 
         if (!requestedScopes.IsEmpty && requestedScopes.IsSubsetOf(scopes))
-            scopes = requestedScopes.Values;
+            scopes = requestedScopes.Values.ToArray();
 
         var newToken = new RefreshToken
         {
@@ -82,7 +82,7 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
             Client = client,
             ClientAuthenticationMethod = method,
             GrantType = GrantType,
-            Scopes = newToken.Scopes,
+            Scopes = newToken.Scopes.ToHashSet(),
             TokenRequest = request,
             RefreshToken = newToken
         };

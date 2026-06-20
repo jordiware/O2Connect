@@ -118,13 +118,13 @@ public class ClientRegistrationService : IClientRegistrationService
             ClientSecret = null,
             RequiresSecret = false,
 
-            RedirectUris = redirectUris,
+            RedirectUris = redirectUris.ToArray(),
 
-            AllowedGrantTypes = grantTypes.ToHashSet(StringComparer.Ordinal),
-            AllowedResponseTypes = responseTypes.ToHashSet(StringComparer.Ordinal),
-            AllowedAuthenticationMethods = new HashSet<string> { "none" },
+            AllowedGrantTypes = grantTypes,
+            AllowedResponseTypes = responseTypes,
+            AllowedAuthenticationMethods = ["none"],
 
-            AllowedScopes = scopes,
+            AllowedScopes = scopes.ToArray(),
 
             // Defaults (your domain policy)
             RequiresPkce = true,

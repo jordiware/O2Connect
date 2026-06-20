@@ -249,7 +249,7 @@ public class ConsentService : IConsentService
             {
                 UserId = userId,
                 ClientId = clientId,
-                GrantedScopes = approvedScopes,
+                GrantedScopes = approvedScopes.ToArray(),
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
@@ -263,7 +263,7 @@ public class ConsentService : IConsentService
         {
             UserId = userId,
             ClientId = clientId,
-            GrantedScopes = grantedScopes,
+            GrantedScopes = grantedScopes.ToArray(),
             CreatedAt = existing.CreatedAt,
             UpdatedAt = DateTimeOffset.UtcNow
         };

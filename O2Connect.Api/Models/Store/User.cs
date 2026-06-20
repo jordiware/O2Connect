@@ -8,7 +8,7 @@ public sealed record User
     public required string Email { get; init; }
     public required string PasswordHash { get; init; }
     public required string Role { get; init; }
-    public required IReadOnlySet<string> Scopes { get; init; }
+    public required string[] Scopes { get; init; }
     public required EntityStatus Status { get; init; }
     public required DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset? LastModifiedAt { get; init; }
