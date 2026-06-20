@@ -10,6 +10,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<UserConsent> UserConsents => Set<UserConsent>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<AuthorizationCode> AuthorizationCodes => Set<AuthorizationCode>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -24,6 +25,7 @@ public sealed class AppDbContext : DbContext
         builder.ApplyConfiguration(new ClientConfiguration());
         builder.ApplyConfiguration(new UserConsentConfiguration());
         builder.ApplyConfiguration(new RefreshTokenConfiguration());
+        builder.ApplyConfiguration(new AuthorizationCodeConfiguration());
         //builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }

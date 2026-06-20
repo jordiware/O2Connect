@@ -86,7 +86,7 @@ public class ParAuthorizationService : IParAuthorizationService
 
         await UpdateSessionAsync(session, ct);
 
-        var requestedScopes = ParseScope(entry.Scope);
+        var requestedScopes = entry.Scopes.ToHashSet();
 
         var missingScopes = await GetMissingScopes(userId, client.Id, requestedScopes, ct);
 
@@ -117,7 +117,7 @@ public class ParAuthorizationService : IParAuthorizationService
             Code = authCode,
             ClientId = entry.ClientId,
             RedirectUri = entry.RedirectUri,
-            Scopes = entry.Scope,
+            Scopes = entry.Scopes,
             CodeChallenge = entry.CodeChallenge,
             CodeChallengeMethod = entry.CodeChallengeMethod,
             UserId = session.UserId!,
@@ -168,12 +168,6 @@ public class ParAuthorizationService : IParAuthorizationService
         uri.Query = query.ToString();
 
         return uri.ToString();
-    }
-
-    private static HashSet<string> ParseScope(string scope)
-    {
-        return scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                    .ToHashSet(StringComparer.Ordinal);
     }
 
     private async Task<HashSet<string>> GetMissingScopes(string userId,

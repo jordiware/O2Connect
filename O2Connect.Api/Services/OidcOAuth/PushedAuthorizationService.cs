@@ -61,7 +61,7 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
             RequestUriCode = code,
             ClientId = client.Id,
             RedirectUri = request.RedirectUri,
-            Scope = normalizedScope,
+            Scopes = normalizedScope,
             ResponseType = request.ResponseType,
             CodeChallenge = request.CodeChallenge,
             CodeChallengeMethod = request.CodeChallengeMethod,
@@ -98,11 +98,11 @@ public sealed class PushedAuthorizationService : IPushedAuthorizationService
         return $"urn:ietf:params:oauth:request_uri:{code}";
     }
 
-    private static string NormalizeScope(string scope)
+    private static string[] NormalizeScope(string scope)
     {
-        return string.Join(' ',
-            scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                 .Distinct(StringComparer.Ordinal)
-                 .OrderBy(x => x, StringComparer.Ordinal));
+        return scope.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(x => x, StringComparer.Ordinal)
+                    .ToArray();
     }
 }

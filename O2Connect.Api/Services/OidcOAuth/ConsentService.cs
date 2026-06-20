@@ -176,7 +176,7 @@ public class ConsentService : IConsentService
             return BuildErrorRedirect(entry, "access_denied");
         }
 
-        var requestedScopes = ParseScope(entry.Scope);
+        var requestedScopes = entry.Scopes.ToHashSet();
 
         await SaveConsentAsync(session.UserId,
                                entry.ClientId,

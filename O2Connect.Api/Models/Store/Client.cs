@@ -27,4 +27,5 @@ public sealed record Client
     public User Owner { get; init; } = default!;
     public ICollection<UserConsent> Consents { get; set; } = new List<UserConsent>();
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+    public ICollection<AuthorizationCode> AuthorizationCodes { get; set; } = new List<AuthorizationCode>();
 }

@@ -186,7 +186,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
             ClientId = session.ClientId,
             UserId = session.UserId!,
             RedirectUri = session.Request.RedirectUri,
-            Scopes = string.Join(' ', session.RequestedScopes ?? new HashSet<string>()).Trim(),
+            Scopes = session.RequestedScopes?.ToArray() ?? [],
             CodeChallenge = session.Request.CodeChallenge!,
             CodeChallengeMethod = session.Request.CodeChallengeMethod!,
             CreatedAt = DateTimeOffset.UtcNow,

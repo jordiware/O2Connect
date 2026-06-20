@@ -29,13 +29,13 @@ public class MemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
     {
         var updated = _codes.AddOrUpdate(code, _ => default!, (_, existing) =>
         {
-            if (existing.Consumed)
+            if (existing.IsConsumed)
                 return existing;
 
-            return existing with { Consumed = true };
+            return existing with { IsConsumed = true };
         });
 
-        return Task.FromResult(updated.Consumed);
+        return Task.FromResult(updated.IsConsumed);
     }
 
     public Task RemoveAsync(string code, CancellationToken ct)

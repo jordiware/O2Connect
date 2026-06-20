@@ -4,11 +4,11 @@ using O2Connect.Api.Models.Store;
 
 namespace O2Connect.Api.Persistence.EntityConfigurations;
 
-public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
+public sealed class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
 {
     public void Configure(EntityTypeBuilder<RefreshToken> builder)
     {
-        builder.ToTable("refresh_token");
+        builder.ToTable("refresh_tokens");
 
         builder.HasKey(x => x.Token);
 
@@ -34,5 +34,7 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.HasIndex(x => x.SessionId);
         builder.HasIndex(x => x.Subject);
         builder.HasIndex(x => x.ClientId);
+        builder.HasIndex(x => new { x.Subject, x.ClientId });
+        builder.HasIndex(x => x.ExpiresAt);
     }
 }
