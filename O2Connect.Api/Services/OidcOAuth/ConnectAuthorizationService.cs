@@ -45,16 +45,20 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
     {
         var responseMode = ExtractResponseMode(request);
 
-        var requestScopes = previousSession?.RequestedScopes ?? ImmutableHashSet<string>.Empty;
+        var requestScopes = previousSession?.RequestedScopes?.ToImmutableHashSet() 
+                            ?? ImmutableHashSet<string>.Empty;
+
         if (previousSession is null)
         {
-            var validationError = ValidateRequest(request, out requestScopes);
+            var validationError = ValidateRequest(request, out var validatedScopes);
 
             if (validationError != null)
                 return validationError;
 
-            if (requestScopes == null || requestScopes.Count == 0)
+            if (validatedScopes == null || validatedScopes.Count == 0)
                 return Error(responseMode, "invalid_scope", "Scopes are empty", request.State);
+
+            requestScopes = validatedScopes.ToImmutableHashSet();
         }
 
         var client = await _clientRepository.GetAsync(request.ClientId, ct);
@@ -85,7 +89,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
                 Request = request,
                 ClientId = client.Id,
                 ClientDisplayName = client.DisplayName,
-                RequestedScopes = requestScopes.ToHashSet()
+                RequestedScopes = requestScopes.ToArray()
             };
         }
 
@@ -130,7 +134,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
             {
                 SessionId = SecureCodeGenerator.GenerateBase64UrlToken(length: 32),
                 Status = AuthorizationStatus.ConsentRequired,
-                MissingScopes = consent.MissingScopes?.ToImmutableHashSet()
+                MissingScopes = consent.MissingScopes?.ToArray()
             };
 
             await _authorizationSessionRepository.StoreAsync(consentSession, ct);

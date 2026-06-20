@@ -8,7 +8,7 @@ public sealed class UserConsentConfiguration : IEntityTypeConfiguration<UserCons
 {
     public void Configure(EntityTypeBuilder<UserConsent> builder)
     {
-        builder.ToTable("user_consent");
+        builder.ToTable("user_consents");
 
         builder.HasKey(x => new { x.UserId, x.ClientId });
 

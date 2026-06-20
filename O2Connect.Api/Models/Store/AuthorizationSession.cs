@@ -17,8 +17,11 @@ public sealed record AuthorizationSession
     public string? UserId { get; init; }
     public string? UserDisplayName { get; init; }
 
-    public IReadOnlySet<string>? RequestedScopes { get; init; }
-    public IReadOnlySet<string>? MissingScopes { get; init; }
+    public string[]? RequestedScopes { get; init; }
+    public string[]? MissingScopes { get; init; }
+
+    public Client Client { get; init; } = null!;
+    public User? User { get; init; }
 }
 
 public enum AuthorizationStatus

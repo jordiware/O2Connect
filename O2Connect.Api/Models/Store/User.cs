@@ -22,4 +22,5 @@ public sealed record User
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public ICollection<AuthorizationCode> AuthorizationCodes { get; set; } = new List<AuthorizationCode>();
     public ICollection<DeviceAuthorization> DeviceAuthorizations { get; set; } = new List<DeviceAuthorization>();
+    public ICollection<AuthorizationSession> AuthorizationSessions { get; set; } = new List<AuthorizationSession>();
 }

@@ -30,4 +30,5 @@ public sealed record Client
     public ICollection<AuthorizationCode> AuthorizationCodes { get; set; } = new List<AuthorizationCode>();
     public ICollection<ParEntry> ParEntries { get; set; } = new List<ParEntry>();
     public ICollection<DeviceAuthorization> DeviceAuthorizations { get; set; } = new List<DeviceAuthorization>();
+    public ICollection<AuthorizationSession> AuthorizationSessions { get; set; } = new List<AuthorizationSession>();
 }

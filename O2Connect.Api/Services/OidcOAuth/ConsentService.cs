@@ -54,7 +54,7 @@ public class ConsentService : IConsentService
         if (session == null || session.ExpiresAt <= DateTimeOffset.UtcNow)
             throw OAuthException.FromInvalidRequest("Consent session expired");
 
-        if (session.MissingScopes == null || session.MissingScopes.Count == 0)
+        if (session.MissingScopes == null || session.MissingScopes.Length == 0)
             throw OAuthException.FromInvalidRequest("No consent required for this session");
 
         var response = new ConsentResponse
@@ -93,7 +93,7 @@ public class ConsentService : IConsentService
         if (session.Status != AuthorizationStatus.ConsentRequired)
             throw OAuthException.FromInvalidRequest("Invalid session state for consent");
 
-        if (session.MissingScopes == null || session.MissingScopes.Count == 0)
+        if (session.MissingScopes == null || session.MissingScopes.Length == 0)
             throw OAuthException.FromInvalidRequest("No consent required for this session");
 
         if (!request.Approved)
