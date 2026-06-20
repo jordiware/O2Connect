@@ -23,4 +23,7 @@ public sealed record Client
     public required IReadOnlySet<string> AllowedScopes { get; init; }
     public required IReadOnlySet<string> AllowedAuthenticationMethods { get; init; }
     public required IReadOnlySet<string> AllowedResponseTypes { get; init; }
+
+    public User Owner { get; init; } = default!;
+    public ICollection<UserConsent> Consents { get; set; } = new List<UserConsent>();
 }

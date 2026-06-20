@@ -16,4 +16,7 @@ public sealed record User
 
     public string? DisplayName { get; init; }
     public string? ImageUrl { get; init; }
+
+    public ICollection<Client> Clients { get; set; } = new List<Client>();
+    public ICollection<UserConsent> Consents { get; set; } = new List<UserConsent>();
 }

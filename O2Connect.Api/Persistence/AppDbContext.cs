@@ -1,11 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using O2Connect.Api.Models.Store;
+using O2Connect.Api.Persistence.EntityConfigurations;
 
 namespace O2Connect.Api.Persistence;
 
 public sealed class AppDbContext : DbContext
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<Client> Clients => Set<Client>();
+    public DbSet<UserConsent> UserConsents => Set<UserConsent>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -16,6 +19,9 @@ public sealed class AppDbContext : DbContext
     {
         base.OnModelCreating(builder);
 
-        builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+        builder.ApplyConfiguration(new UserConfiguration());
+        builder.ApplyConfiguration(new ClientConfiguration());
+        builder.ApplyConfiguration(new UserConsentConfiguration());
+        //builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }
