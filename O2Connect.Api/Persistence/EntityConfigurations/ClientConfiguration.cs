@@ -13,8 +13,8 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Id).HasMaxLength(100);
-        builder.Property(x => x.DisplayName).IsRequired().HasMaxLength(200);
-        builder.Property(x => x.NormalizedName).IsRequired().HasMaxLength(200);
+        builder.Property(x => x.DisplayName).IsRequired().HasMaxLength(32);
+        builder.Property(x => x.NormalizedName).IsRequired().HasMaxLength(48);
         builder.Property(x => x.ImageUrl).HasMaxLength(500);
         builder.Property(x => x.Status).IsRequired();
         builder.Property(x => x.OwnerId).IsRequired();
@@ -26,54 +26,19 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.Property(x => x.RequiresConsent).IsRequired();
         builder.Property(x => x.AllowPlainPkce).IsRequired();
         builder.Property(x => x.AllowPar).IsRequired();
+        builder.Property(x => x.RedirectUris).IsRequired().HasColumnType("text[]");
+        builder.Property(x => x.AllowedGrantTypes).IsRequired().HasColumnType("text[]");
+        builder.Property(x => x.AllowedScopes).IsRequired().HasColumnType("text[]");
+        builder.Property(x => x.AllowedAuthenticationMethods).IsRequired().HasColumnType("text[]");
+        builder.Property(x => x.AllowedResponseTypes).IsRequired().HasColumnType("text[]");
 
-        // Relationship (FK → User)
         builder.HasOne<User>()
                .WithMany(x => x.Clients)
                .HasForeignKey(x => x.OwnerId)
                .OnDelete(DeleteBehavior.Restrict);
 
-        // Unique constraint
         builder.HasIndex(x => x.NormalizedName).IsUnique();
-
-        // Indexes
         builder.HasIndex(x => x.OwnerId);
         builder.HasIndex(x => x.Status);
-
-        // Collections
-        builder.Property(x => x.RedirectUris)
-               .HasConversion(
-                   v => string.Join(' ', v),
-                   v => v.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                         .ToHashSet()
-               );
-
-        builder.Property(x => x.AllowedGrantTypes)
-               .HasConversion(
-                   v => string.Join(' ', v),
-                   v => v.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                         .ToHashSet()
-               );
-
-        builder.Property(x => x.AllowedScopes)
-               .HasConversion(
-                   v => string.Join(' ', v),
-                   v => v.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                         .ToHashSet()
-               );
-
-        builder.Property(x => x.AllowedAuthenticationMethods)
-               .HasConversion(
-                   v => string.Join(' ', v),
-                   v => v.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                         .ToHashSet()
-               );
-
-        builder.Property(x => x.AllowedResponseTypes)
-               .HasConversion(
-                   v => string.Join(' ', v),
-                   v => v.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                       .ToHashSet()
-               );
     }
 }

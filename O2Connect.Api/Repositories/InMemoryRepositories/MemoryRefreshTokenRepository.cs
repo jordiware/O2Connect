@@ -30,7 +30,7 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         ct.ThrowIfCancellationRequested();
 
         if (_tokens.TryGetValue(token, out var value))
-            return Task.FromResult(value.Consumed);
+            return Task.FromResult(value.IsConsumed);
 
         return Task.FromResult(false);
     }
@@ -43,12 +43,11 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         {
             return existing with
             {
-                Consumed = true,
                 ConsumedAt = DateTimeOffset.UtcNow
             };
         });
 
-        return Task.FromResult(updated.Consumed);
+        return Task.FromResult(updated.IsConsumed);
     }
 
     public Task RevokeAsync(string token, CancellationToken ct)
@@ -59,7 +58,6 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         {
             _tokens[token] = existing with
             {
-                Revoked = true,
                 RevokedAt = DateTimeOffset.UtcNow
             };
         }
@@ -79,7 +77,6 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         {
             _tokens[token.Key] = token.Value with
             {
-                Revoked = true,
                 RevokedAt = utcNow
             };
         }
@@ -99,7 +96,6 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         {
             _tokens[token.Key] = token.Value with
             {
-                Revoked = true,
                 RevokedAt = utcNow
             };
         }
@@ -119,7 +115,6 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         {
             _tokens[token.Key] = token.Value with
             {
-                Revoked = true,
                 RevokedAt = utcNow
             };
         }
@@ -140,7 +135,6 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         {
             _tokens[token.Key] = token.Value with
             {
-                Revoked = true,
                 RevokedAt = utcNow
             };
         }
@@ -155,17 +149,16 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
         if (!_tokens.TryGetValue(token, out var existing))
             return Task.FromResult<RefreshToken?>(null);
 
-        if (existing.Consumed)
+        if (existing.IsConsumed)
             return Task.FromResult<RefreshToken?>(null);
 
-        // mark old token as consumed
-        existing.Consumed = true;
-        existing.ConsumedAt = DateTimeOffset.UtcNow;
+        existing = existing with
+        {
+            ConsumedAt = DateTimeOffset.UtcNow,
+            ReplacedByToken = newToken.Token
+        };
 
-        // link chain (optional but useful)
-        existing.ReplacedByToken = newToken.Token;
-
-        // store new token
+        _tokens[existing.Token] = existing;
         _tokens[newToken.Token] = newToken;
 
         return Task.FromResult<RefreshToken?>(newToken);
@@ -177,12 +170,16 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
 
         if (_tokens.TryGetValue(token.Token, out var existing))
         {
-            if (existing.Consumed)
+            if (existing.IsConsumed)
                 throw new InvalidOperationException("Refresh token already consumed.");
 
-            existing.Consumed = true;
-            existing.ConsumedAt = DateTimeOffset.UtcNow;
-            existing.ReplacedByToken = newToken.Token;
+            existing = existing with
+            {
+                ConsumedAt = DateTimeOffset.UtcNow,
+                ReplacedByToken = newToken.Token
+            };
+
+            _tokens[existing.Token] = existing;
         }
 
         _tokens[newToken.Token] = newToken;
@@ -193,8 +190,8 @@ public class MemoryRefreshTokenRepository : IRefreshTokenRepository
     public Task<bool> IsSessionActiveAsync(string sessionId, CancellationToken ct)
     {
         var kvp = _tokens.Where(kvp => kvp.Value.SessionId.Equals(sessionId, StringComparison.Ordinal)
-                                       && !kvp.Value.Consumed
-                                       && !kvp.Value.Revoked
+                                       && !kvp.Value.IsConsumed
+                                       && !kvp.Value.IsRevoked
                                        && kvp.Value.ExpiresAt > DateTimeOffset.UtcNow);
 
         return Task.FromResult(kvp.Any());

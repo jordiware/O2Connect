@@ -47,13 +47,13 @@ public class RefreshTokenContextHandler : ITokenContextHandler
         if (storedToken.ExpiresAt <= now)
             throw OAuthException.FromInvalidGrant();
 
-        if (storedToken.Consumed)
+        if (storedToken.IsConsumed)
         {
             await _refreshTokenRepository.RevokeSessionAsync(storedToken.SessionId, ct);
             throw OAuthException.FromInvalidGrant();
         }
 
-        if (storedToken.Revoked)
+        if (storedToken.IsRevoked)
             throw OAuthException.FromInvalidGrant();
 
         if (storedToken.ClientId != context.Client.Id)
@@ -73,8 +73,6 @@ public class RefreshTokenContextHandler : ITokenContextHandler
             Scopes = context.Scopes,
             CreatedAt = now,
             ExpiresAt = now.AddDays(30),
-            Consumed = false,
-            Revoked = false,
             SessionId = storedToken.SessionId,
             Version = storedToken.Version + 1
         };

@@ -43,13 +43,13 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
         if (token.ClientId != client.Id)
             throw OAuthException.FromInvalidGrant();
 
-        if (token.Revoked)
+        if (token.IsRevoked)
             throw OAuthException.FromInvalidGrant();
 
         if (token.ExpiresAt < DateTimeOffset.UtcNow)
             throw OAuthException.FromInvalidGrant();
 
-        if (token.Consumed)
+        if (token.IsConsumed)
         {
             if (!string.IsNullOrWhiteSpace(token.SessionId))
                 await _refreshTokenRepository.RevokeSessionAsync(token.SessionId, ct);

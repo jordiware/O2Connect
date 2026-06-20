@@ -19,4 +19,5 @@ public sealed record User
 
     public ICollection<Client> Clients { get; set; } = new List<Client>();
     public ICollection<UserConsent> Consents { get; set; } = new List<UserConsent>();
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

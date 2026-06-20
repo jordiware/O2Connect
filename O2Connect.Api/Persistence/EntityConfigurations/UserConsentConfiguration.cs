@@ -13,8 +13,8 @@ public sealed class UserConsentConfiguration : IEntityTypeConfiguration<UserCons
         builder.HasKey(x => new { x.UserId, x.ClientId });
 
         builder.Property(x => x.CreatedAt).IsRequired();
+        builder.Property(x => x.GrantedScopes).HasColumnType("text[]");
 
-        // Relationships
         builder.HasOne(x => x.User)
                .WithMany(x => x.Consents)
                .HasForeignKey(x => x.UserId)
@@ -24,12 +24,5 @@ public sealed class UserConsentConfiguration : IEntityTypeConfiguration<UserCons
                .WithMany(x => x.Consents)
                .HasForeignKey(x => x.ClientId)
                .OnDelete(DeleteBehavior.Cascade);
-
-        // Store GrantedScopes
-        builder.Property(x => x.GrantedScopes)
-               .HasConversion(
-                   v => string.Join(',', v),
-                   v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet()
-               );
     }
 }

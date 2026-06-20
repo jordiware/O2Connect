@@ -9,6 +9,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<UserConsent> UserConsents => Set<UserConsent>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -22,6 +23,7 @@ public sealed class AppDbContext : DbContext
         builder.ApplyConfiguration(new UserConfiguration());
         builder.ApplyConfiguration(new ClientConfiguration());
         builder.ApplyConfiguration(new UserConsentConfiguration());
+        builder.ApplyConfiguration(new RefreshTokenConfiguration());
         //builder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
     }
 }

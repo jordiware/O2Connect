@@ -76,7 +76,7 @@ public class TokenIntrospectionService : ITokenIntrospectionService
     {
         var refresh = await _refreshTokenRepository.GetAsync(token, ct);
 
-        if (refresh is null || refresh.Revoked)
+        if (refresh is null || refresh.IsRevoked)
             return IntrospectionResponse.Inactive;
 
         if (!IsValid(refresh.Subject, refresh.ClientId, callingClientId)) 
