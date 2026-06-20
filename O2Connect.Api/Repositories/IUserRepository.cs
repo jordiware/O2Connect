@@ -7,9 +7,9 @@ public interface IUserRepository
 {
     Task<bool> ContainsUserAsync(string normalizedUsername,
                                  CancellationToken ct);
+    Task<int> CountAsync(CancellationToken ct);
     Task<int> CountAsync(UserFilter filter,
                          CancellationToken ct);
-    Task<int> CountAsync(CancellationToken ct);
     Task<User?> GetAsync(string userId,
                          CancellationToken ct);
     Task<User?> GetByEmailAsync(string email,
