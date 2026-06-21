@@ -18,14 +18,14 @@ public sealed class DbParEntryRepository : IParEntryRepository
         return await _db.ParEntries.AsNoTracking()
                                    .FirstOrDefaultAsync(p => string.Equals(p.RequestUriCode,
                                                                            code,
-                                                                           StringComparison.Ordinal));
+                                                                           StringComparison.Ordinal), ct);
     }
 
     public async Task StoreAsync(ParEntry parEntry, CancellationToken ct)
     {
         var exists = await _db.ParEntries.AnyAsync(p => string.Equals(p.RequestUriCode,
                                                                       parEntry.RequestUriCode,
-                                                                      StringComparison.Ordinal));
+                                                                      StringComparison.Ordinal), ct);
         if (exists)
         {
             _db.ParEntries.Update(parEntry);
