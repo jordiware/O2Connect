@@ -84,7 +84,7 @@ public class ManagementProfileService : IManagementProfileService
             if (client != null)
                 clients.Add(client.ToSummaryDto());
             else
-                await _userConsentRepository.DeleteAsync(userId, consent.ClientId, ct);
+                await _userConsentRepository.RevokeAsync(userId, consent.ClientId, ct);
         }
 
         return clients;
@@ -239,18 +239,11 @@ public class ManagementProfileService : IManagementProfileService
 
         var userId = GetCurrentUserId();
 
-        var revoked = await _userConsentRepository.DeleteAsync(userId, client.Id, ct);
+        await _userConsentRepository.RevokeAsync(userId, client.Id, ct);
 
-        if (revoked)
-        {
-            await _refreshTokenRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
+        await _refreshTokenRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
 
-            await _authorizationCodeRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
-        }
-        else
-        {
-            _logger.LogInformation("Client [{ClientId}] was not consented.", clientId);
-        }
+        await _authorizationCodeRepository.RevokeForSubjectAndClientAsync(userId, client.Id, ct);
     }
 
     private async Task<User> GetCurrentUserAsync(CancellationToken ct)

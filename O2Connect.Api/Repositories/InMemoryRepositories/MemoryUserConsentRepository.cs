@@ -1,6 +1,5 @@
 ﻿using O2Connect.Api.Models.Store;
 using System.Collections.Concurrent;
-using static O2Connect.Api.Models.Scopes;
 
 namespace O2Connect.Api.Repositories.InMemoryRepositories;
 
@@ -8,13 +7,13 @@ public class MemoryUserConsentRepository : IUserConsentRepository
 {
     private readonly ConcurrentDictionary<UserClientKey, UserConsent> _consents = new();
 
-    public Task<bool> DeleteAsync(string userId, string clientId, CancellationToken ct)
+    public Task RevokeAsync(string userId, string clientId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         var key = new UserClientKey(userId, clientId);
         var removed = _consents.TryRemove(key, out var value);
-        return Task.FromResult(removed);
+        return Task.CompletedTask;
     }
 
     public Task<UserConsent?> GetAsync(string userId, string clientId, CancellationToken ct)
@@ -52,7 +51,7 @@ public class MemoryUserConsentRepository : IUserConsentRepository
         return Task.FromResult<IReadOnlyList<UserConsent>>(consents);
     }
 
-    public Task<bool> StoreAsync(UserConsent consent, CancellationToken ct)
+    public Task StoreAsync(UserConsent consent, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -60,7 +59,7 @@ public class MemoryUserConsentRepository : IUserConsentRepository
         var newStoredConsent = _consents.AddOrUpdate(key, 
                                                      key => consent, 
                                                      (key, oldConsent) => oldConsent = consent);
-        return Task.FromResult(consent == newStoredConsent);
+        return Task.CompletedTask;
     }
 
     public Task RevokeForClientAsync(string clientId, CancellationToken ct)
