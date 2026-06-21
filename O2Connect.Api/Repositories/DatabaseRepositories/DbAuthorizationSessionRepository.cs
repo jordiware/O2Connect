@@ -20,6 +20,7 @@ public sealed class DbAuthorizationSessionRepository : IAuthorizationSessionRepo
         var session = await _sessions.FirstOrDefaultAsync(s => string.Equals(s.SessionId,
                                                                              id,
                                                                              StringComparison.Ordinal), ct);
+
         await _sessions.Where(s => string.Equals(s.SessionId,
                                                  id,
                                                  StringComparison.Ordinal))

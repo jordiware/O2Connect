@@ -38,12 +38,6 @@ public class MemoryAuthorizationCodeRepository : IAuthorizationCodeRepository
         return Task.FromResult(updated.IsConsumed);
     }
 
-    public Task RemoveAsync(string code, CancellationToken ct)
-    {
-        _codes.Remove(code, out _);
-        return Task.CompletedTask;
-    }
-
     public Task RevokeForClientAsync(string clientId, CancellationToken ct)
     {
         var keys = _codes.Where(kvp => kvp.Value.ClientId.Equals(clientId, StringComparison.Ordinal))
