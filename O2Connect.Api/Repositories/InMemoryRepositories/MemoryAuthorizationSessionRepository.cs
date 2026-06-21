@@ -7,6 +7,15 @@ public class MemoryAuthorizationSessionRepository : IAuthorizationSessionReposit
 {
     private readonly ConcurrentDictionary<string, AuthorizationSession> _sessions = new();
 
+    public Task<AuthorizationSession?> ConsumeAsync(string id, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        _sessions.TryRemove(id, out var session);
+
+        return Task.FromResult(session);
+    }
+
     public Task<AuthorizationSession?> GetAsync(string id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -32,14 +41,5 @@ public class MemoryAuthorizationSessionRepository : IAuthorizationSessionReposit
         _sessions[session.SessionId] = session;
 
         return Task.CompletedTask;
-    }
-
-    public Task<AuthorizationSession?> TryConsumeAsync(string id, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-
-        _sessions.TryRemove(id, out var session);
-
-        return Task.FromResult(session);
     }
 }

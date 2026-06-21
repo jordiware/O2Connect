@@ -155,7 +155,7 @@ public class ConnectAuthorizationService : IConnectAuthorizationService
                                                               ClaimsPrincipal user,
                                                               CancellationToken ct)
     {
-        var session = await _authorizationSessionRepository.TryConsumeAsync(sessionId, ct);
+        var session = await _authorizationSessionRepository.ConsumeAsync(sessionId, ct);
 
         if (session == null)
             return Error(AuthorizationResultResponseMode.Query, "invalid_request", "Session already used or invalid", null);

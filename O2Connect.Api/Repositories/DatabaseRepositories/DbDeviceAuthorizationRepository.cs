@@ -7,6 +7,7 @@ namespace O2Connect.Api.Repositories.DatabaseRepositories;
 public sealed class DbDeviceAuthorizationRepository : IDeviceAuthorizationRepository
 {
     private readonly AppDbContext _db;
+    private DbSet<DeviceAuthorization> _authorizations => _db.DeviceAuthorizations;
 
     public DbDeviceAuthorizationRepository(AppDbContext db)
     {
@@ -16,34 +17,34 @@ public sealed class DbDeviceAuthorizationRepository : IDeviceAuthorizationReposi
     public async Task<DeviceAuthorization?> GetAsync(string deviceCodeHash,
                                                      CancellationToken ct)
     {
-        return await _db.DeviceAuthorizations.AsNoTracking()
-            .FirstOrDefaultAsync(p => string.Equals(p.DeviceCodeHash,
-                                                    deviceCodeHash,
-                                                    StringComparison.Ordinal), ct);
+        return await _authorizations.AsNoTracking()
+                                    .FirstOrDefaultAsync(a => string.Equals(a.DeviceCodeHash,
+                                                                            deviceCodeHash,
+                                                                            StringComparison.Ordinal), ct);
     }
 
     public async Task<DeviceAuthorization?> GetByUserCodeAsync(string userCodeHash,
                                                                CancellationToken ct)
     {
-        return await _db.DeviceAuthorizations.AsNoTracking()
-            .FirstOrDefaultAsync(p => string.Equals(p.UserCodeHash,
-                                                    userCodeHash,
-                                                    StringComparison.Ordinal), ct);
+        return await _authorizations.AsNoTracking()
+                                    .FirstOrDefaultAsync(a => string.Equals(a.UserCodeHash,
+                                                                            userCodeHash,
+                                                                            StringComparison.Ordinal), ct);
     }
 
     public async Task StoreAsync(DeviceAuthorization authorization,
                                  CancellationToken ct)
     {
-        var exists = await _db.DeviceAuthorizations.AnyAsync(p => string.Equals(p.DeviceCodeHash,
-                                                                                authorization.DeviceCodeHash,
-                                                                                StringComparison.Ordinal), ct);
+        var exists = await _authorizations.AnyAsync(p => string.Equals(p.DeviceCodeHash,
+                                                                       authorization.DeviceCodeHash,
+                                                                       StringComparison.Ordinal), ct);
         if (exists)
         {
-            _db.DeviceAuthorizations.Update(authorization);
+            _authorizations.Update(authorization);
         }
         else
         {
-            await _db.DeviceAuthorizations.AddAsync(authorization, ct);
+            await _authorizations.AddAsync(authorization, ct);
         }
 
         await _db.SaveChangesAsync(ct);
