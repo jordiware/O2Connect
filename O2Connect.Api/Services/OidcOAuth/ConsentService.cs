@@ -186,11 +186,10 @@ public class ConsentService : IConsentService
         session = session with { Status = AuthorizationStatus.Consented };
         await _authorizationSessionRepository.StoreAsync(session, ct);
 
-        var requestUri = BuildParRequestUri(session.RequestUriCode!);
         return new RedirectResponse
         {
             Action = "redirect",
-            RedirectUrl = RedirectUrlFactory.Authorize(requestUri)
+            RedirectUrl = RedirectUrlFactory.Authorize(session.RequestUriCode!)
         };
     }
 
@@ -275,11 +274,6 @@ public class ConsentService : IConsentService
     {
         return scope.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .ToHashSet(StringComparer.Ordinal);
-    }
-
-    private static string BuildParRequestUri(string code)
-    {
-        return $"urn:ietf:params:oauth:request_uri:{code}";
     }
 
     private static string BuildErrorRedirect(AuthorizationSession session)

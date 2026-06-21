@@ -39,9 +39,7 @@ public class ParAuthorizationService : IParAuthorizationService
                                                     HttpContext httpContext,
                                                     CancellationToken ct)
     {
-        var code = ExtractCode(requestUri);
-
-        var entry = await _parEntryRepository.GetAsync(code, ct);
+        var entry = await _parEntryRepository.GetAsync(requestUri, ct);
 
         if (entry is null)
             throw OAuthException.FromInvalidRequest();
@@ -134,16 +132,6 @@ public class ParAuthorizationService : IParAuthorizationService
             Action = "redirect",
             RedirectUrl = redirectUrl
         };
-    }
-
-    private static string ExtractCode(string requestUri)
-    {
-        const string prefix = "urn:ietf:params:oauth:request_uri:";
-
-        if (!requestUri.StartsWith(prefix, StringComparison.Ordinal))
-            throw OAuthException.FromInvalidRequest("Invalid request_uri format");
-
-        return requestUri.Substring(prefix.Length);
     }
 
     private static RedirectResponse BuildRedirect(string url)

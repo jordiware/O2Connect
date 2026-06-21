@@ -14,10 +14,10 @@ public class MemoryParEntryRepository : IParEntryRepository
         return Task.FromResult(parEntry);
     }
 
-    public Task StoreAsync(string code, ParEntry parEntry, CancellationToken ct)
+    public Task StoreAsync(ParEntry parEntry, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        _entries[code] = parEntry;
+        _entries[parEntry.RequestUriCode] = parEntry;
         return Task.CompletedTask;
     }
 }
