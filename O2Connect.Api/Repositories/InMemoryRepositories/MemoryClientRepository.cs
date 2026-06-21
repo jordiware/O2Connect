@@ -67,31 +67,4 @@ public class MemoryClientRepository : IClientRepository
 
         return Task.CompletedTask;
     }
-
-    public Task<bool> ValidateClientAsync(string clientId, string? clientSecret, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-
-        _clients.TryGetValue(clientId, out var client);
-
-        if (client == null)
-            return Task.FromResult(false);
-
-        if (string.IsNullOrEmpty(client.ClientSecret))
-            return Task.FromResult(true);
-
-        return Task.FromResult(client.ClientSecret == clientSecret);
-    }
-
-    public Task<bool> ValidateRedirectUriAsync(string clientId, string redirectUri, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-
-        _clients.TryGetValue(clientId, out var client);
-
-        if (client == null)
-            return Task.FromResult(false);
-
-        return Task.FromResult(client.RedirectUris.Contains(redirectUri, StringComparer.Ordinal));
-    }
 }

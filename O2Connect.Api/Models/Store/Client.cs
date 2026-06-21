@@ -1,6 +1,6 @@
 ﻿namespace O2Connect.Api.Models.Store;
 
-public sealed record Client
+public sealed record Client : IIdentificable
 {
     public required string Id { get; init; }
     public required string DisplayName { get; init; }

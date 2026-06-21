@@ -1,6 +1,6 @@
 ﻿namespace O2Connect.Api.Models.Store;
 
-public sealed record User
+public sealed record User : IIdentificable
 {
     public required string Id { get; init; }
     public required string Username { get; init; }

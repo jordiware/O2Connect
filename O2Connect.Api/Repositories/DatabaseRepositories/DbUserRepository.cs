@@ -2,7 +2,6 @@
 using O2Connect.Api.Models.Store;
 using O2Connect.Api.Persistence;
 using O2Connect.Api.Repositories.Filters;
-using System.Reflection;
 
 namespace O2Connect.Api.Repositories.DatabaseRepositories;
 
@@ -24,16 +23,16 @@ public sealed class DbUserRepository : IUserRepository
 
     public async Task<int> CountAsync(CancellationToken ct)
     {
-        return await _db.Users.CountAsync(ct);
+        return await _db.Users.AsNoTracking()
+                              .CountAsync(ct);
     }
 
     public async Task<int> CountAsync(UserFilter filter,
                                       CancellationToken ct)
     {
-        var query = _db.Users.AsQueryable()
-                             .Where(filter.ToExpression());
-
-        return await query.CountAsync(ct);
+        return await _db.Users.AsNoTracking()
+                              .Where(filter.ToExpression())
+                              .CountAsync(ct);
     }
 
     public async Task<User?> GetAsync(string userId,
@@ -60,26 +59,23 @@ public sealed class DbUserRepository : IUserRepository
     public async Task<IReadOnlyList<User>> QueryAsync(EntityPagination pagination,
                                                       CancellationToken ct)
     {
-        var query = _db.Users.AsNoTracking()
-                             .AsQueryable();
-
-        query = ApplySorting(query, pagination);
-        query = ApplyPagination(query, pagination);
-
-        return await query.ToListAsync(ct);
+        return await _db.Users.AsNoTracking()
+                              .AsQueryable()
+                              .ApplySorting(pagination)
+                              .ApplyPagination(pagination)
+                              .ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<User>> QueryAsync(EntityPagination pagination,
                                                       UserFilter filter,
                                                       CancellationToken ct)
     {
-        var query = _db.Users.AsNoTracking()
-                             .Where(filter.ToExpression());
-
-        query = ApplySorting(query, pagination);
-        query = ApplyPagination(query, pagination);
-
-        return await query.ToListAsync(ct);
+        return await _db.Users.AsNoTracking()
+                              .AsQueryable()
+                              .Where(filter.ToExpression())
+                              .ApplySorting(pagination)
+                              .ApplyPagination(pagination)
+                              .ToListAsync(ct);
     }
 
     public async Task StoreAsync(User user,
@@ -97,31 +93,5 @@ public sealed class DbUserRepository : IUserRepository
         }
 
         await _db.SaveChangesAsync(ct);
-    }
-
-    private static IQueryable<User> ApplyPagination(IQueryable<User> query,
-                                                    EntityPagination pagination)
-    {
-        var skip = (pagination.Page - 1) * pagination.PageSize;
-
-        return query.Skip(skip).Take(pagination.PageSize);
-    }
-
-    private static IQueryable<User> ApplySorting(IQueryable<User> query,
-                                                 EntityPagination pagination)
-    {
-        var property = typeof(User).GetProperty(pagination.SortBy,
-                                                BindingFlags.IgnoreCase |
-                                                BindingFlags.Public |
-                                                BindingFlags.Instance);
-
-        if (property is null)
-        {
-            return query.OrderBy(u => u.Id);
-        }
-
-        return pagination.Order.Equals("desc", StringComparison.OrdinalIgnoreCase)
-            ? query.OrderByDescending(e => EF.Property<object>(e, property.Name))
-            : query.OrderBy(e => EF.Property<object>(e, property.Name));
     }
 }
