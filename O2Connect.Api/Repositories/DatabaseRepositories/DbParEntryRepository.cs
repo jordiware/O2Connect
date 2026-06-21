@@ -13,7 +13,8 @@ public sealed class DbParEntryRepository : IParEntryRepository
         _db = db;
     }
 
-    public async Task<ParEntry?> GetAsync(string code, CancellationToken ct)
+    public async Task<ParEntry?> GetAsync(string code,
+                                          CancellationToken ct)
     {
         return await _db.ParEntries.AsNoTracking()
                                    .FirstOrDefaultAsync(p => string.Equals(p.RequestUriCode,
@@ -21,7 +22,8 @@ public sealed class DbParEntryRepository : IParEntryRepository
                                                                            StringComparison.Ordinal), ct);
     }
 
-    public async Task StoreAsync(ParEntry parEntry, CancellationToken ct)
+    public async Task StoreAsync(ParEntry parEntry,
+                                 CancellationToken ct)
     {
         var exists = await _db.ParEntries.AnyAsync(p => string.Equals(p.RequestUriCode,
                                                                       parEntry.RequestUriCode,

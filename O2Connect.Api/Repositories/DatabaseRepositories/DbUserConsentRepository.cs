@@ -18,63 +18,74 @@ public sealed class DbUserConsentRepository : IUserConsentRepository
                                              CancellationToken ct)
     {
         return await _db.UserConsents.AsNoTracking()
-                                     .FirstOrDefaultAsync(uc => string.Equals(uc.UserId, userId, StringComparison.Ordinal)
-                                                                && string.Equals(uc.ClientId, clientId, StringComparison.Ordinal),
-                                                          ct);
+                                     .FirstOrDefaultAsync(uc => string.Equals(uc.UserId,
+                                                                              userId,
+                                                                              StringComparison.Ordinal)
+                                                                && string.Equals(uc.ClientId,
+                                                                                 clientId,
+                                                                                 StringComparison.Ordinal), ct);
     }
 
     public async Task<IReadOnlyList<UserConsent>> GetForClientAsync(string clientId,
                                                                     CancellationToken ct)
     {
         return await _db.UserConsents.AsNoTracking()
-                                     .Where(uc => string.Equals(uc.ClientId, clientId, StringComparison.Ordinal))
-                                     .ToListAsync();
+                                     .Where(uc => string.Equals(uc.ClientId,
+                                                                clientId,
+                                                                StringComparison.Ordinal))
+                                     .ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<UserConsent>> GetForUserAsync(string userId,
                                                                   CancellationToken ct)
     {
         return await _db.UserConsents.AsNoTracking()
-                                     .Where(uc => string.Equals(uc.UserId, userId, StringComparison.Ordinal))
-                                     .ToListAsync();
+                                     .Where(uc => string.Equals(uc.UserId,
+                                                                userId,
+                                                                StringComparison.Ordinal))
+                                     .ToListAsync(ct);
     }
 
     public async Task RevokeAsync(string userId,
                                   string clientId,
                                   CancellationToken ct)
     {
-        var entity = await _db.UserConsents.FirstOrDefaultAsync(uc => string.Equals(uc.UserId, userId, StringComparison.Ordinal)
-                                                                      && string.Equals(uc.ClientId, clientId, StringComparison.Ordinal),
-                                                                ct);
-
-        if (entity is null)
-            return;
-
-        _db.UserConsents.Remove(entity);
-
-        await _db.SaveChangesAsync(ct);
+        await _db.UserConsents.Where(uc => string.Equals(uc.UserId,
+                                                         userId,
+                                                         StringComparison.Ordinal) 
+                                           && string.Equals(uc.ClientId,
+                                                            clientId,
+                                                            StringComparison.Ordinal))
+                              .ExecuteDeleteAsync(ct);
     }
 
     public async Task RevokeForClientAsync(string clientId,
                                            CancellationToken ct)
     {
-        await _db.UserConsents.Where(uc => string.Equals(uc.ClientId, clientId, StringComparison.Ordinal))
+        await _db.UserConsents.Where(uc => string.Equals(uc.ClientId,
+                                                         clientId,
+                                                         StringComparison.Ordinal))
                               .ExecuteDeleteAsync(ct);
     }
 
     public async Task RevokeForUserAsync(string userId,
                                          CancellationToken ct)
     {
-        await _db.UserConsents.Where(uc => string.Equals(uc.UserId, userId, StringComparison.Ordinal))
+        await _db.UserConsents.Where(uc => string.Equals(uc.UserId,
+                                                         userId,
+                                                         StringComparison.Ordinal))
                               .ExecuteDeleteAsync(ct);
     }
 
     public async Task StoreAsync(UserConsent consent,
                                  CancellationToken ct)
     {
-        var exists = await _db.UserConsents.AnyAsync(uc => string.Equals(uc.UserId, consent.UserId, StringComparison.Ordinal)
-                                                           && string.Equals(uc.ClientId, consent.ClientId, StringComparison.Ordinal),
-                                                     ct);
+        var exists = await _db.UserConsents.AnyAsync(uc => string.Equals(uc.UserId,
+                                                                         consent.UserId,
+                                                                         StringComparison.Ordinal)
+                                                           && string.Equals(uc.ClientId,
+                                                                            consent.ClientId,
+                                                                            StringComparison.Ordinal), ct);
 
         if (exists)
         {

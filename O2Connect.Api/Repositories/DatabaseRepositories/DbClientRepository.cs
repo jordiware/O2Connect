@@ -17,7 +17,7 @@ public sealed class DbClientRepository : IClientRepository
     public async Task<int> CountAsync(CancellationToken ct)
     {
         return await _db.Clients.AsNoTracking()
-                                .CountAsync();
+                                .CountAsync(ct);
     }
 
     public async Task<int> CountAsync(ClientFilter filter,
@@ -25,7 +25,7 @@ public sealed class DbClientRepository : IClientRepository
     {
         return await _db.Clients.AsNoTracking()
                                 .Where(filter.ToExpression())
-                                .CountAsync();
+                                .CountAsync(ct);
     }
 
     public async Task<Client?> GetAsync(string clientId,
