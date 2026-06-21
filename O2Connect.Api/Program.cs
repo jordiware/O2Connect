@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using O2Connect.Api.Persistence;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
@@ -11,9 +10,10 @@ using O2Connect.Api.DataValidators;
 using O2Connect.Api.DataValidators.TokenRequestValidators;
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Models.Options;
+using O2Connect.Api.Persistence;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
-using O2Connect.Api.Repositories.InMemoryRepositories;
+using O2Connect.Api.Repositories.DatabaseRepositories;
 using O2Connect.Api.Security;
 using O2Connect.Api.Services;
 using O2Connect.Api.Services.Management;
@@ -62,14 +62,14 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
 builder.Services.AddSingleton<ITokenReplayCache, MemoryTokenReplayCache>();
 
-builder.Services.AddSingleton<IClientRepository, MemoryClientRepository>();
-builder.Services.AddSingleton<IAuthorizationCodeRepository, MemoryAuthorizationCodeRepository>();
-builder.Services.AddSingleton<IAuthorizationSessionRepository, MemoryAuthorizationSessionRepository>();
-builder.Services.AddSingleton<IRefreshTokenRepository, MemoryRefreshTokenRepository>();
-builder.Services.AddSingleton<IUserConsentRepository, MemoryUserConsentRepository>();
-builder.Services.AddSingleton<IUserRepository, MemoryUserRepository>();
-builder.Services.AddSingleton<IParEntryRepository, MemoryParEntryRepository>();
-builder.Services.AddSingleton<IDeviceAuthorizationRepository, MemoryDeviceAuthorizationRepository>();
+builder.Services.AddScoped<IClientRepository, DbClientRepository>();
+builder.Services.AddScoped<IAuthorizationCodeRepository, DbAuthorizationCodeRepository>();
+builder.Services.AddScoped<IAuthorizationSessionRepository, DbAuthorizationSessionRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, DbRefreshTokenRepository>();
+builder.Services.AddScoped<IUserConsentRepository, DbUserConsentRepository>();
+builder.Services.AddScoped<IUserRepository, DbUserRepository>();
+builder.Services.AddScoped<IParEntryRepository, DbParEntryRepository>();
+builder.Services.AddScoped<IDeviceAuthorizationRepository, DbDeviceAuthorizationRepository>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
@@ -129,17 +129,17 @@ builder.Services.AddSingleton(sp =>
     };
 });
 
-builder.Services.AddTransient<ITokenContextHandler, AuthorizationCodeContextHandler>();
-builder.Services.AddTransient<ITokenContextHandler, ClientCredentialsContextHandler>();
-builder.Services.AddTransient<ITokenContextHandler, RefreshTokenContextHandler>();
-builder.Services.AddTransient<ITokenContextHandler, DeviceCodeContextHandler>();
-builder.Services.AddSingleton<ITokenContextHandlerResolver, TokenContextHandlerResolver>();
+builder.Services.AddScoped<ITokenContextHandler, AuthorizationCodeContextHandler>();
+builder.Services.AddScoped<ITokenContextHandler, ClientCredentialsContextHandler>();
+builder.Services.AddScoped<ITokenContextHandler, RefreshTokenContextHandler>();
+builder.Services.AddScoped<ITokenContextHandler, DeviceCodeContextHandler>();
+builder.Services.AddScoped<ITokenContextHandlerResolver, TokenContextHandlerResolver>();
 
-builder.Services.AddTransient<ITokenRequestValidator, AuthorizationCodeTokenRequestValidator>();
-builder.Services.AddTransient<ITokenRequestValidator, ClientCredentialsTokenRequestValidator>();
-builder.Services.AddTransient<ITokenRequestValidator, RefreshTokenTokenRequestValidator>();
-builder.Services.AddTransient<ITokenRequestValidator, DeviceCodeTokenRequestValidator>();
-builder.Services.AddSingleton<ITokenRequestValidatorResolver, TokenRequestValidatorResolver>();
+builder.Services.AddScoped<ITokenRequestValidator, AuthorizationCodeTokenRequestValidator>();
+builder.Services.AddScoped<ITokenRequestValidator, ClientCredentialsTokenRequestValidator>();
+builder.Services.AddScoped<ITokenRequestValidator, RefreshTokenTokenRequestValidator>();
+builder.Services.AddScoped<ITokenRequestValidator, DeviceCodeTokenRequestValidator>();
+builder.Services.AddScoped<ITokenRequestValidatorResolver, TokenRequestValidatorResolver>();
 
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretBasicHandler>();
 builder.Services.AddScoped<IClientAuthenticationHandler, ClientSecretPostHandler>();
