@@ -30,9 +30,6 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptio
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
 
-builder.Services.AddDbContext<AppDbContext>(options => 
-    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresDb")));
-
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddMemoryCache(options =>
@@ -41,26 +38,19 @@ builder.Services.AddMemoryCache(options =>
 });
 
 builder.Services.AddAuthorizationBuilder()
+                .AddPolicy(RequireClientTokenAttribute.PolicyName, policy =>
+                {
+                    policy.RequireAssertion(ctx => ctx.User.IsClientToken());
+                })
+                .AddPolicy(RequireUserTokenAttribute.PolicyName, policy =>
+                {
+                    policy.RequireAssertion(ctx => ctx.User.IsUserToken());
+                })
                 .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser()
                                                                           .Build());
 
-builder.Services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
-builder.Services.AddSingleton<IAuthorizationPolicyProvider, ScopePolicyProvider>();
-
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy(RequireClientTokenAttribute.PolicyName, policy =>
-    {
-        policy.RequireAssertion(ctx => ctx.User.IsClientToken());
-    });
-    options.AddPolicy(RequireUserTokenAttribute.PolicyName, policy =>
-    {
-        policy.RequireAssertion(ctx => ctx.User.IsUserToken());
-    });
-});
-
-builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
-builder.Services.AddSingleton<ITokenReplayCache, MemoryTokenReplayCache>();
+builder.Services.AddDbContext<AppDbContext>(options => 
+    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresDb")));
 
 builder.Services.AddScoped<IClientRepository, DbClientRepository>();
 builder.Services.AddScoped<IAuthorizationCodeRepository, DbAuthorizationCodeRepository>();
@@ -70,6 +60,12 @@ builder.Services.AddScoped<IUserConsentRepository, DbUserConsentRepository>();
 builder.Services.AddScoped<IUserRepository, DbUserRepository>();
 builder.Services.AddScoped<IParEntryRepository, DbParEntryRepository>();
 builder.Services.AddScoped<IDeviceAuthorizationRepository, DbDeviceAuthorizationRepository>();
+
+builder.Services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, ScopePolicyProvider>();
+
+builder.Services.AddSingleton<IReplayCache, MemoryReplayCache>();
+builder.Services.AddSingleton<ITokenReplayCache, MemoryTokenReplayCache>();
 
 builder.Services.AddSingleton<ISecureTokenGenerator, SecureTokenGenerator>();
 builder.Services.AddSingleton<IJwksProvider, JwksProvider>();
