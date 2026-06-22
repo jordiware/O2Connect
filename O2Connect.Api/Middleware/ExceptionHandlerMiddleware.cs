@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using O2Connect.Api.Config.OptionsModels;
 using O2Connect.Api.Exceptions;
-using O2Connect.Api.Models.Options;
 using O2Connect.Dto.OidcOAuth;
 using System.Text.Json;
 using System.Text.Json.Serialization;

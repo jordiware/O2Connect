@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Options;
-using O2Connect.Api.Models.Options;
+using O2Connect.Api.Config.OptionsModels;
+using O2Connect.Api.DataValidators.ConfigValidators;
 
-namespace O2Connect.Api.DataValidators.ConfigValidators;
+namespace O2Connect.Api.Config.Validators;
 
 public sealed class ConfigurationValidationRunner
 {

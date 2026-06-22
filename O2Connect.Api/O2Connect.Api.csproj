@@ -25,4 +25,8 @@
       <ProjectReference Include="..\O2Connect.Dto\O2Connect.Dto.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Models\Options\" />
+    </ItemGroup>
+
 </Project>

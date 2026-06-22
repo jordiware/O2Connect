@@ -1,4 +1,4 @@
-﻿namespace O2Connect.Api.DataValidators.ConfigValidators;
+﻿namespace O2Connect.Api.Config.Validators;
 
 public interface IConfigValidator<in TOptions>
 {

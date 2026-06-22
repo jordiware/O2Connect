@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
+using O2Connect.Api.Config.OptionsModels;
 using O2Connect.Api.Models;
-using O2Connect.Api.Models.Options;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Dto.OidcOAuth.Discovery;
 

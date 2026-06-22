@@ -1,4 +1,4 @@
-﻿namespace O2Connect.Api.Models.Options;
+﻿namespace O2Connect.Api.Config.OptionsModels;
 
 public sealed record SecurityOptions
 {

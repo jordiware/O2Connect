@@ -2,15 +2,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using O2Connect.Api.Config.OptionsModels;
+using O2Connect.Api.Config.Validators;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.DataHandlers.TokenContextHandlers;
 using O2Connect.Api.DataValidators;
-using O2Connect.Api.DataValidators.ConfigValidators;
 using O2Connect.Api.DataValidators.TokenRequestValidators;
 using O2Connect.Api.Middleware;
-using O2Connect.Api.Models.Options;
 using O2Connect.Api.Persistence;
 using O2Connect.Api.Repositories;
 using O2Connect.Api.Repositories.Cache;
@@ -47,6 +47,15 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 });
 
 #region APP_OPTIONS
+builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection(ApiOptions.SectionName));
+builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
+builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
+builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection(FeatureOptions.SectionName));
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
+builder.Services.Configure<OidcOptions>(builder.Configuration.GetSection(OidcOptions.SectionName));
+builder.Services.Configure<SecurityOptions>(builder.Configuration.GetSection(SecurityOptions.SectionName));
+
 builder.Services.AddSingleton<IConfigValidator<ApiOptions>, ApiOptionsValidator>();
 builder.Services.AddSingleton<IConfigValidator<DatabaseOptions>, DatabaseOptionsValidator>();
 builder.Services.AddSingleton<IConfigValidator<DiscoveryEndpoints>, DiscoveryEndpointsValidator>();
@@ -57,15 +66,6 @@ builder.Services.AddSingleton<IConfigValidator<OidcOptions>, OidcOptionsValidato
 builder.Services.AddSingleton<IConfigValidator<SecurityOptions>, SecurityOptionsValidator>();
 
 builder.Services.AddSingleton<ConfigurationValidationRunner>();
-
-builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection(ApiOptions.SectionName));
-builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
-builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
-builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection(FeatureOptions.SectionName));
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
-builder.Services.Configure<OidcOptions>(builder.Configuration.GetSection(OidcOptions.SectionName));
-builder.Services.Configure<SecurityOptions>(builder.Configuration.GetSection(SecurityOptions.SectionName));
 #endregion
 
 #region DATA_PERSISTENCE
@@ -189,8 +189,7 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var validator = scope.ServiceProvider
-        .GetRequiredService<ConfigurationValidationRunner>();
+    var validator = scope.ServiceProvider.GetRequiredService<ConfigurationValidationRunner>();
 
     validator.Validate();
 }
