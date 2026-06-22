@@ -7,6 +7,7 @@ using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
 using O2Connect.Api.DataHandlers.TokenContextHandlers;
 using O2Connect.Api.DataValidators;
+using O2Connect.Api.DataValidators.ConfigValidators;
 using O2Connect.Api.DataValidators.TokenRequestValidators;
 using O2Connect.Api.Middleware;
 using O2Connect.Api.Models.Options;
@@ -20,15 +21,6 @@ using O2Connect.Api.Services.Management;
 using O2Connect.Api.Services.OidcOAuth;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
-    options.SuppressModelStateInvalidFilter = true;
-});
-builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection(ApiOptions.SectionName));
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
-builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
 
 builder.Services.AddHttpContextAccessor();
 
@@ -49,6 +41,34 @@ builder.Services.AddAuthorizationBuilder()
                 .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser()
                                                                           .Build());
 
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
+
+#region APP_OPTIONS
+builder.Services.AddSingleton<IConfigValidator<ApiOptions>, ApiOptionsValidator>();
+builder.Services.AddSingleton<IConfigValidator<DatabaseOptions>, DatabaseOptionsValidator>();
+builder.Services.AddSingleton<IConfigValidator<DiscoveryEndpoints>, DiscoveryEndpointsValidator>();
+builder.Services.AddSingleton<IConfigValidator<FeatureOptions>, FeatureOptionsValidator>();
+builder.Services.AddSingleton<IConfigValidator<JwtOptions>, JwtOptionsValidator>();
+builder.Services.AddSingleton<IConfigValidator<OAuthOptions>, OAuthOptionsValidator>();
+builder.Services.AddSingleton<IConfigValidator<OidcOptions>, OidcOptionsValidator>();
+builder.Services.AddSingleton<IConfigValidator<SecurityOptions>, SecurityOptionsValidator>();
+
+builder.Services.AddSingleton<ConfigurationValidationRunner>();
+
+builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection(ApiOptions.SectionName));
+builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
+builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
+builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection(FeatureOptions.SectionName));
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
+builder.Services.Configure<OidcOptions>(builder.Configuration.GetSection(OidcOptions.SectionName));
+builder.Services.Configure<SecurityOptions>(builder.Configuration.GetSection(SecurityOptions.SectionName));
+#endregion
+
+#region DATA_PERSISTENCE
 builder.Services.AddDbContext<AppDbContext>(options => 
     options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresDb")));
 
@@ -60,6 +80,7 @@ builder.Services.AddScoped<IUserConsentRepository, DbUserConsentRepository>();
 builder.Services.AddScoped<IUserRepository, DbUserRepository>();
 builder.Services.AddScoped<IParEntryRepository, DbParEntryRepository>();
 builder.Services.AddScoped<IDeviceAuthorizationRepository, DbDeviceAuthorizationRepository>();
+#endregion
 
 builder.Services.AddSingleton<IAuthorizationHandler, ScopeAuthorizationHandler>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, ScopePolicyProvider>();
@@ -165,6 +186,14 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var validator = scope.ServiceProvider
+        .GetRequiredService<ConfigurationValidationRunner>();
+
+    validator.Validate();
+}
 
 if (app.Environment.IsDevelopment())
 {
