@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using O2Connect.Api.Config;
-using O2Connect.Api.Config.OptionsModels;
-using O2Connect.Api.Config.Validators;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataHandlers.ClientAuthentication;
@@ -22,6 +20,17 @@ using O2Connect.Api.Services.Management;
 using O2Connect.Api.Services.OidcOAuth;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration.Sources.Clear();
+builder.Configuration.AddJsonFile("appsettings.json",
+                                  optional: false,
+                                  reloadOnChange: true)
+                     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json",
+                                  optional: true,
+                                  reloadOnChange: true)
+                     .AddUserSecrets<Program>(optional: true)
+                     .AddEnvironmentVariables()
+                     .AddCommandLine(args);
 
 builder.Services.AddHttpContextAccessor();
 
