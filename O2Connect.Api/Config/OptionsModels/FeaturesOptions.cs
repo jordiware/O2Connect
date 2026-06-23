@@ -1,6 +1,6 @@
 ﻿namespace O2Connect.Api.Config.OptionsModels;
 
-public sealed record FeatureOptions
+public sealed record FeaturesOptions
 {
     public const string SectionName = "Features";
 

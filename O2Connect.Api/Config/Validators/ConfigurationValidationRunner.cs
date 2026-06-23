@@ -18,7 +18,7 @@ public sealed class ConfigurationValidationRunner
         ValidateSection<ApiOptions>();
         ValidateSection<DatabaseOptions>();
         ValidateSection<DiscoveryEndpoints>();
-        ValidateSection<FeatureOptions>();
+        ValidateSection<FeaturesOptions>();
         ValidateSection<JwtOptions>();
         ValidateSection<OAuthOptions>();
         ValidateSection<OidcOptions>();

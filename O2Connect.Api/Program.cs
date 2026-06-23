@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using O2Connect.Api.Config;
 using O2Connect.Api.Config.OptionsModels;
 using O2Connect.Api.Config.Validators;
 using O2Connect.Api.Crypto;
@@ -50,16 +51,25 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection(ApiOptions.SectionName));
 builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
 builder.Services.Configure<DiscoveryEndpoints>(builder.Configuration.GetSection(DiscoveryEndpoints.SectionName));
-builder.Services.Configure<FeatureOptions>(builder.Configuration.GetSection(FeatureOptions.SectionName));
+builder.Services.Configure<FeaturesOptions>(builder.Configuration.GetSection(FeaturesOptions.SectionName));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<OidcOptions>(builder.Configuration.GetSection(OidcOptions.SectionName));
 builder.Services.Configure<SecurityOptions>(builder.Configuration.GetSection(SecurityOptions.SectionName));
 
+builder.Services.AddSingleton<IApiConfig, ApiConfig>();
+builder.Services.AddSingleton<IDatabaseConfig, DatabaseConfig>();
+builder.Services.AddSingleton<IDiscoveryEndpointsConfig, DiscoveryEndpointsConfig>();
+builder.Services.AddSingleton<IFeaturesConfig, FeaturesConfig>();
+builder.Services.AddSingleton<IJwtConfig, JwtConfig>();
+builder.Services.AddSingleton<IOAuthConfig, OAuthConfig>();
+builder.Services.AddSingleton<IOidcConfig, OidcConfig>();
+builder.Services.AddSingleton<ISecurityConfig, SecurityConfig>();
+
 builder.Services.AddSingleton<IConfigValidator<ApiOptions>, ApiOptionsValidator>();
 builder.Services.AddSingleton<IConfigValidator<DatabaseOptions>, DatabaseOptionsValidator>();
 builder.Services.AddSingleton<IConfigValidator<DiscoveryEndpoints>, DiscoveryEndpointsValidator>();
-builder.Services.AddSingleton<IConfigValidator<FeatureOptions>, FeatureOptionsValidator>();
+builder.Services.AddSingleton<IConfigValidator<FeaturesOptions>, FeaturesOptionsValidator>();
 builder.Services.AddSingleton<IConfigValidator<JwtOptions>, JwtOptionsValidator>();
 builder.Services.AddSingleton<IConfigValidator<OAuthOptions>, OAuthOptionsValidator>();
 builder.Services.AddSingleton<IConfigValidator<OidcOptions>, OidcOptionsValidator>();

@@ -2,9 +2,9 @@
 
 namespace O2Connect.Api.Config.Validators;
 
-public sealed class FeatureOptionsValidator : IConfigValidator<FeatureOptions>
+public sealed class FeaturesOptionsValidator : IConfigValidator<FeaturesOptions>
 {
-    public void Validate(FeatureOptions options)
+    public void Validate(FeaturesOptions options)
     {
         // No strict validation required yet.
         // This is intentional: feature flags are meant to be flexible.
