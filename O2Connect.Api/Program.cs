@@ -32,6 +32,13 @@ builder.Configuration.AddJsonFile("appsettings.json",
                      .AddEnvironmentVariables()
                      .AddCommandLine(args);
 
+builder.Services.AddAppConfiguration(builder.Configuration);
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddMemoryCache(options =>
@@ -50,13 +57,6 @@ builder.Services.AddAuthorizationBuilder()
                 })
                 .SetDefaultPolicy(new AuthorizationPolicyBuilder("Bearer").RequireAuthenticatedUser()
                                                                           .Build());
-
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
-    options.SuppressModelStateInvalidFilter = true;
-});
-
-builder.Services.AddAppConfiguration(builder.Configuration);
 
 #region DATA_PERSISTENCE
 builder.Services.AddDbContext<AppDbContext>(options => 

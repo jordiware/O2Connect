@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
-using O2Connect.Api.Config.OptionsModels;
+using O2Connect.Api.Config.Options;
 using O2Connect.Api.Config.Validators;
 
 namespace O2Connect.Api.Config;

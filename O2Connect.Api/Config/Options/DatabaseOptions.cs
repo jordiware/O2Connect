@@ -1,4 +1,4 @@
-﻿namespace O2Connect.Api.Config.OptionsModels;
+﻿namespace O2Connect.Api.Config.Options;
 
 public sealed record DatabaseOptions
 {

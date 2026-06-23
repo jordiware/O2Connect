@@ -1,4 +1,4 @@
-﻿using O2Connect.Api.Config.OptionsModels;
+﻿using O2Connect.Api.Config.Options;
 
 namespace O2Connect.Api.Config.Validators;
 
