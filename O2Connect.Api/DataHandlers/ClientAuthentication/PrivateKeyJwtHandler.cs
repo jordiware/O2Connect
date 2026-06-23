@@ -1,6 +1,5 @@
-﻿using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using O2Connect.Api.Config.OptionsModels;
+﻿using Microsoft.IdentityModel.Tokens;
+using O2Connect.Api.Config;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
@@ -17,18 +16,18 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
 {
     private const string JwtBearerAssertionType = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 
-    private readonly OAuthOptions _oauthOptions;
+    private readonly IOidcConfig _oidcConfig;
     private readonly IJwksProvider _jwksProvider;
     private readonly IReplayCache _replayCache;
 
     public ClientAuthenticationMethod Method => ClientAuthenticationMethod.PrivateKeyJwt;
 
     public PrivateKeyJwtHandler(
-        IOptions<OAuthOptions> oauthOptions,
+        IOidcConfig oidcConfig,
         IJwksProvider jwksProvider,
         IReplayCache replayCache)
     {
-        _oauthOptions = oauthOptions.Value;
+        _oidcConfig = oidcConfig;
         _jwksProvider = jwksProvider;
         _replayCache = replayCache;
     }
@@ -206,7 +205,7 @@ public class PrivateKeyJwtHandler : IClientAuthenticationHandler
             ValidIssuer = client.Id,
 
             ValidateAudience = true,
-            ValidAudience = _oauthOptions.TokenEndpoint,
+            ValidAudience = _oidcConfig.TokenEndpoint,
 
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(1),

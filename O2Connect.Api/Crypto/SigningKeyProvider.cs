@@ -1,6 +1,5 @@
-﻿using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using O2Connect.Api.Config.OptionsModels;
+﻿using Microsoft.IdentityModel.Tokens;
+using O2Connect.Api.Config;
 using O2Connect.Api.Models;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
@@ -15,25 +14,21 @@ public interface ISigningKeyProvider
 
 public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
 {
-    private readonly JwtOptions _options;
+    private readonly IJwtConfig _jwtConfig;
 
     private readonly object _lock = new();
     private readonly Dictionary<string, SigningKey> _keys = new();
     private readonly HashSet<RSA> _ownedRsa = new();
 
-    public RsaSigningKeyProvider(IOptions<JwtOptions> options)
+    public RsaSigningKeyProvider(IJwtConfig jwtConfig)
     {
-        _options = options.Value;
+        _jwtConfig = jwtConfig;
 
         var rsa = RSA.Create();
+        rsa.ImportFromPem(File.ReadAllText(_jwtConfig.Signing.PrivateKeyPath));
 
-        if (!File.Exists("private_key.pem"))
-            throw new InvalidOperationException("Private key file missing.");
-
-        rsa.ImportFromPem(File.ReadAllText("private_key.pem"));
-
-        AddKey(rsa, _options.ActiveKeyId);
-        SetActiveKey(_options.ActiveKeyId);
+        AddKey(rsa, "private_key");
+        SetActiveKey("private_key");
     }
 
     public IReadOnlyCollection<SigningKey> GetValidSigningKeys()
