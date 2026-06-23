@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using O2Connect.Api.Config.OptionsModels;
+﻿using O2Connect.Api.Config;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
@@ -25,18 +24,18 @@ public sealed class DeviceConnectService : IDeviceConnectService
     private readonly IDeviceAuthorizationRepository _deviceAuthorizationRepository;
     private readonly IClientRepository _clientRepository;
     private readonly ISecretHasher _secretHasher;
-    private readonly JwtOptions _jwtOptions;
+    private readonly IJwtConfig _jwtConfig;
 
     public DeviceConnectService(
         IDeviceAuthorizationRepository deviceAuthorizationRepository,
         IClientRepository clientRepository,
         ISecretHasher secretHasher,
-        IOptions<JwtOptions> options)
+        IJwtConfig jwtConfig)
     {
         _deviceAuthorizationRepository = deviceAuthorizationRepository;
         _clientRepository = clientRepository;
         _secretHasher = secretHasher;
-        _jwtOptions = options.Value;
+        _jwtConfig = jwtConfig;
     }
 
     public async Task<DeviceAuthorizationResponse> CreateAsync(string clientId,
@@ -76,7 +75,7 @@ public sealed class DeviceConnectService : IDeviceConnectService
 
         await _deviceAuthorizationRepository.StoreAsync(authorization, ct);
 
-        var verificationUri = $"{_jwtOptions.Issuer}/connect/device";
+        var verificationUri = $"{_jwtConfig.Issuer}/connect/device";
 
         return new DeviceAuthorizationResponse
         {

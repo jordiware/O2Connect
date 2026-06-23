@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using O2Connect.Api.Config.OptionsModels;
+using O2Connect.Api.Config;
 using O2Connect.Api.Exceptions;
 using O2Connect.Dto.OidcOAuth;
 using System.Text.Json;
@@ -11,16 +10,16 @@ namespace O2Connect.Api.Middleware;
 public class ExceptionHandlerMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly ApiOptions _apiOptions;
+    private readonly IApiConfig _apiConfig;
     private readonly ILogger<ExceptionHandlerMiddleware> _logger;
 
     public ExceptionHandlerMiddleware(
         RequestDelegate next,
-        IOptions<ApiOptions> apiOptions,
+        IApiConfig apiConfig,
         ILogger<ExceptionHandlerMiddleware> logger)
     {
         _next = next;
-        _apiOptions = apiOptions.Value;
+        _apiConfig = apiConfig;
         _logger = logger;
     }
 
@@ -41,7 +40,7 @@ public class ExceptionHandlerMiddleware
         {
             var problem = new ProblemDetails
             {
-                Type = $"{_apiOptions.Domain}{ex.Type}",
+                Type = $"{_apiConfig.Domain}{ex.Type}",
                 Title = ex.Title,
                 Status = ex.StatusCode,
                 Detail = ex.Message,

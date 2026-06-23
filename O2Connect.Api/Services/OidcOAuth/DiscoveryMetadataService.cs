@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using O2Connect.Api.Config.OptionsModels;
+﻿using O2Connect.Api.Config;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.SmartEnums;
 using O2Connect.Dto.OidcOAuth.Discovery;
@@ -14,19 +13,19 @@ public interface IDiscoveryMetadataService
 
 public sealed class DiscoveryMetadataService : IDiscoveryMetadataService
 {
-    private readonly JwtOptions _jwtOptions;
-    private readonly DiscoveryEndpoints _endpoints;
+    private readonly IJwtConfig _jwtConfig;
+    private readonly IDiscoveryEndpointsConfig _endpoints;
 
     private Uri IssuerUri { get; }
 
     public DiscoveryMetadataService(
-        IOptions<JwtOptions> jwtOptions,
-        IOptions<DiscoveryEndpoints> endpoints)
+        IJwtConfig jwtConfig,
+        IDiscoveryEndpointsConfig endpoints)
     {
-        _jwtOptions = jwtOptions.Value;
-        _endpoints = endpoints.Value;
+        _jwtConfig = jwtConfig;
+        _endpoints = endpoints;
 
-        IssuerUri = new Uri(_jwtOptions.Issuer.TrimEnd('/'));
+        IssuerUri = new Uri(_jwtConfig.Issuer.TrimEnd('/'));
     }
 
     private DiscoveryMetadata BaseMetadata()

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-using O2Connect.Api.Config.OptionsModels;
+﻿using O2Connect.Api.Config;
 using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Dto.OidcOAuth.Connect;
@@ -16,14 +15,14 @@ public interface ITokenFactory
 
 public class JwtTokenFactory : ITokenFactory
 {
-    private readonly JwtOptions _options;
+    private readonly IJwtConfig _jwtConfig;
     private readonly ISigningKeyProvider _keyProvider;
 
     public JwtTokenFactory(
-        IOptions<JwtOptions> options,
+        IJwtConfig jwtConfig,
         ISigningKeyProvider keyProvider)
     {
-        _options = options.Value;
+        _jwtConfig = jwtConfig;
         _keyProvider = keyProvider;
     }
 
@@ -37,11 +36,11 @@ public class JwtTokenFactory : ITokenFactory
         var claims = BuildClaims(request, now);
 
         var jwt = new JwtSecurityToken(
-            issuer: _options.Issuer,
+            issuer: _jwtConfig.Issuer,
             audience: request.ClientId,
             claims: claims,
             notBefore: now.UtcDateTime,
-            expires: now.AddSeconds(_options.AccessTokenLifetimeSeconds).UtcDateTime,
+            expires: now.AddSeconds(_jwtConfig.AccessTokenLifetimeSeconds).UtcDateTime,
             signingCredentials: key.Credentials);
 
         jwt.Header["kid"] = key.KeyId;
@@ -52,7 +51,7 @@ public class JwtTokenFactory : ITokenFactory
         {
             AccessToken = token,
             TokenType = "Bearer",
-            ExpiresIn = _options.AccessTokenLifetimeSeconds,
+            ExpiresIn = _jwtConfig.AccessTokenLifetimeSeconds,
             Scope = string.Join(' ', request.Scopes.Order())
         });
     }
