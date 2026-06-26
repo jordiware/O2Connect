@@ -37,7 +37,7 @@ public class JwtTokenFactory : ITokenFactory
 
         var jwt = new JwtSecurityToken(
             issuer: _jwtConfig.Issuer,
-            audience: request.ClientId,
+            audience: _jwtConfig.Audience,
             claims: claims,
             notBefore: now.UtcDateTime,
             expires: now.AddSeconds(_jwtConfig.AccessTokenLifetimeSeconds).UtcDateTime,
@@ -52,7 +52,8 @@ public class JwtTokenFactory : ITokenFactory
             AccessToken = token,
             TokenType = "Bearer",
             ExpiresIn = _jwtConfig.AccessTokenLifetimeSeconds,
-            Scope = string.Join(' ', request.Scopes.Order())
+            Scope = string.Join(' ', request.Scopes.Order()),
+            RefreshToken = request.RefreshToken
         });
     }
 

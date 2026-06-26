@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Crypto;
+﻿using O2Connect.Api.Config;
+using O2Connect.Api.Crypto;
 using O2Connect.Api.Exceptions;
 using O2Connect.Api.Models;
 using O2Connect.Api.Models.SmartEnums;
@@ -13,15 +14,18 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
 {
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly ISecureTokenGenerator _secureTokenGenerator;
+    private readonly IJwtConfig _jwtConfig;
 
     public GrantType GrantType => GrantType.RefreshToken;
 
     public RefreshTokenTokenRequestValidator(
         IRefreshTokenRepository store,
-        ISecureTokenGenerator secureTokenGenerator)
+        ISecureTokenGenerator secureTokenGenerator,
+        IJwtConfig jwtConfig)
     {
         _refreshTokenRepository = store;
         _secureTokenGenerator = secureTokenGenerator;
+        _jwtConfig = jwtConfig;
     }
 
     public async Task<TokenRequestContext> ValidateAsync(TokenRequest request,
@@ -70,7 +74,7 @@ public class RefreshTokenTokenRequestValidator : ITokenRequestValidator
             Subject = token.Subject,
             Scopes = scopes,
             CreatedAt = DateTimeOffset.UtcNow,
-            ExpiresAt = DateTimeOffset.UtcNow.AddDays(30),
+            ExpiresAt = DateTimeOffset.UtcNow.AddDays(_jwtConfig.RefreshTokenLifetimeDays),
             SessionId = token.SessionId,
             Version = token.Version + 1,
         };

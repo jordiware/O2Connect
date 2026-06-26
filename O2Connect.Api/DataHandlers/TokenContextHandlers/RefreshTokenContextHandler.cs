@@ -1,4 +1,5 @@
-﻿using O2Connect.Api.Crypto;
+﻿using O2Connect.Api.Config;
+using O2Connect.Api.Crypto;
 using O2Connect.Api.DataFactories;
 using O2Connect.Api.DataFactories.RequestModels;
 using O2Connect.Api.Exceptions;
@@ -15,17 +16,20 @@ public class RefreshTokenContextHandler : ITokenContextHandler
     private readonly ITokenFactory _tokenFactory;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly ISecureTokenGenerator _secureTokenGenerator;
+    private readonly IJwtConfig _jwtConfig;
 
     public GrantType GrantType => GrantType.RefreshToken;
 
     public RefreshTokenContextHandler(
         ITokenFactory tokenFactory,
         IRefreshTokenRepository refreshTokenRepository,
-        ISecureTokenGenerator secureTokenGenerator)
+        ISecureTokenGenerator secureTokenGenerator,
+        IJwtConfig jwtConfig)
     {
         _tokenFactory = tokenFactory;
         _refreshTokenRepository = refreshTokenRepository;
         _secureTokenGenerator = secureTokenGenerator;
+        _jwtConfig = jwtConfig;
     }
 
     public async Task<TokenResponse> HandleAsync(TokenRequestContext context, CancellationToken ct)
@@ -72,7 +76,7 @@ public class RefreshTokenContextHandler : ITokenContextHandler
             Subject = storedToken.Subject,
             Scopes = context.Scopes.ToArray(),
             CreatedAt = now,
-            ExpiresAt = now.AddDays(30),
+            ExpiresAt = now.AddDays(_jwtConfig.RefreshTokenLifetimeDays),
             SessionId = storedToken.SessionId,
             Version = storedToken.Version + 1
         };

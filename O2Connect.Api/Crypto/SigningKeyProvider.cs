@@ -27,8 +27,8 @@ public class RsaSigningKeyProvider : ISigningKeyProvider, IDisposable
         var rsa = RSA.Create();
         rsa.ImportFromPem(File.ReadAllText(_jwtConfig.Signing.PrivateKeyPath));
 
-        AddKey(rsa, "private_key");
-        SetActiveKey("private_key");
+        AddKey(rsa, _jwtConfig.Signing.KeyId);
+        SetActiveKey(_jwtConfig.Signing.KeyId);
     }
 
     public IReadOnlyCollection<SigningKey> GetValidSigningKeys()
